@@ -37,11 +37,7 @@ a{color:var(--accent)}
 .sidebar .status{margin-top:18px;padding:10px;border-radius:9px;background:var(--panel2);font-size:11.5px;color:var(--sub);line-height:1.5}
 .content{flex:1;min-width:0;padding:18px 26px 60px;max-width:1240px;margin:0 auto;width:100%}
 
-/* ===== TOPBAR ===== */
-.topbar{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  gap:12px;margin-bottom:16px;
-}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
 .topbar-text{flex:1;min-width:0}
 .topbar h1{font-size:19px;margin:0;line-height:1.2}
 .topbar .muted{color:var(--sub);font-size:12.5px;margin-top:3px;line-height:1.35}
@@ -145,14 +141,12 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .bottom-nav{display:flex}
   .content{padding:14px 14px calc(var(--bottomnav-h) + 40px + env(safe-area-inset-bottom,0px));max-width:100%}
   footer.app-footer{padding-bottom:calc(var(--bottomnav-h) + 20px + env(safe-area-inset-bottom,0px))}
-
   .topbar{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
   .topbar-text{width:100%}
   .topbar h1{font-size:17px}
   .topbar .muted{font-size:12px}
   .topbar-actions{justify-content:flex-end;width:100%}
   .iconbtn{width:38px;height:38px;padding:9px}
-
   .row{gap:10px}
   .field{min-width:130px}
   .chartbox{height:220px}
@@ -350,7 +344,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <!-- VISTA: SETTINGS -->
 <section class="view" id="view-settings">
   <div class="card">
-    <h2>Paletas temáticas <span class="tag">16 estilos</span></h2>
+    <h2>Paletas temáticas <span class="tag">20 estilos</span></h2>
     <p class="hint">Un clic aplica la combinación de acento principal + secundario.</p>
     <div class="palette-grid" id="paletteGrid"></div>
   </div>
@@ -410,7 +404,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   <button data-view="settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
 </nav>
 
-<footer class="app-footer">Procesamiento 100% local en el navegador · los datos se guardan en tu dispositivo · v4.0</footer>
+<footer class="app-footer">Procesamiento 100% local en el navegador · los datos se guardan en tu dispositivo · v4.1</footer>
 
 <div class="omni-overlay hidden" id="omniOverlay">
   <div class="omni-box">
@@ -680,25 +674,50 @@ function cap(s){
 }
 function titleCase(s){return cap(s||'');}
 
+/* ================= DOMICILIO (corregido) =================
+   - Número de puerta: "Lavalle Nro: 15"          → nro puramente numérico
+   - Con letra: "Lavalle Nro: 15A"                 → dígito + letra
+   - Sin número: "Lavalle s/n"
+   - Esquina: "Tormey y 25 de Mayo"                → nro contiene palabras
+   - Entre: "Tormey entre 25 de Mayo y Rivadavia"  → nro contiene " y " o "/"
+   - Piso/Dpto: solo si existen datos
+=========================================================== */
 function domicilio(r){
   const calle=(r.calle||'').trim();
-  const nro=(r.nroCalle||'').trim();
-  const piso=(r.piso||'').trim();
-  const dpto=(r.dpto||'').trim();
-  const nroEsCalle = nro && !/^\d/.test(nro) && /[a-zA-Záéíóúñ]/i.test(nro);
+  const nro  =(r.nroCalle||'').trim();
+  const piso =(r.piso||'').trim();
+  const dpto =(r.dpto||'').trim();
+
+  // ¿Es un número de puerta? (dígito puro, con letra suelta opcional: "15", "123A", "45 B")
+  const isDoorNumber = /^\d+\s*[a-zA-Z]?$/.test(nro);
+  // ¿Es "s/n" (sin número)?
+  const isSinNumero = /^s\s*\/?\s*n\.?$/i.test(nro);
+
   let base='';
-  if(calle && nroEsCalle){
-    if(/\s+y\s+|\/|,/i.test(nro)) base=`${calle} entre ${nro}`;
-    else base=`${calle} y ${nro}`;
+  if(calle && nro && isDoorNumber){
+    base = `${calle} Nro: ${nro}`;
+  } else if(calle && nro && isSinNumero){
+    base = `${calle} s/n`;
   } else if(calle && nro){
-    base=`${calle} ${nro}`;
+    // nro contiene palabras → es otra calle
+    if(/\s+y\s+|\s+e\s+|\/|,/i.test(nro)){
+      base = `${calle} entre ${nro}`;
+    } else {
+      base = `${calle} y ${nro}`;
+    }
+  } else if(calle){
+    base = calle;
+  } else if(nro){
+    base = nro;
   } else {
-    base=calle||nro||'-';
+    base = '-';
   }
-  if(piso) base+=` · Piso ${piso}`;
-  if(dpto) base+=` · Dpto ${dpto}`;
-  return base||'-';
+
+  if(piso) base += ` · Piso ${piso}`;
+  if(dpto) base += ` · Dpto ${dpto}`;
+  return base || '-';
 }
+
 function toNum(v){
   if(v===null||v===undefined) return 0;
   const s=String(v).trim();
@@ -1573,7 +1592,7 @@ function initSheet(toggleId,cardId){
 initSheet('toggleSheetPdf','controls');
 initSheet('toggleSheetDash','dashFiltersCard');
 
-/* ======================= INICIALIZACION / RESTAURAR ESTADO ======================= */
+/* ======================= INICIALIZACION ======================= */
 document.getElementById('batchSize').addEventListener('change',()=>{
   if(batchState.ranges.length) prepareBatches(true);
 });
