@@ -19,7 +19,10 @@
 :root[data-theme="dark"]{--bg:#0f1216;--panel:#171b21;--panel2:#1d2229;--ink:#e8ebef;--sub:#9aa3af;--line:#2a2f38;--accent:#5b8fd6;--accent2:#5fb583;--warn:#e08a4c;--danger:#e2685f;}
 body.density-compact{--density-pad:11px;--density-font:12.5px;--density-row:3px 7px}
 *{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100%;font-size:var(--density-font);-webkit-text-size-adjust:100%}
+body.ff-serif{font-family:Georgia,'Times New Roman',serif}
+body.ff-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 a{color:var(--accent)}
 .app{display:flex;min-height:100%}
 .sidebar{width:var(--sidebar-w);flex:0 0 auto;background:var(--panel);border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;padding-top:calc(16px + env(safe-area-inset-top,0px))}
@@ -33,11 +36,21 @@ a{color:var(--accent)}
 .nav button.active{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .sidebar .status{margin-top:18px;padding:10px;border-radius:9px;background:var(--panel2);font-size:11.5px;color:var(--sub);line-height:1.5}
 .content{flex:1;min-width:0;padding:18px 26px 60px;max-width:1240px;margin:0 auto;width:100%}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.topbar h1{font-size:19px;margin:0}
-.topbar .muted{color:var(--sub);font-size:12.5px;margin-top:2px}
-.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--ink);font-size:13px}
-.iconbtn.active{background:color-mix(in srgb, var(--accent) 15%, var(--panel));color:var(--accent);border-color:var(--accent)}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:12px;margin-bottom:16px;
+}
+.topbar-text{flex:1;min-width:0}
+.topbar h1{font-size:19px;margin:0;line-height:1.2}
+.topbar .muted{color:var(--sub);font-size:12.5px;margin-top:3px;line-height:1.35}
+.topbar-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px;cursor:pointer;color:var(--ink);font-size:13px;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+.iconbtn .icon{margin:0}
+.iconbtn:hover{background:var(--panel2)}
+.iconbtn.active{background:color-mix(in srgb,var(--accent) 15%,var(--panel));color:var(--accent);border-color:var(--accent)}
+
 .view{display:none}
 .view.active{display:block}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:var(--density-pad);margin-bottom:16px}
@@ -71,7 +84,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid2>*{min-width:0}
 .icon{width:17px;height:17px;vertical-align:-3px;margin-right:7px;flex:0 0 auto;stroke:currentColor}
-.iconbtn .icon,#btnTheme .icon,#btnOmni .icon,#btnDensity .icon{margin-right:0;vertical-align:-3px}
 .editor-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
 .editor-row input[type=text]{flex:1;min-width:110px}
 .editor-row select{width:auto;min-width:90px}
@@ -98,20 +110,17 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .file-pill b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
 .file-pill button{all:unset;cursor:pointer;color:var(--danger);font-weight:700;padding:0 2px;font-size:13px}
 
-/* Chips rápidos */
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .chip{background:var(--panel);border:1px solid var(--line);color:var(--sub);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;user-select:none}
 .chip:hover{border-color:var(--accent);color:var(--accent)}
 .chip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
-/* Paletas */
-.palette-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}
+.palette-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:8px}
 .palette-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--panel2);border-radius:10px;cursor:pointer;font-size:12.5px;color:var(--ink);text-align:left;transition:.15s}
 .palette-btn:hover{border-color:var(--accent)}
-.palette-btn .sw{width:22px;height:22px;border-radius:6px;flex:0 0 auto}
+.palette-btn .sw{width:26px;height:26px;border-radius:7px;flex:0 0 auto;border:1px solid rgba(0,0,0,.08)}
 .palette-btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 
-/* Omnibox */
 .omni-overlay{position:fixed;inset:0;background:rgba(10,14,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100;display:flex;justify-content:center;align-items:flex-start;padding:8vh 16px 16px}
 .omni-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:640px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
 .omni-box input{border:none;background:transparent;font-size:16px;padding:16px 18px;border-radius:0;width:100%}
@@ -123,26 +132,27 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .omni-empty{padding:24px;text-align:center;color:var(--sub);font-size:13px}
 .omni-hint{padding:8px 18px;color:var(--sub);font-size:11px;background:var(--panel2);border-top:1px solid var(--line)}
 
-/* Bottom nav (mobile) */
 .bottom-nav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;background:color-mix(in srgb, var(--panel) 96%, transparent);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px rgba(0,0,0,.08);justify-content:space-around;gap:2px}
 .bottom-nav button{all:unset;cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;border-radius:11px;color:var(--sub);font-size:10px;font-weight:600;transition:.15s;min-width:0}
 .bottom-nav button .icon{margin:0;width:21px;height:21px}
 .bottom-nav button.active{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
 .bottom-nav button:active{transform:scale(.94)}
 
-/* FAB filtros móvil */
-.fab{display:none;position:fixed;right:16px;bottom:calc(var(--bottomnav-h) + 16px + env(safe-area-inset-bottom,0px));z-index:45;background:var(--accent);color:var(--accent-ink);border:none;border-radius:50%;width:52px;height:52px;box-shadow:0 8px 20px rgba(0,0,0,.28);cursor:pointer;align-items:center;justify-content:center;font-size:20px}
-
 @media(max-width:820px){
   .grid2{grid-template-columns:1fr}
   .app{flex-direction:column}
   .sidebar{display:none}
   .bottom-nav{display:flex}
-  .fab{display:flex}
   .content{padding:14px 14px calc(var(--bottomnav-h) + 40px + env(safe-area-inset-bottom,0px));max-width:100%}
   footer.app-footer{padding-bottom:calc(var(--bottomnav-h) + 20px + env(safe-area-inset-bottom,0px))}
-  .topbar h1{font-size:16.5px}
-  .topbar .muted{font-size:11.5px}
+
+  .topbar{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
+  .topbar-text{width:100%}
+  .topbar h1{font-size:17px}
+  .topbar .muted{font-size:12px}
+  .topbar-actions{justify-content:flex-end;width:100%}
+  .iconbtn{width:38px;height:38px;padding:9px}
+
   .row{gap:10px}
   .field{min-width:130px}
   .chartbox{height:220px}
@@ -161,12 +171,12 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .omni-box input{font-size:16px;padding:14px}
   .palette-grid{grid-template-columns:1fr 1fr}
   .filter-card.sheet-closed .sheet-body{display:none}
+  .filter-card.sheet-closed h2{margin-bottom:0}
 }
 @media(max-width:480px){
   .batch-item{min-width:100%}
-  .topbar{flex-direction:column;align-items:flex-start;gap:8px}
-  .topbar>div:last-child{align-self:flex-end;margin-top:-34px}
   .palette-grid{grid-template-columns:1fr}
+  .topbar-actions .iconbtn{width:42px;height:42px}
 }
 </style>
 </head>
@@ -185,8 +195,11 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <main class="content" id="mainContent">
 
 <div class="topbar">
-  <div><h1 id="pageTitle">Generador de Informes PDF</h1><div class="muted" id="pageSub">Cargá el Excel (solapa "Datos") y generá el informe.</div></div>
-  <div style="display:flex;gap:8px">
+  <div class="topbar-text">
+    <h1 id="pageTitle">Generador de Informes PDF</h1>
+    <div class="muted" id="pageSub">Cargá el Excel (solapa "Datos") y generá el informe.</div>
+  </div>
+  <div class="topbar-actions">
     <button class="iconbtn" id="btnOmni" title="Buscar (Ctrl+K)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
     <button class="iconbtn" id="btnDensity" title="Densidad de interfaz"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3"></rect><rect x="3" y="10.5" width="18" height="3"></rect><rect x="3" y="17" width="18" height="3"></rect></svg></button>
     <button class="iconbtn" id="btnTheme" title="Cambiar tema"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
@@ -197,7 +210,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <section class="view active" id="view-pdf">
   <div class="card">
     <h2>1. Origen de datos <span class="tag">Excel</span></h2>
-    <div id="dz" class="dropzone"><svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Hacé clic o arrastrá uno o más archivos .xlsx (solapa "Datos")<div class="hint">Los archivos se <b>acumulan</b>. Si subís uno con el mismo nombre, se reemplaza solo ese. Se respetan los formatos (ej. "001" se conserva como "001").</div>
+    <div id="dz" class="dropzone"><svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Hacé clic o arrastrá uno o más archivos .xlsx (solapa "Datos")<div class="hint">Los archivos se <b>acumulan</b> y quedan guardados entre sesiones. Se respetan los formatos (ej. "001" se conserva como "001").</div>
       <input id="file" type="file" accept=".xlsx,.xls" multiple class="hidden">
     </div>
     <div id="status" class="status-line">Sin archivo cargado.</div>
@@ -303,8 +316,8 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
       <div class="scrollx" style="margin-top:8px"><div id="gapsList"></div></div>
     </div>
     <div class="card">
-      <h2>Duplicados y resolución asistida <span class="tag" id="dupTag">-</span></h2>
-      <div class="hint">Mismo apellido + nombre + domicilio. Elegí cómo resolver cada grupo sin editar el Excel original.</div>
+      <h2>Números de rifa duplicados <span class="tag" id="dupTag">-</span></h2>
+      <div class="hint">Detecta números de rifa repetidos. Que un mismo cliente compre varias rifas es normal — solo se marca cuando el N° de rifa aparece más de una vez.</div>
       <div class="scrollx" style="margin-top:8px"><table class="mini" id="dupTable"></table></div>
       <div id="excludedInfo" class="hint" style="margin-top:10px"></div>
     </div>
@@ -319,7 +332,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <section class="view" id="view-print">
   <div class="card">
     <h2>Impresión por lotes <span class="tag">control de progreso</span></h2>
-    <p class="hint">Los lotes se imprimen de forma continua: cada hoja lleva el número de página global y un encabezado de continuación, así al apilar las hojas el informe se ve como si se hubiera impreso todo junto.</p>
+    <p class="hint">Los lotes se imprimen de forma continua: cada hoja lleva el número de página global y un encabezado de continuación.</p>
     <div class="row">
       <div class="field" style="max-width:170px"><label>Hojas por lote</label><input id="batchSize" type="number" min="1" value="2"></div>
       <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches">Preparar / recalcular lotes</button></div>
@@ -337,15 +350,18 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <!-- VISTA: SETTINGS -->
 <section class="view" id="view-settings">
   <div class="card">
-    <h2>Paletas temáticas</h2>
+    <h2>Paletas temáticas <span class="tag">16 estilos</span></h2>
+    <p class="hint">Un clic aplica la combinación de acento principal + secundario.</p>
     <div class="palette-grid" id="paletteGrid"></div>
   </div>
   <div class="card">
     <h2>Personalización de la interfaz</h2>
     <div class="row">
-      <div class="field" style="max-width:120px"><label>Color de acento</label><input id="cfgAccent" type="color" class="swatch" value="#1f4e8c"></div>
+      <div class="field" style="max-width:120px"><label>Color principal</label><input id="cfgAccent" type="color" class="swatch" value="#1f4e8c"></div>
+      <div class="field" style="max-width:120px"><label>Color secundario</label><input id="cfgAccent2" type="color" class="swatch" value="#2f7a4f"></div>
       <div class="field" style="max-width:160px"><label>Tema</label><select id="cfgTheme"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
-      <div class="field" style="max-width:200px"><label>Densidad de interfaz</label><select id="cfgDensity"><option value="comoda">Cómoda (espaciada)</option><option value="compacta">Compacta (hoja de cálculo)</option></select></div>
+      <div class="field" style="max-width:200px"><label>Densidad</label><select id="cfgDensity"><option value="comoda">Cómoda (espaciada)</option><option value="compacta">Compacta (planilla)</option></select></div>
+      <div class="field" style="max-width:200px"><label>Tipografía interfaz</label><select id="cfgFont"><option value="system">Sistema (default)</option><option value="serif">Serif (Georgia)</option><option value="mono">Monoespaciada</option></select></div>
     </div>
   </div>
   <div class="card">
@@ -355,23 +371,28 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
       <div class="field" style="max-width:170px"><label>Total de cuotas</label><input id="cfgCuotas" type="number" min="1" max="30" value="10"></div>
     </div>
     <div class="row" style="margin-top:10px">
+      <div class="field" style="max-width:220px"><label>Tipografía PDF</label>
+        <select id="cfgPdfFont"><option value="helvetica">Helvetica (moderna)</option><option value="times">Times (clásica)</option><option value="courier">Courier (técnica)</option></select>
+      </div>
+      <div class="field" style="max-width:180px"><label>Tamaño del texto PDF</label>
+        <select id="cfgPdfSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select>
+      </div>
       <div class="field" style="max-width:260px"><label>Modo ahorro de tóner</label>
         <select id="cfgToner"><option value="on">Activado (recomendado)</option><option value="off">Desactivado (con relleno gris)</option></select>
-        <div class="hint">Evita rellenos oscuros en la cabecera de la tabla.</div>
       </div>
     </div>
   </div>
 
   <div class="card">
     <h2>Cabecera del PDF <span class="tag">editable</span></h2>
-    <p class="hint">Las líneas se muestran en una sola fila (separadas por ·) para mantener el encabezado limpio. Marcá "nueva línea" para forzar un salto. Tokens: <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code> <code>{{fecha_generacion}}</code></p>
+    <p class="hint">Las líneas se muestran en una sola fila. Tokens: <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code> <code>{{fecha_generacion}}</code></p>
     <div id="headerEditor"></div>
     <button class="ghost miniBtn" id="btnAddHeaderRow">+ Agregar línea</button>
   </div>
 
   <div class="card">
     <h2>Pie de página del PDF <span class="tag">editable</span></h2>
-    <p class="hint">Tokens disponibles: <code>{{pagina}}</code> <code>{{total_paginas}}</code> <code>{{fecha_generacion}}</code> <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code></p>
+    <p class="hint">Tokens: <code>{{pagina}}</code> <code>{{total_paginas}}</code> <code>{{fecha_generacion}}</code> <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code></p>
     <div id="footerEditor"></div>
     <button class="ghost miniBtn" id="btnAddFooterRow">+ Agregar elemento</button>
   </div>
@@ -382,8 +403,6 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 </main>
 </div>
 
-<button class="fab" id="fabFilters" title="Filtros">⚙</button>
-
 <nav class="bottom-nav" id="bottomNav">
   <button data-view="pdf" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>PDF</button>
   <button data-view="dash"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Dashboard</button>
@@ -391,9 +410,8 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   <button data-view="settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
 </nav>
 
-<footer class="app-footer">Procesamiento 100% local en el navegador · ningún dato se envía a Internet · v3.0</footer>
+<footer class="app-footer">Procesamiento 100% local en el navegador · los datos se guardan en tu dispositivo · v4.0</footer>
 
-<!-- Omnibox -->
 <div class="omni-overlay hidden" id="omniOverlay">
   <div class="omni-box">
     <input id="omniInput" type="text" placeholder="Buscar por legajo, apellido, calle, localidad…" autocomplete="off">
@@ -404,8 +422,8 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 
 <script>
 /* ======================= CONFIG ======================= */
-const CFG_KEY='cobranza_suite_cfg_v3';
-const CFG_VERSION=3;
+const CFG_KEY='cobranza_suite_cfg_v4';
+const CFG_VERSION=4;
 const DEFAULT_HEADER_ROWS=[
   {label:'Localidad:',value:'{{localidad}}',sep:false},
   {label:'Mes:',value:'{{mes}}',sep:false},
@@ -424,16 +442,29 @@ const PALETTES={
   verde:      {name:'Verde institución', accent:'#1e5631', accent2:'#4c9a2a'},
   bordo:      {name:'Bordó ejecutivo',   accent:'#8b2c3c', accent2:'#c1873b'},
   purpura:    {name:'Púrpura moderno',   accent:'#5b2c6f', accent2:'#af7ac5'},
-  arena:      {name:'Arena cálida',      accent:'#8a6d3b', accent2:'#5d8a66'}
+  arena:      {name:'Arena cálida',      accent:'#8a6d3b', accent2:'#5d8a66'},
+  oceano:     {name:'Océano profundo',   accent:'#0d4c73', accent2:'#1f9bb8'},
+  bosque:     {name:'Bosque nocturno',   accent:'#1c3a2e', accent2:'#5c9e6a'},
+  atardecer:  {name:'Atardecer',         accent:'#c44536', accent2:'#f2a541'},
+  lavanda:    {name:'Lavanda',           accent:'#6a4c93', accent2:'#b8a9d9'},
+  coral:      {name:'Rosa coral',        accent:'#c2185b', accent2:'#f48fb1'},
+  monocromo:  {name:'Monocromo',         accent:'#2b2b2b', accent2:'#7a7a7a'},
+  nordico:    {name:'Nórdico',           accent:'#3b5b77', accent2:'#8fa9bd'},
+  cyber:      {name:'Cyberpunk',         accent:'#7b2cbf', accent2:'#ff006e'},
+  sepia:      {name:'Sepia clásico',     accent:'#6b4423', accent2:'#a67c52'},
+  vino:       {name:'Rojo vino',         accent:'#722f37', accent2:'#b08456'},
+  turquesa:   {name:'Turquesa',          accent:'#0e7c86', accent2:'#4ecdc4'},
+  miel:       {name:'Miel',              accent:'#a67c00', accent2:'#d4a017'}
 };
 let CFG={
-  version:CFG_VERSION, accent:'#1f4e8c', theme:'auto', density:'comoda',
-  title:'Informe de Cobranza', cuotas:10, toner:'on', palette:'clasico',
+  version:CFG_VERSION, accent:'#1f4e8c', accent2:'#2f7a4f', theme:'auto', density:'comoda',
+  font:'system', title:'Informe de Cobranza', cuotas:10, toner:'on', palette:'clasico',
+  pdfFont:'helvetica', pdfSize:'normal',
   headerRows:JSON.parse(JSON.stringify(DEFAULT_HEADER_ROWS)),
   footerItems:JSON.parse(JSON.stringify(DEFAULT_FOOTER_ITEMS))
 };
 try{
-  const raw=localStorage.getItem(CFG_KEY)||localStorage.getItem('cobranza_suite_cfg_v2')||localStorage.getItem('cobranza_suite_cfg_v1');
+  const raw=localStorage.getItem(CFG_KEY)||localStorage.getItem('cobranza_suite_cfg_v3')||localStorage.getItem('cobranza_suite_cfg_v2')||localStorage.getItem('cobranza_suite_cfg_v1');
   const saved=JSON.parse(raw||'null');
   if(saved){
     Object.assign(CFG,saved);
@@ -450,12 +481,18 @@ function applyCfg(){
   document.documentElement.style.setProperty('--accent2',CFG.accent2||'#2f7a4f');
   document.documentElement.setAttribute('data-theme',CFG.theme==='auto'?'':CFG.theme);
   document.body.classList.toggle('density-compact', CFG.density==='compacta');
+  document.body.classList.toggle('ff-serif', CFG.font==='serif');
+  document.body.classList.toggle('ff-mono', CFG.font==='mono');
   document.getElementById('cfgAccent').value=CFG.accent;
+  document.getElementById('cfgAccent2').value=CFG.accent2||'#2f7a4f';
   document.getElementById('cfgTheme').value=CFG.theme;
   document.getElementById('cfgDensity').value=CFG.density;
+  document.getElementById('cfgFont').value=CFG.font||'system';
   document.getElementById('cfgTitle').value=CFG.title;
   document.getElementById('cfgCuotas').value=CFG.cuotas;
   document.getElementById('cfgToner').value=CFG.toner;
+  document.getElementById('cfgPdfFont').value=CFG.pdfFont||'helvetica';
+  document.getElementById('cfgPdfSize').value=CFG.pdfSize||'normal';
   renderPaletteGrid();
   renderHeaderEditor(); renderFooterEditor();
 }
@@ -464,7 +501,7 @@ function renderPaletteGrid(){
   grid.innerHTML=Object.entries(PALETTES).map(([k,p])=>`
     <div class="palette-btn ${CFG.palette===k?'active':''}" data-pal="${k}">
       <div class="sw" style="background:linear-gradient(135deg,${p.accent} 0%,${p.accent2} 100%)"></div>
-      <div><div style="font-weight:600">${p.name}</div><div style="font-size:11px;color:var(--sub)">${p.accent}</div></div>
+      <div><div style="font-weight:600">${p.name}</div><div style="font-size:10.5px;color:var(--sub)">${p.accent} · ${p.accent2}</div></div>
     </div>`).join('');
   grid.querySelectorAll('.palette-btn').forEach(b=>{
     b.onclick=()=>{
@@ -510,11 +547,16 @@ document.getElementById('btnAddFooterRow').onclick=()=>{CFG.footerItems.push({te
 applyCfg();
 document.getElementById('btnSaveCfg').onclick=()=>{
   CFG.accent=document.getElementById('cfgAccent').value;
+  CFG.accent2=document.getElementById('cfgAccent2').value;
   CFG.theme=document.getElementById('cfgTheme').value;
   CFG.density=document.getElementById('cfgDensity').value;
+  CFG.font=document.getElementById('cfgFont').value;
   CFG.title=document.getElementById('cfgTitle').value.trim()||'Informe de Cobranza';
   CFG.cuotas=Math.max(1,parseInt(document.getElementById('cfgCuotas').value)||10);
   CFG.toner=document.getElementById('cfgToner').value;
+  CFG.pdfFont=document.getElementById('cfgPdfFont').value;
+  CFG.pdfSize=document.getElementById('cfgPdfSize').value;
+  CFG.palette='custom';
   CFG.version=CFG_VERSION;
   try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
   applyCfg();
@@ -538,9 +580,9 @@ document.getElementById('btnDensity').classList.toggle('active',CFG.density==='c
 /* ======================= NAVEGACION ======================= */
 const TITLES={
   pdf:['Generador de Informes PDF','Cargá el Excel (solapa "Datos") y generá el informe.'],
-  dash:['Dashboard de cobranza','Indicadores, tendencias y hallazgos automáticos sobre tu cartera.'],
-  print:['Impresión por lotes','Imprimí el informe en tandas, con control de lo ya impreso.'],
-  settings:['Personalización','Ajustá colores, tema y comportamiento del informe generado.']
+  dash:['Dashboard de cobranza','Indicadores, tendencias y hallazgos automáticos.'],
+  print:['Impresión por lotes','Imprimí en tandas, con control de lo impreso.'],
+  settings:['Personalización','Colores, tema, tipografía y comportamiento.']
 };
 function setView(v){
   document.querySelectorAll('.nav button, .bottom-nav button').forEach(x=>x.classList.toggle('active', x.dataset.view===v));
@@ -552,8 +594,7 @@ function setView(v){
 }
 document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
-/* Swipe entre vistas */
-(function(){
+(function swipe(){
   let ts=null;
   const content=document.getElementById('mainContent');
   content.addEventListener('touchstart',e=>{
@@ -577,19 +618,86 @@ document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclic
   },{passive:true});
 })();
 
+/* ======================= INDEXEDDB PERSISTENCIA ======================= */
+const DB_NAME='cobranza_suite_db';
+const STORE='state';
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function saveState(){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put({
+      files:FILES.map(f=>({name:f.name,records:f.records.map(r=>({
+        ...r, fcarga: r.fcarga instanceof Date ? r.fcarga.toISOString() : r.fcarga
+      }))})),
+      ts:Date.now()
+    },'main');
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+  }catch(e){console.warn('saveState',e);}
+}
+async function loadState(){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readonly');
+    const req=tx.objectStore(STORE).get('main');
+    return await new Promise((res,rej)=>{req.onsuccess=()=>res(req.result);req.onerror=rej;});
+  }catch(e){return null;}
+}
+async function clearState(){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).delete('main');
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+  }catch(e){}
+}
+
 /* ======================= MODELO ======================= */
 let RECORDS=[];
-let FILES=[]; // {name, records:[...]}
+let FILES=[];
 const charts={};
 
-function cap(s){if(!s)return'';s=(s+'').toLowerCase().trim();return s.replace(/(^|\s)\S/g,c=>c.toUpperCase());}
+const STOPWORDS=new Set(['de','del','la','las','los','y','e','o','u','a','en','por','para','con','sin','al','el','un','una']);
+function cap(s){
+  if(!s) return '';
+  s=(s+'').toLowerCase().trim();
+  if(!s) return '';
+  return s.split(/\s+/).map((w,i)=>{
+    if(i>0 && STOPWORDS.has(w)) return w;
+    if(/^\d+$/.test(w)) return w;
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  }).join(' ');
+}
 function titleCase(s){return cap(s||'');}
+
 function domicilio(r){
-  let d=r.calle||'';
-  if(r.nroCalle) d+=' Nro: '+r.nroCalle;
-  if(r.piso) d+=' Piso: '+r.piso;
-  if(r.dpto) d+=' Dpto: '+r.dpto;
-  return d||'-';
+  const calle=(r.calle||'').trim();
+  const nro=(r.nroCalle||'').trim();
+  const piso=(r.piso||'').trim();
+  const dpto=(r.dpto||'').trim();
+  const nroEsCalle = nro && !/^\d/.test(nro) && /[a-zA-Záéíóúñ]/i.test(nro);
+  let base='';
+  if(calle && nroEsCalle){
+    if(/\s+y\s+|\/|,/i.test(nro)) base=`${calle} entre ${nro}`;
+    else base=`${calle} y ${nro}`;
+  } else if(calle && nro){
+    base=`${calle} ${nro}`;
+  } else {
+    base=calle||nro||'-';
+  }
+  if(piso) base+=` · Piso ${piso}`;
+  if(dpto) base+=` · Dpto ${dpto}`;
+  return base||'-';
 }
 function toNum(v){
   if(v===null||v===undefined) return 0;
@@ -603,15 +711,12 @@ function parseDate(v){
   if(v instanceof Date) return v;
   const s=String(v).trim();
   if(!s) return null;
-  // Excel serial
   if(/^\d+(\.\d+)?$/.test(s)){
     const n=parseFloat(s);
     if(n>20000&&n<60000) return new Date(Math.round((n-25569)*86400*1000));
   }
-  // ISO
   let d=new Date(s);
   if(!isNaN(d.getTime())) return d;
-  // dd/mm/yyyy o dd-mm-yyyy
   const m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if(m){let y=parseInt(m[3]); if(y<100) y+=2000; return new Date(y,parseInt(m[2])-1,parseInt(m[1]));}
   return null;
@@ -619,12 +724,11 @@ function parseDate(v){
 function reparseDebe(){
   FILES.forEach(f=>f.records.forEach(r=>{r.debe=Math.max(0,CFG.cuotas-r.pago);}));
   rebuildRecords();
-  refreshPreview();updateDashboard();
+  refreshPreview();updateDashboard();saveState();
 }
 function rebuildRecords(){
   RECORDS=FILES.flatMap(f=>f.records).filter(r=>!r._excluded);
 }
-
 function parseRecords(rows,sourceName){
   let hIdx=-1;
   for(let i=0;i<rows.length;i++){if((rows[i][1]+'').trim().toLowerCase()==='apellido'){hIdx=i;break;}}
@@ -632,7 +736,6 @@ function parseRecords(rows,sourceName){
   const out=[];
   for(let i=hIdx+1;i<rows.length;i++){
     const r=rows[i];
-    // num se conserva como string tal cual (preserva "001")
     const num=(r[0]+'').trim();
     const ape=(r[1]+'').trim();
     if(!num&&!ape)continue;
@@ -642,7 +745,7 @@ function parseRecords(rows,sourceName){
     out.push({
       num, apellido:cap(ape), nombre:cap((r[2]+'').trim()),
       calle:cap((r[3]+'').trim()),
-      nroCalle:(r[4]+'').trim(), piso:(r[5]+'').trim(), dpto:(r[6]+'').trim(),
+      nroCalle:cap((r[4]+'').trim()), piso:(r[5]+'').trim(), dpto:(r[6]+'').trim(),
       pago, debe:Math.max(0,CFG.cuotas-pago),
       mes:cap((r[8]+'').trim()), situacion:cap((r[10]+'').trim()), localidad:cap((r[11]+'').trim()),
       fcarga, source:sourceName, _excluded:false
@@ -668,11 +771,9 @@ async function handleFiles(files){
   for(const file of files){
     try{
       const buf=await file.arrayBuffer();
-      // Sin cellDates para preservar el formato de celda (leading zeros etc.)
       const wb=XLSX.read(buf,{type:'array',cellDates:false});
       const sheetName=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos')||wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
-      // raw:false → devuelve el texto formateado de la celda (respeta "000", "001", etc.)
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,dateNF:'yyyy-mm-dd'});
       const recs=parseRecords(rows,file.name);
       if(!recs.length){errors.push(file.name+': sin filas válidas');continue;}
@@ -690,13 +791,17 @@ async function handleFiles(files){
   ['controls','previewCard','genCard'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
   document.getElementById('filesActions').classList.remove('hidden');
   document.getElementById('dashFiltersCard').classList.remove('hidden');
+  refreshSelects();
+  document.getElementById('dashEmpty').classList.add('hidden');
+  document.getElementById('dashBody').classList.remove('hidden');
+  refreshPreview(); updateDashboard(); updateFilenamePreview();
+  await saveState();
+}
+function refreshSelects(){
   fillSourceSelect('fSource');
   fillSourceSelect('dSource');
   [['fSit','situacion'],['fMes','mes'],['fLoc','localidad'],['dSit','situacion'],['dMes','mes'],['dLoc','localidad']]
     .forEach(([id,f])=>fillSelect(id,uniq(f)));
-  document.getElementById('dashEmpty').classList.add('hidden');
-  document.getElementById('dashBody').classList.remove('hidden');
-  refreshPreview(); updateDashboard(); updateFilenamePreview();
 }
 function updateStatusLine(added,replaced,errors){
   const st=document.getElementById('status');
@@ -715,12 +820,13 @@ function renderFilesList(){
     const ex=f.records.length-act;
     return `<span class="file-pill"><b title="${f.name}">${f.name}</b> · ${act} reg.${ex?` <span style="color:var(--danger)">(−${ex})</span>`:''} <button data-remove="${i}" title="Quitar archivo">✕</button></span>`;
   }).join('');
-  fl.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{
+  fl.querySelectorAll('[data-remove]').forEach(b=>b.onclick=async()=>{
     FILES.splice(parseInt(b.dataset.remove),1);
     rebuildRecords(); renderFilesList();
-    fillSourceSelect('fSource'); fillSourceSelect('dSource');
+    refreshSelects();
     updateStatusLine([],[],[]);
     if(!FILES.length){
+      await clearState();
       ['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
       document.getElementById('filesActions').classList.add('hidden');
       document.getElementById('dashEmpty').classList.remove('hidden');
@@ -729,13 +835,14 @@ function renderFilesList(){
       document.getElementById('status').textContent='Sin archivo cargado.';
       document.getElementById('sideStatus').innerHTML='Sin datos cargados.<br>Cargá un Excel para empezar.';
     } else {
-      refreshPreview(); updateDashboard();
+      refreshPreview(); updateDashboard(); await saveState();
     }
   });
 }
-document.getElementById('btnClearFiles').onclick=()=>{
+document.getElementById('btnClearFiles').onclick=async()=>{
   if(!confirm('¿Vaciar todos los archivos cargados?')) return;
   FILES=[]; RECORDS=[];
+  await clearState();
   renderFilesList(); updateStatusLine([],[],[]);
   ['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('filesActions').classList.add('hidden');
@@ -853,8 +960,19 @@ function hexToRgb(hex){
   const n=parseInt(hex,16);
   return [(n>>16)&255,(n>>8)&255,n&255];
 }
+function pdfFontName(){
+  const f=CFG.pdfFont||'helvetica';
+  if(f==='times') return {normal:'times',bold:'times',italic:'times'};
+  if(f==='courier') return {normal:'courier',bold:'courier',italic:'courier'};
+  return {normal:'helvetica',bold:'helvetica',italic:'helvetica'};
+}
+function pdfFontSize(){return CFG.pdfSize==='small'?8:CFG.pdfSize==='large'?10.5:9;}
+function pdfTitleSize(){return CFG.pdfSize==='small'?17:CFG.pdfSize==='large'?21:19;}
+function pdfMetaSize(){return CFG.pdfSize==='small'?9.5:CFG.pdfSize==='large'?11.5:10.5;}
+
 function measureText(doc,text,style,size){
-  doc.setFont('helvetica',style); doc.setFontSize(size);
+  doc.setFont(pdfFontName()[style]||'helvetica',style);
+  doc.setFontSize(size);
   return doc.getTextWidth(text||'');
 }
 function buildTableSpec(data){
@@ -866,13 +984,14 @@ function buildTableSpec(data){
 function replaceTokens(tpl,ctx){return (tpl||'').replace(/\{\{(\w+)\}\}/g,(m,k)=> ctx[k]!==undefined?ctx[k]:m);}
 function estimateHeaderHeight(doc,W,M,ctx){
   let y=74,x=M;
+  const metaSize=pdfMetaSize();
   CFG.headerRows.forEach((row,i)=>{
     if(row.sep && i>0){y+=15;x=M;}
     const label=replaceTokens(row.label,ctx)||'';
     const value=replaceTokens(row.value,ctx)||'';
-    const lw=label?measureText(doc,label+' ','normal',10.5):0;
-    const vw=value?measureText(doc,value,'bold',10.5):0;
-    const sw=i<CFG.headerRows.length-1?measureText(doc,'   ·   ','normal',10.5):0;
+    const lw=label?measureText(doc,label+' ','normal',metaSize):0;
+    const vw=value?measureText(doc,value,'bold',metaSize):0;
+    const sw=i<CFG.headerRows.length-1?measureText(doc,'   ·   ','normal',metaSize):0;
     if(x!==M && x+lw+vw+sw>W-M){y+=15;x=M;}
     x+=lw+vw+sw;
   });
@@ -880,35 +999,39 @@ function estimateHeaderHeight(doc,W,M,ctx){
 }
 function drawHeaderBlock(doc,W,M,ctx){
   const accent=hexToRgb(CFG.accent);
-  doc.setFont('helvetica','bold');doc.setFontSize(19);doc.setTextColor(20,24,30);
+  const fonts=pdfFontName();
+  doc.setFont(fonts.bold,'bold'); doc.setFontSize(pdfTitleSize()); doc.setTextColor(20,24,30);
   doc.text(CFG.title,M,46);
   doc.setDrawColor(accent[0],accent[1],accent[2]);doc.setLineWidth(2.2);doc.line(M,54,M+60,54);
   doc.setDrawColor(215,218,223);doc.setLineWidth(.6);doc.line(M+60,54,W-M,54);
   let y=74,x=M;
+  const metaSize=pdfMetaSize();
   CFG.headerRows.forEach((row,i)=>{
     if(row.sep && i>0){y+=15;x=M;}
     const label=replaceTokens(row.label,ctx)||'';
     const value=replaceTokens(row.value,ctx)||'';
     const labelText=label?label+' ':'';
-    const lw=labelText?measureText(doc,labelText,'normal',10.5):0;
-    const vw=value?measureText(doc,value,'bold',10.5):0;
+    const lw=labelText?measureText(doc,labelText,'normal',metaSize):0;
+    const vw=value?measureText(doc,value,'bold',metaSize):0;
     const sepText='   ·   ';
-    const sw=i<CFG.headerRows.length-1?measureText(doc,sepText,'normal',10.5):0;
+    const sw=i<CFG.headerRows.length-1?measureText(doc,sepText,'normal',metaSize):0;
     if(x!==M && x+lw+vw+sw>W-M){y+=15;x=M;}
-    if(labelText){doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(120,126,134);doc.text(labelText,x,y);x+=lw;}
-    if(value){doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(20,24,30);doc.text(value,x,y);x+=vw;}
-    if(sw){doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(180,185,192);doc.text(sepText,x,y);x+=sw;}
+    if(labelText){doc.setFont(fonts.normal,'normal');doc.setFontSize(metaSize);doc.setTextColor(120,126,134);doc.text(labelText,x,y);x+=lw;}
+    if(value){doc.setFont(fonts.bold,'bold');doc.setFontSize(metaSize);doc.setTextColor(20,24,30);doc.text(value,x,y);x+=vw;}
+    if(sw){doc.setFont(fonts.normal,'normal');doc.setFontSize(metaSize);doc.setTextColor(180,185,192);doc.text(sepText,x,y);x+=sw;}
   });
 }
 function drawContinuationHeader(doc,W,M,ctx){
-  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(120,126,134);
+  const fonts=pdfFontName();
+  doc.setFont(fonts.bold,'bold');doc.setFontSize(9.5);doc.setTextColor(120,126,134);
   doc.text(CFG.title,M,30);
   const meta=[ctx.localidad,ctx.mes,ctx.situacion].filter(x=>x&&x!=='Todas'&&x!=='Todos').join(' · ');
-  if(meta){doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.text(meta,W-M,30,{align:'right'});}
+  if(meta){doc.setFont(fonts.normal,'normal');doc.setFontSize(9.5);doc.text(meta,W-M,30,{align:'right'});}
   doc.setDrawColor(225,228,233);doc.setLineWidth(.5);doc.line(M,37,W-M,37);
 }
 function drawFooter(doc,W,H,M,ctx){
-  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90,97,107);
+  const fonts=pdfFontName();
+  doc.setFont(fonts.normal,'normal');doc.setFontSize(8.5);doc.setTextColor(90,97,107);
   const groups={left:[],center:[],right:[]};
   (CFG.footerItems||[]).forEach(it=>{(groups[it.align]||groups.left).push(it.text);});
   groups.left.forEach((t,idx)=>doc.text(replaceTokens(t,ctx),M,H-18-idx*10));
@@ -931,14 +1054,17 @@ function generatePdf(data,f,opts){
     total:String(data.length), fecha_generacion:new Date().toLocaleDateString('es-AR')
   };
   const startY=isFirstOfDoc?estimateHeaderHeight(doc,W,M,baseCtx):46;
+  const fonts=pdfFontName();
+  const baseSize=pdfFontSize();
+  const accentRgb=hexToRgb(CFG.accent);
   doc.autoTable({
     head, body, startY,
     margin:{left:M,right:M,top:46,bottom:38},
-    styles:{font:'helvetica',fontSize:9,cellPadding:4,lineColor:[190,193,198],lineWidth:.5,textColor:[20,24,30]},
+    styles:{font:fonts.normal,fontSize:baseSize,cellPadding:4,lineColor:[190,193,198],lineWidth:.5,textColor:[20,24,30]},
     headStyles: tonerSave
-      ? {fillColor:[255,255,255],textColor:[20,24,30],fontStyle:'bold',halign:'center',lineWidth:.8,lineColor:[20,24,30]}
-      : {fillColor:[228,230,233],textColor:[20,24,30],fontStyle:'normal',halign:'center'},
-    bodyStyles:{fontStyle:'italic'},
+      ? {fillColor:[255,255,255],textColor:[20,24,30],fontStyle:'bold',halign:'center',lineWidth:.8,lineColor:[20,24,30],font:fonts.bold}
+      : {fillColor: accentRgb, textColor:[255,255,255],fontStyle:'bold',halign:'center',font:fonts.bold},
+    bodyStyles:{fontStyle:'italic',font:fonts.italic},
     columnStyles:Object.assign({0:{halign:'center',cellWidth:44},4:{halign:'center',cellWidth:34},5:{halign:'center',cellWidth:34}},
       Object.fromEntries(Array.from({length:CFG.cuotas},(_,i)=>[6+i,{halign:'center',cellWidth:20}]))),
     didDrawCell:(d)=>{if(d.section==='body' && d.column.index===0){rowPageMap[d.row.index]=pageOffset+d.pageNumber;}},
@@ -1125,7 +1251,6 @@ function updateDashboard(){
   const pct=total?Math.round(cuotasPagadas/((cuotasPagadas+cuotasDebe)||1)*100):0;
   const byCalle=groupCount(data,'calle'); const byMes=groupCount(data,'mes');
 
-  // Series para sparklines (por mes)
   const mesOrder=[...new Set(data.map(r=>r.mes).filter(Boolean))];
   const seriesReg=mesOrder.map(m=>data.filter(r=>r.mes===m).length);
   const seriesPag=mesOrder.map(m=>data.filter(r=>r.mes===m).reduce((s,r)=>s+r.pago,0));
@@ -1133,7 +1258,6 @@ function updateDashboard(){
   const seriesAlDia=mesOrder.map(m=>data.filter(r=>r.mes===m&&r.debe===0).length);
   const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';
 
-  // Proyección cashflow
   const cash=cashflowProjection(data);
 
   const kpiData=[
@@ -1173,14 +1297,13 @@ function updateDashboard(){
 
   renderDuplicates();
 
-  // Info de excluidos
   const totalExcluded=FILES.reduce((s,f)=>s+f.records.filter(r=>r._excluded).length,0);
   const infoEl=document.getElementById('excludedInfo');
   if(totalExcluded){
-    infoEl.innerHTML=`⚠ ${totalExcluded} registro(s) excluidos manualmente desde duplicados. <button class="ghost miniBtn" id="btnRestoreAll">Restaurar todos</button>`;
+    infoEl.innerHTML=`⚠ ${totalExcluded} registro(s) excluidos manualmente. <button class="ghost miniBtn" id="btnRestoreAll">Restaurar todos</button>`;
     infoEl.querySelector('#btnRestoreAll').onclick=()=>{
       FILES.forEach(f=>f.records.forEach(r=>r._excluded=false));
-      rebuildRecords(); updateDashboard(); refreshPreview(); renderFilesList();
+      rebuildRecords(); updateDashboard(); refreshPreview(); renderFilesList(); saveState();
     };
   } else infoEl.textContent='';
 
@@ -1213,7 +1336,7 @@ function drawCashflow(cash){
     {label:'Cobrado',data:pagados,backgroundColor:accent2},
     {label:'Proyectado',data:proyectados,backgroundColor:accent},
     {label:'Riesgo (no cobra)',data:pendientes,backgroundColor:'#b3261e88'}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{footer:(items)=>'Total emitido: '+(pagados[items[0].dataIndex]+proyectados[items[0].dataIndex]+pendientes[items[0].dataIndex])}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
 }
 function sparkline(values,w,h,color){
   if(!values||values.length<2) return '';
@@ -1225,44 +1348,62 @@ function sparkline(values,w,h,color){
 function findDuplicates(data){
   const m={};
   data.forEach(r=>{
-    const k=(r.apellido+'|'+r.nombre+'|'+domicilio(r)).toLowerCase();
-    if(!m[k]) m[k]={key:k,apellido:r.apellido,nombre:r.nombre,dom:domicilio(r),count:0};
+    const k=String(r.num||'').trim();
+    if(!k) return;
+    if(!m[k]) m[k]={num:k,records:[],count:0};
+    m[k].records.push(r);
     m[k].count++;
   });
   return Object.values(m).filter(v=>v.count>1).sort((a,b)=>b.count-a.count);
 }
 function renderDuplicates(){
-  const data=RECORDS; // sin filtros, para mostrar todos los duplicados reales
+  const data=RECORDS;
   const dups=findDuplicates(data);
-  document.getElementById('dupTag').textContent=dups.length+' grupo(s)';
+  document.getElementById('dupTag').textContent=dups.length+' rifa(s) repetida(s)';
+  const wrap=document.getElementById('dupTable').parentElement;
+  const old=wrap.querySelector('.dup-msg');
+  if(old) old.remove();
   if(!dups.length){
-    document.getElementById('dupTable').innerHTML='<tr><td class="hint" style="border:none">No se detectaron duplicados evidentes.</td></tr>';
+    document.getElementById('dupTable').innerHTML='<tr><td class="hint" style="border:none">No se detectaron números de rifa repetidos. ✓</td></tr>';
     return;
   }
   document.getElementById('dupTable').innerHTML=
-    '<tr><th>Apellido</th><th>Nombre</th><th>Domicilio</th><th>Veces</th><th style="text-align:right">Acciones</th></tr>'+
-    dups.slice(0,40).map(d=>`<tr>
-      <td>${d.apellido}</td><td>${d.nombre}</td><td>${d.dom}</td><td>${d.count}</td>
-      <td style="text-align:right">
-        <button class="ghost miniBtn" data-dup="first" data-key="${d.key}">Mantener 1°</button>
-        <button class="ghost miniBtn" data-dup="last" data-key="${d.key}">Mantener últ.</button>
-        <button class="ghost miniBtn" style="color:var(--danger);border-color:var(--danger)" data-dup="all" data-key="${d.key}">Excluir todos</button>
-      </td>
-    </tr>`).join('');
+    '<tr><th>N° rifa</th><th>Apellido</th><th>Nombre</th><th>Domicilio</th><th>Fuente</th><th style="text-align:right">Acciones</th></tr>'+
+    dups.slice(0,80).map(d=>
+      d.records.map((r,i)=>`<tr>
+        ${i===0?`<td rowspan="${d.count}" style="font-weight:700;color:var(--danger);vertical-align:top">${d.num}</td>`:''}
+        <td>${r.apellido}</td>
+        <td>${r.nombre}</td>
+        <td>${domicilio(r)}</td>
+        <td style="color:var(--sub);font-size:11px">${r.source||'-'}</td>
+        ${i===0?`<td rowspan="${d.count}" style="text-align:right;vertical-align:top">
+          <button class="ghost miniBtn" data-dup="first" data-key="${d.num}">Mantener 1°</button>
+          <button class="ghost miniBtn" data-dup="last" data-key="${d.num}">Mantener últ.</button>
+          <button class="ghost miniBtn" style="color:var(--danger);border-color:var(--danger)" data-dup="all" data-key="${d.num}">Excluir todos</button>
+        </td>`:''}
+      </tr>`).join('')
+    ).join('');
   document.getElementById('dupTable').querySelectorAll('[data-dup]').forEach(b=>{
     b.onclick=()=>resolveDup(b.dataset.key,b.dataset.dup);
   });
+  const msg=document.createElement('div');
+  msg.className='hint dup-msg';
+  msg.style.marginTop='8px';
+  msg.innerHTML=`⚠ <b>${dups.length}</b> número(s) de rifa aparecen más de una vez. `+
+    `Un cliente con varias rifas distintas <b>no es duplicado</b> — solo lo es cuando se repite el N° de rifa.`;
+  wrap.appendChild(msg);
 }
 function resolveDup(key,action){
-  const matches=RECORDS.filter(r=>(r.apellido+'|'+r.nombre+'|'+domicilio(r)).toLowerCase()===key);
+  const matches=RECORDS.filter(r=>String(r.num||'').trim()===key);
   if(!matches.length) return;
   if(action==='first') matches.slice(1).forEach(r=>r._excluded=true);
   else if(action==='last') matches.slice(0,-1).forEach(r=>r._excluded=true);
   else if(action==='all') matches.forEach(r=>r._excluded=true);
   rebuildRecords();
   refreshPreview(); updateDashboard(); renderFilesList();
-  fillSourceSelect('fSource'); fillSourceSelect('dSource');
+  refreshSelects();
   updateStatusLine([],[],[]);
+  saveState();
 }
 function groupCount(data,field){
   const m={}; data.forEach(r=>{const k=r[field]||'Sin dato'; m[k]=(m[k]||0)+1;});
@@ -1301,7 +1442,6 @@ function drawBar(canvasId,pairs,drillField){
     opts.onClick=(e,els)=>{
       if(!els.length) return;
       const label=pairs[els[0].index][0];
-      // Aplicar drill-down según el campo
       if(drillField==='sit') document.getElementById('dSit').value=label;
       else if(drillField==='loc') document.getElementById('dLoc').value=label;
       else if(drillField==='mes') document.getElementById('dMes').value=label;
@@ -1322,11 +1462,11 @@ function buildConclusions(data,total,pct,alDia,byCalle,byMes,gaps,dups){
   const debeAlto=data.filter(r=>r.debe>=Math.ceil(CFG.cuotas*0.8)).length;
   if(debeAlto) out.push(`<b>${debeAlto}</b> registros (${Math.round(debeAlto/total*100)}%) con 80%+ pendiente — prioritarios.`);
   if(gaps.missing) out.push(`Hay <b>${gaps.missing}</b> legajos sin usar entre ${gaps.min} y ${gaps.max}.`);
-  if(dups&&dups.length) out.push(`<b>${dups.length}</b> posible(s) duplicado(s) — resolvelos desde el panel de Duplicados.`);
+  if(dups&&dups.length) out.push(`<b>${dups.length}</b> número(s) de rifa repetido(s) — revisar antes de imprimir.`);
   return out;
 }
 
-/* ======================= OMNI (Ctrl+K) ======================= */
+/* ======================= OMNI ======================= */
 const omniOverlay=document.getElementById('omniOverlay');
 const omniInput=document.getElementById('omniInput');
 const omniResults=document.getElementById('omniResults');
@@ -1368,7 +1508,6 @@ function renderOmni(q){
     wireOmni();
     return;
   }
-  // Buscar registros
   const found=RECORDS.filter(r=>
     r.num.toLowerCase().includes(ql) ||
     r.apellido.toLowerCase().includes(ql) ||
@@ -1401,24 +1540,20 @@ function paintOmniSel(){
   items.forEach((el,i)=>el.style.background=i===omniSel?'var(--panel2)':'');
 }
 function jumpToRecord(r){
-  // Aplicar filtros que coincidan y saltar a PDF
   setView('pdf');
-  // Poner búsqueda en vista previa
   document.getElementById('fSearch').value=r.apellido;
-  // Limpiar filtros amplios para asegurar que el registro se vea
   document.getElementById('fSit').value='';
   document.getElementById('fMes').value='';
   document.getElementById('fLoc').value='';
   document.getElementById('fSource').value=r.source;
   refreshPreview();
-  // Resaltar brevemente
   setTimeout(()=>{
     const el=document.getElementById('previewCard');
     if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.transition='box-shadow .4s';el.style.boxShadow='0 0 0 3px var(--accent)';setTimeout(()=>{el.style.boxShadow='';},1200);}
   },100);
 }
 
-/* ======================= SHEET COLAPSABLE (móvil) ======================= */
+/* ======================= SHEET COLAPSABLE ======================= */
 function initSheet(toggleId,cardId){
   const t=document.getElementById(toggleId);
   const c=document.getElementById(cardId);
@@ -1438,25 +1573,38 @@ function initSheet(toggleId,cardId){
 initSheet('toggleSheetPdf','controls');
 initSheet('toggleSheetDash','dashFiltersCard');
 
-// FAB móvil abre los filtros de la vista activa
-document.getElementById('fabFilters').onclick=()=>{
-  const active=document.querySelector('.view.active').id;
-  if(active==='view-pdf'){
-    setView('pdf');
-    document.getElementById('controls').classList.remove('sheet-closed');
-    document.getElementById('toggleSheetPdf').textContent='Filtros ▴';
-    setTimeout(()=>document.getElementById('controls').scrollIntoView({behavior:'smooth'}),50);
-  } else if(active==='view-dash'){
-    document.getElementById('dashFiltersCard').classList.remove('sheet-closed');
-    document.getElementById('toggleSheetDash').textContent='Filtros ▴';
-    setTimeout(()=>document.getElementById('dashFiltersCard').scrollIntoView({behavior:'smooth'}),50);
-  } else setView('pdf');
-};
-
-/* ======================= INICIALIZACION ======================= */
+/* ======================= INICIALIZACION / RESTAURAR ESTADO ======================= */
 document.getElementById('batchSize').addEventListener('change',()=>{
   if(batchState.ranges.length) prepareBatches(true);
 });
+
+(async function restoreState(){
+  const st=await loadState();
+  if(!st||!st.files||!st.files.length) return;
+  try{
+    FILES=st.files.map(f=>({
+      name:f.name,
+      records:f.records.map(r=>{
+        let fc=r.fcarga;
+        if(fc && typeof fc==='string'){ const d=new Date(fc); fc=isNaN(d.getTime())?null:d; }
+        return {...r, fcarga:fc};
+      })
+    }));
+    rebuildRecords();
+    if(!RECORDS.length) return;
+    renderFilesList();
+    dz.classList.add('ready');
+    ['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
+    document.getElementById('filesActions').classList.remove('hidden');
+    document.getElementById('dashEmpty').classList.add('hidden');
+    document.getElementById('dashBody').classList.remove('hidden');
+    refreshSelects();
+    refreshPreview(); updateDashboard(); updateFilenamePreview();
+    updateStatusLine([],[],[]);
+    document.getElementById('status').className='status-line ok';
+    document.getElementById('status').textContent='✓ Datos restaurados de la sesión anterior: '+RECORDS.length+' registros desde '+FILES.length+' archivo(s).';
+  }catch(e){console.warn('restoreState',e);}
+})();
 </script>
 </body>
 </html>
