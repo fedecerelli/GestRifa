@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Torre de Control</title>
+<title>Nora - Suite de Gestión</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<!-- Ícono para dispositivos móviles -->
+<link rel="apple-touch-icon" href="icon-512.png">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -27,6 +34,7 @@ a{color:var(--accent)}
 .app{display:flex;min-height:100%}
 .sidebar{width:var(--sidebar-w);flex:0 0 auto;background:var(--panel);border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;padding-top:calc(16px + env(safe-area-inset-top,0px))}
 .brand{display:flex;align-items:center;gap:9px;padding:4px 6px 18px}
+.brand img{width:32px;height:32px;object-fit:contain;flex:0 0 auto;border-radius:8px}
 .brand .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700}
 .brand b{font-size:14.5px}
 .brand small{display:block;color:var(--sub);font-size:11px}
@@ -177,7 +185,10 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 <body>
 <div class="app">
 <nav class="sidebar">
-  <div class="brand"><div class="logo">T</div><div><b>Torre de Control</b><small>Cobranza · Sorteos</small></div></div>
+  <div class="brand">
+    <img src="logo-nora.svg" alt="Nora Logo" style="height:32px;width:auto;border-radius:8px">
+    <div><b>Nora</b><small>Suite de Gestión</small></div>
+  </div>
   <div class="nav" id="sideNav">
     <button data-view="home" class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>Inicio</button>
     <div class="navlbl">Cobranza</div>
@@ -215,7 +226,14 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
     </div>
     <div id="status" class="status-line">Sin archivo cargado.</div>
     <div id="filesList" class="batchlist"></div>
-    <div id="filesActions" class="hidden" style="margin-top:10px"><button class="ghost miniBtn" id="btnClearFiles">Vaciar todos los archivos</button></div>
+    <div id="filesActions" class="hidden" style="margin-top:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="ghost miniBtn" id="btnClearFiles">Vaciar todos los archivos</button>
+        <button class="ghost miniBtn" id="btnLinkBackup">🔗 Activar respaldo automático en archivo</button>
+        <button class="ghost miniBtn hidden" id="btnReconnectBackup">Reconectar respaldo</button>
+      </div>
+      <div id="backupStatus" class="hint" style="margin-top:6px"></div>
+    </div>
   </div>
 
   <div class="card hidden filter-card" id="controls">
@@ -432,10 +450,10 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
     </div>
     <div class="card">
       <h2>Exportar y respaldo</h2>
-      <p class="hint">Todo se guarda en este navegador. Descargá un respaldo de vez en cuando para no perder archivos, quinielas y control mensual.</p>
+      <p class="hint">Todo se guarda en este navegador. Además del respaldo automático, podés generar un reporte completo en Excel y elegir dónde guardarlo.</p>
       <div class="row">
+        <div class="field" style="max-width:280px"><button class="secondary" id="tReporte">📊 Generar reporte completo (.xlsx)</button></div>
         <div class="field" style="max-width:250px"><button class="secondary" id="tXlsx">Ganadores del mes en Excel</button></div>
-        <div class="field" style="max-width:250px"><button class="secondary" id="tBackup">Descargar respaldo (.json)</button></div>
         <div class="field" style="max-width:250px"><button class="secondary" id="tRestore">Restaurar respaldo…</button><input type="file" id="tRestoreF" accept=".json" class="hidden"></div>
       </div>
     </div>
@@ -528,6 +546,10 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
         <select id="cfgToner"><option value="on">Activado (recomendado)</option><option value="off">Desactivado (con relleno gris)</option></select>
       </div>
     </div>
+    <div style="margin-top:16px;background:#eaecef;padding:10px;border-radius:10px;overflow-x:auto">
+      <canvas id="pdfPrev" style="max-width:100%;display:block;border:1px solid var(--line);box-shadow:0 4px 12px rgba(0,0,0,.08);background:#fff"></canvas>
+    </div>
+    <div class="hint" style="margin-top:8px">Vista previa del encabezado, tabla y pie del PDF (A4 horizontal). Se actualiza sola al cambiar título, tipografía, tamaño, tóner o las líneas de cabecera/pie.</div>
   </div>
 
   <div class="card">
@@ -580,7 +602,7 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
   <button data-view="settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
 </nav>
 
-<footer class="app-footer">Procesamiento 100% local en el navegador · los datos se guardan en tu dispositivo · v4.1</footer>
+<footer class="app-footer">Procesamiento 100% local en el navegador · respaldo automático activo · Nora Suite · v4.3</footer>
 
 <div class="omni-overlay hidden" id="omniOverlay">
   <div class="omni-box">
@@ -591,6 +613,157 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
 </div>
 
 <script>
+/* ======================= AUTO BACKUP SYSTEM ======================= */
+const MIRROR_KEY='cobranza_mirror_v4';
+let backupFileHandle=null;
+let _autoSaveTimer=null;
+
+async function readAllState(){
+  const out={};
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readonly');
+    const os=tx.objectStore(STORE);
+    await new Promise(res=>{
+      const rq=os.openCursor();
+      rq.onsuccess=()=>{
+        const c=rq.result;
+        if(c){ if(c.key!=='backupHandle') out[c.key]=c.value; c.continue(); }
+        else res();
+      };
+      rq.onerror=()=>res();
+    });
+  }catch(e){}
+  return out;
+}
+async function mirrorToLocalStorage(){
+  try{
+    const state=await readAllState();
+    if(!Object.keys(state).length){ localStorage.removeItem(MIRROR_KEY); return; }
+    localStorage.setItem(MIRROR_KEY,JSON.stringify({v:1,ts:Date.now(),state}));
+  }catch(e){}
+}
+async function getBackupHandle(){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readonly');
+    const rq=tx.objectStore(STORE).get('backupHandle');
+    return await new Promise(r=>{rq.onsuccess=()=>r(rq.result);rq.onerror=()=>r(null);});
+  }catch(e){ return null; }
+}
+async function storeBackupHandle(h){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(h,'backupHandle');
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+  }catch(e){}
+}
+async function writeAutoBackup(){
+  if(!backupFileHandle) return;
+  try{
+    let perm='prompt';
+    if(backupFileHandle.queryPermission){
+      perm=await backupFileHandle.queryPermission({mode:'readwrite'});
+    } else { perm='granted'; }
+    if(perm!=='granted'){ updateBackupStatus('⚠ Reconectar respaldo automático',true); return; }
+    const state=await readAllState();
+    const w=await backupFileHandle.createWritable();
+    await w.write(new Blob([JSON.stringify({v:1,ts:Date.now(),state})],{type:'application/json'}));
+    await w.close();
+    updateBackupStatus('✓ Respaldo automático guardado · '+new Date().toLocaleTimeString('es-AR'));
+  }catch(e){ console.warn('writeAutoBackup',e); }
+}
+function scheduleAutoBackup(){
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(async()=>{
+    await mirrorToLocalStorage();
+    await writeAutoBackup();
+  },400);
+}
+window.scheduleAutoBackup=scheduleAutoBackup;
+function updateBackupStatus(msg,showButton){
+  const el=document.getElementById('backupStatus');
+  const btn=document.getElementById('btnReconnectBackup');
+  if(el) el.textContent=msg||'';
+  if(btn) btn.classList.toggle('hidden',!showButton);
+}
+window.updateBackupStatus=updateBackupStatus;
+
+async function linkAutoBackup(){
+  if(!window.showSaveFilePicker){
+    alert('Tu navegador no permite guardar automáticamente en un archivo.\n\nProbá con Chrome, Edge u Opera. Mientras tanto, el respaldo local del navegador sigue activo.');
+    return;
+  }
+  try{
+    const h=await window.showSaveFilePicker({
+      suggestedName:'respaldo-cobranza-sorteos.json',
+      types:[{description:'Respaldo JSON',accept:{'application/json':['.json']}}]
+    });
+    backupFileHandle=h;
+    await storeBackupHandle(h);
+    updateBackupStatus('✓ Respaldo automático activo en "'+h.name+'"',false);
+    await writeAutoBackup();
+  }catch(e){ if(e.name!=='AbortError') console.warn(e); }
+}
+async function tryReconnectBackup(){
+  const h=await getBackupHandle();
+  if(!h) return;
+  backupFileHandle=h;
+  try{
+    let perm='prompt';
+    if(h.queryPermission) perm=await h.queryPermission({mode:'readwrite'});
+    else perm='granted';
+    if(perm==='granted'){
+      updateBackupStatus('✓ Respaldo automático activo en "'+h.name+'"',false);
+      await writeAutoBackup();
+    } else {
+      updateBackupStatus('⚠ Reconectar respaldo automático en "'+h.name+'"',true);
+    }
+  }catch(e){}
+}
+async function reconnectBackupGesture(){
+  if(!backupFileHandle) return;
+  try{
+    const perm=await backupFileHandle.requestPermission({mode:'readwrite'});
+    if(perm==='granted'){
+      updateBackupStatus('✓ Respaldo automático reconectado',false);
+      await writeAutoBackup();
+    } else {
+      updateBackupStatus('⚠ Permiso denegado',true);
+    }
+  }catch(e){ console.warn(e); }
+}
+
+document.getElementById('btnLinkBackup').onclick=linkAutoBackup;
+document.getElementById('btnReconnectBackup').onclick=reconnectBackupGesture;
+
+const _boot=(async()=>{
+  try{
+    if(navigator.storage&&navigator.storage.persist){
+      try{ await navigator.storage.persist(); }catch(e){}
+    }
+  }catch(e){}
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readonly');
+    const os=tx.objectStore(STORE);
+    const main=await new Promise(r=>{const rq=os.get('main');rq.onsuccess=()=>r(rq.result);rq.onerror=()=>r(null);});
+    const sort=await new Promise(r=>{const rq=os.get('sorteos');rq.onsuccess=()=>r(rq.result);rq.onerror=()=>r(null);});
+    if(main||sort) return;
+    const raw=localStorage.getItem(MIRROR_KEY);
+    if(!raw) return;
+    const parsed=JSON.parse(raw);
+    if(!parsed||!parsed.state) return;
+    const tx2=db.transaction(STORE,'readwrite');
+    const os2=tx2.objectStore(STORE);
+    for(const [k,v] of Object.entries(parsed.state)){ os2.put(v,k); }
+    await new Promise((res,rej)=>{tx2.oncomplete=res;tx2.onerror=rej;});
+    console.info('✓ Estado restaurado desde el respaldo local (mirror).');
+  }catch(e){ console.warn('bootstrap',e); }
+})();
+window._boot=_boot;
+
 /* ======================= CONFIG ======================= */
 const CFG_KEY='cobranza_suite_cfg_v4';
 const CFG_VERSION=4;
@@ -665,6 +838,7 @@ function applyCfg(){
   document.getElementById('cfgPdfSize').value=CFG.pdfSize||'normal';
   renderPaletteGrid();
   renderHeaderEditor(); renderFooterEditor();
+  previewPdfStyle();
 }
 function renderPaletteGrid(){
   const grid=document.getElementById('paletteGrid');
@@ -690,12 +864,12 @@ function renderHeaderEditor(){
       <input type="text" data-f="value" placeholder="Valor o token" value="${(row.value||'').replace(/"/g,'&quot;')}">
       <label style="display:flex;align-items:center;gap:4px;font-size:11px;text-transform:none;white-space:nowrap"><input type="checkbox" data-f="sep" ${row.sep?'checked':''} style="width:auto;padding:0">nueva línea</label>
       <button class="ghost miniBtn" data-a="up">↑</button><button class="ghost miniBtn" data-a="down">↓</button><button class="ghost miniBtn" data-a="del">✕</button>`;
-    div.querySelector('[data-f=label]').oninput=e=>row.label=e.target.value;
-    div.querySelector('[data-f=value]').oninput=e=>row.value=e.target.value;
-    div.querySelector('[data-f=sep]').onchange=e=>row.sep=e.target.checked;
-    div.querySelector('[data-a=up]').onclick=()=>{if(i>0){[CFG.headerRows[i-1],CFG.headerRows[i]]=[CFG.headerRows[i],CFG.headerRows[i-1]];renderHeaderEditor();}};
-    div.querySelector('[data-a=down]').onclick=()=>{if(i<CFG.headerRows.length-1){[CFG.headerRows[i+1],CFG.headerRows[i]]=[CFG.headerRows[i],CFG.headerRows[i+1]];renderHeaderEditor();}};
-    div.querySelector('[data-a=del]').onclick=()=>{CFG.headerRows.splice(i,1);renderHeaderEditor();};
+    div.querySelector('[data-f=label]').oninput=e=>{row.label=e.target.value;previewPdfStyle();};
+    div.querySelector('[data-f=value]').oninput=e=>{row.value=e.target.value;previewPdfStyle();};
+    div.querySelector('[data-f=sep]').onchange=e=>{row.sep=e.target.checked;previewPdfStyle();};
+    div.querySelector('[data-a=up]').onclick=()=>{if(i>0){[CFG.headerRows[i-1],CFG.headerRows[i]]=[CFG.headerRows[i],CFG.headerRows[i-1]];renderHeaderEditor();previewPdfStyle();}};
+    div.querySelector('[data-a=down]').onclick=()=>{if(i<CFG.headerRows.length-1){[CFG.headerRows[i+1],CFG.headerRows[i]]=[CFG.headerRows[i],CFG.headerRows[i+1]];renderHeaderEditor();previewPdfStyle();}};
+    div.querySelector('[data-a=del]').onclick=()=>{CFG.headerRows.splice(i,1);renderHeaderEditor();previewPdfStyle();};
     box.appendChild(div);
   });
 }
@@ -706,14 +880,118 @@ function renderFooterEditor(){
     div.innerHTML=`<input type="text" data-f="text" placeholder="Texto / tokens" value="${(it.text||'').replace(/"/g,'&quot;')}">
       <select data-f="align"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select>
       <button class="ghost miniBtn" data-a="del">✕</button>`;
-    div.querySelector('[data-f=text]').oninput=e=>it.text=e.target.value;
-    const sel=div.querySelector('[data-f=align]'); sel.value=it.align; sel.onchange=e=>it.align=e.target.value;
-    div.querySelector('[data-a=del]').onclick=()=>{CFG.footerItems.splice(i,1);renderFooterEditor();};
+    div.querySelector('[data-f=text]').oninput=e=>{it.text=e.target.value;previewPdfStyle();};
+    const sel=div.querySelector('[data-f=align]'); sel.value=it.align; sel.onchange=e=>{it.align=e.target.value;previewPdfStyle();};
+    div.querySelector('[data-a=del]').onclick=()=>{CFG.footerItems.splice(i,1);renderFooterEditor();previewPdfStyle();};
     box.appendChild(div);
   });
 }
-document.getElementById('btnAddHeaderRow').onclick=()=>{CFG.headerRows.push({label:'',value:'',sep:false});renderHeaderEditor();};
-document.getElementById('btnAddFooterRow').onclick=()=>{CFG.footerItems.push({text:'',align:'left'});renderFooterEditor();};
+
+/* ======================= PDF PREVIEW (settings) ======================= */
+function previewPdfStyle(){
+  const cv=document.getElementById('pdfPrev'); if(!cv)return;
+  const W=842,H=595,K=1.2;
+  cv.width=W*K; cv.height=H*K;
+  const c=cv.getContext('2d'); c.setTransform(K,0,0,K,0,0);
+  c.fillStyle='#fff'; c.fillRect(0,0,W,H);
+  const title=(CFG.title||'Informe de Cobranza');
+  const accent=CFG.accent||'#1f4e8c';
+  const M=40;
+  const fam=CFG.pdfFont==='times'?'Georgia,Times,serif':CFG.pdfFont==='courier'?'Courier New,monospace':'Helvetica,Arial,sans-serif';
+  const titleSize=CFG.pdfSize==='small'?17:CFG.pdfSize==='large'?21:19;
+  const metaSize=CFG.pdfSize==='small'?9.5:CFG.pdfSize==='large'?11.5:10.5;
+  const toner=CFG.toner==='on';
+  c.textBaseline='alphabetic';
+  c.fillStyle='#14181e'; c.font='bold '+titleSize+'px '+fam;
+  c.fillText(title,M,46);
+  c.fillStyle=accent; c.fillRect(M,52,60,2.2);
+  c.fillStyle='#d7dae0'; c.fillRect(M+60,53,W-M-(M+60),0.6);
+  const ctx={localidad:'Ejemplo',mes:'Enero',situacion:'Cuotas',total:'123',fecha_generacion:'01/01/2026',pagina:'1',total_paginas:'3'};
+  function tok(t){ return String(t||'').replace(/\{\{(\w+)\}\}/g,(m,k)=>ctx[k]!==undefined?ctx[k]:m); }
+  let y=74,x=M;
+  CFG.headerRows.forEach((row,i)=>{
+    if(row.sep&&i>0){y+=15;x=M;}
+    const lbl=tok(row.label||''), val=tok(row.value||'');
+    if(lbl){
+      c.font=metaSize+'px '+fam; c.fillStyle='#787e86';
+      const t=lbl+' '; const w=c.measureText(t).width;
+      if(x!==M&&x+w>W-M){y+=15;x=M;}
+      c.fillText(t,x,y+metaSize); x+=w;
+    }
+    if(val){
+      c.font='bold '+metaSize+'px '+fam; c.fillStyle='#14181e';
+      const w=c.measureText(val).width;
+      if(x!==M&&x+w>W-M){y+=15;x=M;}
+      c.fillText(val,x,y+metaSize); x+=w;
+    }
+    if(i<CFG.headerRows.length-1){
+      const s='   ·   '; c.font=metaSize+'px '+fam; c.fillStyle='#b4b9c0';
+      const w=c.measureText(s).width;
+      if(x!==M&&x+w>W-M){y+=15;x=M;}
+      c.fillText(s,x,y+metaSize); x+=w;
+    }
+  });
+  const tableY=y+22, rowH=14, cuotas=Math.min(CFG.cuotas,8);
+  const cols=['N°','Apellido','Nombre','Domicilio','Pago','Debe',...Array.from({length:cuotas},(_,i)=>String(i+1))];
+  const cw=[44,80,80,170,40,40,...Array.from({length:cuotas},()=>18)];
+  const scale=(W-2*M)/cw.reduce((a,b)=>a+b,0);
+  if(toner){
+    c.fillStyle='#fff'; c.fillRect(M,tableY,W-2*M,rowH);
+    c.strokeStyle='#14181e'; c.lineWidth=.8; c.strokeRect(M,tableY,W-2*M,rowH);
+    c.fillStyle='#14181e';
+  } else {
+    c.fillStyle=accent; c.fillRect(M,tableY,W-2*M,rowH);
+    c.fillStyle='#fff';
+  }
+  c.font='bold '+Math.max(6,metaSize-1)+'px '+fam; c.textAlign='center';
+  let cx=M;
+  cols.forEach((t,i)=>{const w=cw[i]*scale; c.fillText(t,cx+w/2,tableY+rowH/2+3); cx+=w;});
+  const samples=[
+    ['001','Gómez','Ana','Lavalle Nro: 15','3','7'],
+    ['002','Pérez','Juan','Tormey y 25 de Mayo','10','0'],
+    ['003','Rodríguez','Luis','Rivadavia s/n','0','10']
+  ];
+  c.font='italic '+Math.max(6,metaSize-1)+'px '+fam; c.fillStyle='#14181e';
+  samples.forEach((s,ri)=>{
+    const ry=tableY+rowH*(ri+1);
+    c.strokeStyle='#bdc0c4'; c.lineWidth=.3;
+    c.beginPath(); c.moveTo(M,ry+rowH); c.lineTo(W-M,ry+rowH); c.stroke();
+    let px=M;
+    s.forEach((v,i)=>{
+      const w=cw[i]*scale;
+      if(i<2||i>3){c.textAlign='center'; c.fillText(v,px+w/2,ry+rowH/2+3);}
+      else{c.textAlign='left'; c.fillText(v,px+3,ry+rowH/2+3);}
+      px+=w;
+    });
+  });
+  let vx=M; c.strokeStyle='#bdc0c4'; c.lineWidth=.3;
+  cw.forEach(w=>{vx+=w*scale; c.beginPath(); c.moveTo(vx,tableY); c.lineTo(vx,tableY+rowH*(samples.length+1)); c.stroke();});
+  c.strokeStyle='#bdc0c4'; c.lineWidth=.5;
+  c.strokeRect(M,tableY,W-2*M,rowH*(samples.length+1));
+  c.font='8.5px '+fam; c.fillStyle='#5a616b';
+  const fy=H-18;
+  const g={left:[],center:[],right:[]};
+  (CFG.footerItems||[]).forEach(it=>{(g[it.align]||g.left).push(it.text);});
+  g.left.forEach((t,i)=>{c.textAlign='left'; c.fillText(tok(t),M,fy-i*10);});
+  g.center.forEach((t,i)=>{c.textAlign='center'; c.fillText(tok(t),W/2,fy-i*10);});
+  g.right.forEach((t,i)=>{c.textAlign='right'; c.fillText(tok(t),W-M,fy-i*10);});
+  c.textAlign='left';
+}
+
+['cfgTitle','cfgCuotas','cfgPdfFont','cfgPdfSize','cfgToner'].forEach(id=>{
+  const el=document.getElementById(id); if(!el) return;
+  el.addEventListener('input',()=>{
+    CFG.title=document.getElementById('cfgTitle').value||'Informe de Cobranza';
+    CFG.cuotas=Math.max(1,parseInt(document.getElementById('cfgCuotas').value)||10);
+    CFG.pdfFont=document.getElementById('cfgPdfFont').value;
+    CFG.pdfSize=document.getElementById('cfgPdfSize').value;
+    CFG.toner=document.getElementById('cfgToner').value;
+    previewPdfStyle();
+  });
+});
+
+document.getElementById('btnAddHeaderRow').onclick=()=>{CFG.headerRows.push({label:'',value:'',sep:false});renderHeaderEditor();previewPdfStyle();};
+document.getElementById('btnAddFooterRow').onclick=()=>{CFG.footerItems.push({text:'',align:'left'});renderFooterEditor();previewPdfStyle();};
 applyCfg();
 document.getElementById('btnSaveCfg').onclick=()=>{
   CFG.accent=document.getElementById('cfgAccent').value;
@@ -763,6 +1041,7 @@ function setView(v){
   document.getElementById('pageSub').textContent=TITLES[v][1];
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='dash'&&RECORDS.length){setTimeout(updateDashboard,60);}
+  if(v==='settings'){setTimeout(previewPdfStyle,50);}
 }
 document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
@@ -816,6 +1095,7 @@ async function saveState(){
     },'main');
     await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
   }catch(e){console.warn('saveState',e);}
+  scheduleAutoBackup();
 }
 async function loadState(){
   try{
@@ -832,6 +1112,7 @@ async function clearState(){
     tx.objectStore(STORE).delete('main');
     await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
   }catch(e){}
+  scheduleAutoBackup();
 }
 
 /* ======================= MODELO ======================= */
@@ -852,32 +1133,19 @@ function cap(s){
 }
 function titleCase(s){return cap(s||'');}
 
-/* ================= DOMICILIO (corregido) =================
-   - Número de puerta: "Lavalle Nro: 15"          → nro puramente numérico
-   - Con letra: "Lavalle Nro: 15A"                 → dígito + letra
-   - Sin número: "Lavalle s/n"
-   - Esquina: "Tormey y 25 de Mayo"                → nro contiene palabras
-   - Entre: "Tormey entre 25 de Mayo y Rivadavia"  → nro contiene " y " o "/"
-   - Piso/Dpto: solo si existen datos
-=========================================================== */
 function domicilio(r){
   const calle=(r.calle||'').trim();
   const nro  =(r.nroCalle||'').trim();
   const piso =(r.piso||'').trim();
   const dpto =(r.dpto||'').trim();
-
-  // ¿Es un número de puerta? (dígito puro, con letra suelta opcional: "15", "123A", "45 B")
   const isDoorNumber = /^\d+\s*[a-zA-Z]?$/.test(nro);
-  // ¿Es "s/n" (sin número)?
   const isSinNumero = /^s\s*\/?\s*n\.?$/i.test(nro);
-
   let base='';
   if(calle && nro && isDoorNumber){
     base = `${calle} Nro: ${nro}`;
   } else if(calle && nro && isSinNumero){
     base = `${calle} s/n`;
   } else if(calle && nro){
-    // nro contiene palabras → es otra calle
     if(/\s+y\s+|\s+e\s+|\/|,/i.test(nro)){
       base = `${calle} entre ${nro}`;
     } else {
@@ -890,7 +1158,6 @@ function domicilio(r){
   } else {
     base = '-';
   }
-
   if(piso) base += ` · Piso ${piso}`;
   if(dpto) base += ` · Dpto ${dpto}`;
   return base || '-';
@@ -1778,8 +2045,12 @@ document.getElementById('batchSize').addEventListener('change',()=>{
 });
 
 (async function restoreState(){
+  await _boot;
   const st=await loadState();
-  if(!st||!st.files||!st.files.length) return;
+  if(!st||!st.files||!st.files.length){
+    try{ await tryReconnectBackup(); }catch(e){}
+    return;
+  }
   try{
     FILES=st.files.map(f=>({
       name:f.name,
@@ -1801,9 +2072,11 @@ document.getElementById('batchSize').addEventListener('change',()=>{
     refreshPreview(); updateDashboard(); updateFilenamePreview();
     updateStatusLine([],[],[]);
     document.getElementById('status').className='status-line ok';
-    document.getElementById('status').textContent='✓ Datos restaurados de la sesión anterior: '+RECORDS.length+' registros desde '+FILES.length+' archivo(s).';
+    document.getElementById('status').textContent='✓ Datos restaurados: '+RECORDS.length+' registros desde '+FILES.length+' archivo(s).';
   }catch(e){console.warn('restoreState',e);}
+  try{ await tryReconnectBackup(); }catch(e){}
 })();
+
 /* ======================= SORTEOS v2 ======================= */
 (function(){
 const $=id=>document.getElementById(id);
@@ -1815,6 +2088,7 @@ const toast=window.sorteoToast;
 async function save(){
   try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(JSON.parse(JSON.stringify(S)),'sorteos');
   await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){console.warn('sorteos save',e);}
+  if(window.scheduleAutoBackup) window.scheduleAutoBackup();
 }
 function merge(v){
   if(!v)return;
@@ -1833,7 +2107,6 @@ const month=()=>$('cMonth').value;
 const sortedDraws=()=>[...S.draws].sort((a,b)=>b.date.localeCompare(a.date));
 const uid=()=>'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
-/* ---- tabs ---- */
 function tab(t){
   if(!['month','files','hist','tools'].includes(t))t='month';
   S.cfg.tab=t;
@@ -1843,7 +2116,6 @@ function tab(t){
 }
 $('sTabs').onclick=e=>{const c=e.target.closest('.chip');if(c)tab(c.dataset.sp);};
 
-/* ---- archivos ---- */
 const dz=$('sDz'),fi=$('sFile');
 dz.onclick=()=>fi.click();
 dz.ondragover=e=>{e.preventDefault();dz.classList.add('ready')};
@@ -1907,7 +2179,6 @@ function renderFiles(){
   box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar este archivo?')){S.files.splice(x.dataset.del,1);save();render();}});
 }
 
-/* ---- quinielas (tarjetas independientes) ---- */
 let cards=[];
 const defDate=()=>{const t=new Date().toISOString().slice(0,10),m=month();return !m||t.slice(0,7)===m?t:m+'-01';};
 const blank=()=>({lot:'',turno:'',id:uid(),saved:false,dirty:true,name:'',date:defDate(),nums:Array(20).fill('')});
@@ -1968,7 +2239,6 @@ ql.addEventListener('click',e=>{
 });
 $('qAdd').onclick=()=>{cards.unshift(blank());renderCards();ql.querySelector('[data-f="name"]').focus();};
 
-/* ---- cálculo ---- */
 function rowsFor(f,d,n,unsold){
   const h=holders(f);
   let r=d.nums.map((num,i)=>{const k=keyOf(num,f.cifras);return {pos:i+1,num:k,p:(h[k]||[])[0]};});
@@ -1981,7 +2251,6 @@ const desc=(f,d)=>(S.cfg.wa||DEFWA).replace(/{localidad}/g,f.loc||'').replace(/{
 const fname=(f,d,ext)=>safe(`Sorteo ${f.title} - ${d.name} - ${d.date}`)+'.'+ext;
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
 
-/* ---- JPG ---- */
 const ST=()=>Object.assign({head:'#000000',font:'Calibri',size:11,zebra:false,seal:true,logo:''},S.cfg.style||{});
 const hexRgb=x=>[1,3,5].map(k=>parseInt(x.slice(k,k+2),16));
 const lum=x=>{const [r,g,b]=hexRgb(x);return (.299*r+.587*g+.114*b)/255;};
@@ -2052,7 +2321,6 @@ async function wa(f,d,m){
   window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');ctl(m,f.name).wa=Date.now();save();renderMonth();
 }
 
-/* ---- sorteo del mes ---- */
 const drawOf=(f)=>{const c=ctl(month(),f.name),s=sortedDraws(),m=month();
   return S.draws.find(d=>d.id===c.drawKey)||s.find(d=>d.date.slice(0,7)===m)||s[0];};
 const status=f=>{const c=ctl(month(),f.name);return c.fin?3:c.wa?2:(c.pdf&&c.jpg)?1:0;};
@@ -2107,7 +2375,6 @@ $('cN').onchange=e=>{S.cfg.n=Math.max(1,Math.min(20,+e.target.value||20));save()
 $('cUnsold').onchange=e=>{S.cfg.unsold=e.target.value==='1';save();renderMonth();};
 $('cWa').oninput=e=>{S.cfg.wa=e.target.value;save();};
 
-/* ---- KPIs y avance ---- */
 function renderTop(){
   const tot=S.files.length,st=S.files.map(status),fin=st.filter(x=>x===3).length;
   $('cBar').style.width=(tot?fin/tot*100:0)+'%';
@@ -2116,7 +2383,6 @@ function renderTop(){
     if(!p){if(s)s.remove();return;}if(!s){s=document.createElement('span');s.className='nbadge';b.appendChild(s);}s.textContent=p;});
   renderHome();
 }
-/* ---- INICIO ---- */
 const MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const mlabel=m=>{const [y,mm]=m.split('-');return MN[mm-1]+' '+y;};
 window.goSorteos=t=>{setView('sorteos');tab(t||'month');};
@@ -2146,7 +2412,6 @@ function renderHome(){
 }
 document.addEventListener('click',e=>{const g=e.target.closest('#view-home [data-go]');if(g)setView(g.dataset.go);});
 
-/* ---- HISTORIAL ---- */
 function renderHist(){
   const q=($('hSearch').value||'').toLowerCase(),rows=[],cnt={};
   Object.values(S.control).forEach(fs=>Object.values(fs).forEach(c=>{if(c.snap)c.snap.w.forEach(w=>{cnt[w.n]=(cnt[w.n]||0)+1;});}));
@@ -2157,17 +2422,22 @@ function renderHist(){
   $('hList').innerHTML=rows.join('')||'<div class="hint">Todavía no hay sorteos generados.</div>';
 }
 $('hSearch').oninput=renderHist;
-/* ---- VERIFICAR ---- */
 $('vCode').oninput=e=>{
   const v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');e.target.value=v.length>4?v.slice(0,4)+'-'+v.slice(4,8):v;
   const out=$('vRes');if(v.length<8){out.innerHTML='';return;}
   const hit=[];S.files.forEach(f=>S.draws.forEach(d=>{if(code(f,d)===v.slice(0,4)+'-'+v.slice(4,8))hit.push(`<div>✅ <b>Auténtico</b>: ${esc(f.title)} · ${esc(d.name)} · ${d.date}</div>`);}));
   out.innerHTML=hit.join('')||'<div>❌ No coincide con ningún sorteo cargado. Los números, el título o la fecha pudieron haber cambiado.</div>';
 };
-/* ---- ESTILO ---- */
 const HEADS=['#000000','#1f3a5f','#1e5631','#7a1f2b','#5b2c6f','#555555'];
-function applyBrand(){const n=(S.cfg.appName||'Torre de Control').trim()||'Torre de Control',s=S.cfg.appSub??'Cobranza · Sorteos',b=document.querySelector('.brand');
-  document.title=n;b.querySelector('b').textContent=n;b.querySelector('small').textContent=s;b.querySelector('.logo').textContent=n.charAt(0).toUpperCase();}
+function applyBrand(){
+  const n=(S.cfg.appName||'Nora').trim()||'Nora';
+  const s=S.cfg.appSub??'Suite de Gestión';
+  const b=document.querySelector('.brand');
+  if(!b) return;
+  document.title=n+' - '+s;
+  const elB=b.querySelector('b'); if(elB) elB.textContent=n;
+  const elS=b.querySelector('small'); if(elS) elS.textContent=s;
+}
 function applyLayout(){
   document.body.classList.toggle('sb-mini',!!S.cfg.mini);
   document.querySelectorAll('.nav button,.bottom-nav button').forEach(b=>{if(['print','dash','pdf'].includes(b.dataset.view))b.style.display=(S.cfg.hide||[]).includes(b.dataset.view)?'none':'';});
@@ -2183,7 +2453,7 @@ function previewStyle(){
 function renderStyle(){
   const st=ST();
   $('stHead').innerHTML=HEADS.map(c=>`<span class="sw-c${st.head===c?' on':''}" data-h="${c}" style="background:${c}"></span>`).join('');
-  $('nmName').value=S.cfg.appName||'Torre de Control';$('nmSub').value=S.cfg.appSub??'Cobranza · Sorteos';$('stHeadC').value=st.head;$('stFont').value=st.font;$('stSize').value=st.size;$('stZebra').checked=st.zebra;$('stSeal').checked=st.seal;
+  $('nmName').value=S.cfg.appName||'Nora';$('nmSub').value=S.cfg.appSub??'Suite de Gestión';$('stHeadC').value=st.head;$('stFont').value=st.font;$('stSize').value=st.size;$('stZebra').checked=st.zebra;$('stSeal').checked=st.seal;
   $('stMini').checked=!!S.cfg.mini;['pdf','dash','print'].forEach(v=>$('stHide-'+v).checked=!(S.cfg.hide||[]).includes(v));
   $('stLogoName').textContent=st.logo?'Logo cargado ✓':'Sin logo (se muestra arriba a la derecha)';
   previewStyle();
@@ -2207,7 +2477,6 @@ sp.addEventListener('change',e=>{const t=e.target;
 $('stLogoBtn').onclick=()=>$('stLogoF').click();
 $('stLogoDel').onclick=async()=>{setStyle('logo','');await loadLogo();renderStyle();};
 
-/* ---- herramientas ---- */
 $('tNum').oninput=e=>{
   const v=e.target.value.replace(/\D/g,'');e.target.value=v;const out=$('tRes');
   if(!v){out.innerHTML='';return;}
@@ -2216,30 +2485,118 @@ $('tNum').oninput=e=>{
     const hits=S.draws.map(d=>{const i=d.nums.findIndex(n=>keyOf(n,f.cifras)===k);return i>=0?`<b>${esc(d.name)}</b> ${d.date} (puesto ${i+1})`:'';}).filter(Boolean);
     return `<div><b>${esc(f.title)}</b> · n° ${k}<br>${p?`${esc(p.ape)}, ${esc(p.nom)} — ${esc(p.dom)}`:'<span style="color:var(--danger)">Sin vender</span>'}${hits.length?'<br>🎯 Salió en: '+hits.join(' · '):''}</div>`;}).join('')||'<div>No hay archivos cargados.</div>';
 };
+
+async function saveBlobSmart(blob,suggestedName){
+  if(window.showSaveFilePicker){
+    try{
+      const h=await window.showSaveFilePicker({
+        suggestedName,
+        types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]
+      });
+      const w=await h.createWritable();
+      await w.write(blob); await w.close();
+      return 'picker';
+    }catch(e){ if(e.name==='AbortError') return 'cancel'; }
+  }
+  dl(blob,suggestedName);
+  return 'download';
+}
+
+$('tReporte').onclick=async ()=>{
+  const m=month()||new Date().toISOString().slice(0,7);
+  const wb=XLSX.utils.book_new();
+  const resumen=S.files.map(f=>{
+    const c=ctl(m,f.name), d=drawOf(f), st=status(f);
+    const rs=d?rowsOf(f,d):[];
+    return {
+      'Institución':f.title,'Localidad':f.loc||'','Cifras':f.cifras,
+      'Participantes':f.people.length,
+      'Números':f.people.reduce((a,p)=>a+p.nums.length,0),
+      'Quiniela':d?d.name:'—','Fecha sorteo':d?d.date:'—',
+      'Ganadores':rs.filter(r=>r.p).length,'Sin vender':rs.filter(r=>!r.p).length,
+      'Estado':['Pendiente','Generado','Enviado','Finalizado'][st],
+      'PDF':c.pdf?'✔':'','JPG':c.jpg?'✔':'','WhatsApp':c.wa?'✔':'','Finalizado':c.fin?'✔':'',
+      'Sello':d?code(f,d):''
+    };
+  });
+  if(resumen.length){
+    const ws=XLSX.utils.json_to_sheet(resumen);
+    ws['!cols']=Object.keys(resumen[0]).map(k=>({wch:Math.max(k.length,...resumen.map(r=>String(r[k]||'').length))+2}));
+    XLSX.utils.book_append_sheet(wb,ws,'Resumen');
+  }
+  const gans=[];
+  S.files.forEach(f=>{
+    const d=drawOf(f); if(!d)return;
+    rowsOf(f,d).forEach(r=>gans.push({
+      'Institución':f.title,'Localidad':f.loc||'','Puesto':r.pos,'N°':r.num,
+      'Apellido':r.p?r.p.ape:'Sin Vender','Nombre':r.p?r.p.nom:'',
+      'Domicilio':r.p?r.p.dom:'','Situación':r.p?r.p.sit:'','Localidad ganador':r.p?r.p.loc:'',
+      'Quiniela':d.name,'Fecha':d.date
+    }));
+  });
+  if(gans.length){
+    const ws=XLSX.utils.json_to_sheet(gans);
+    ws['!cols']=Object.keys(gans[0]).map(k=>({wch:Math.max(k.length,...gans.map(r=>String(r[k]||'').length))+2}));
+    XLSX.utils.book_append_sheet(wb,ws,'Ganadores');
+  }
+  const locs={};
+  S.files.forEach(f=>{
+    const k=f.loc||'(sin localidad)';
+    locs[k]=locs[k]||{Localidad:k,Instituciones:0,Participantes:0,'Números':0};
+    locs[k].Instituciones++;
+    locs[k].Participantes+=f.people.length;
+    locs[k]['Números']+=f.people.reduce((a,p)=>a+p.nums.length,0);
+  });
+  const locArr=Object.values(locs).sort((a,b)=>b.Participantes-a.Participantes);
+  if(locArr.length){
+    const ws=XLSX.utils.json_to_sheet(locArr);
+    ws['!cols']=[{wch:25},{wch:14},{wch:14},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,'Por localidad');
+  }
+  const qs=S.draws.map(d=>({
+    'Quiniela':d.name,'Fecha':d.date,'Mes':d.date.slice(0,7),'Números':d.nums.join(' · ')
+  }));
+  if(qs.length){
+    const ws=XLSX.utils.json_to_sheet(qs);
+    ws['!cols']=[{wch:25},{wch:12},{wch:10},{wch:80}];
+    XLSX.utils.book_append_sheet(wb,ws,'Quinielas');
+  }
+  if(!wb.SheetNames.length)return toast('No hay datos para exportar','err');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const fname=`Resumen sorteos ${m}.xlsx`;
+  const r=await saveBlobSmart(blob,fname);
+  if(r==='picker') toast('Reporte guardado donde elegiste');
+  else if(r==='download') toast('Reporte descargado');
+};
+
 $('tXlsx').onclick=()=>{
   const m=month(),data=[];
   S.files.forEach(f=>{const d=drawOf(f);if(!d)return;rowsOf(f,d).forEach(r=>data.push({Sorteo:f.title,Quiniela:d.name,Fecha:d.date,'#':r.pos,'N°':r.num,Apellido:r.p?r.p.ape:'Sin Vender',Nombre:r.p?r.p.nom:'',Domicilio:r.p?r.p.dom:'',Situación:r.p?r.p.sit:'',Localidad:r.p?r.p.loc:''}));});
   if(!data.length)return toast('No hay ganadores para exportar','err');
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Ganadores');XLSX.writeFile(wb,`Ganadores ${m||''}.xlsx`);
 };
-$('tBackup').onclick=()=>{dl(new Blob([JSON.stringify(S)],{type:'application/json'}),`respaldo-sorteos-${new Date().toISOString().slice(0,10)}.json`);toast('Respaldo descargado');};
 $('tRestore').onclick=()=>$('tRestoreF').click();
 $('tRestoreF').onchange=async e=>{
-  try{const v=JSON.parse(await e.target.files[0].text());if(!v.files||!v.draws)throw 0;
+  try{const v=JSON.parse(await e.target.files[0].text());
+    let merged=null;
+    if(v.files||v.draws){ merged=v; }
+    else if(v.state && v.state.sorteos){ merged=v.state.sorteos; }
+    if(!merged) throw 0;
     if(!confirm('Esto reemplaza los datos actuales de Sorteos. ¿Continuar?'))return;
-    merge(v);await save();syncCards();render();toast('Respaldo restaurado');}catch(x){toast('Archivo de respaldo inválido','err');}
+    merge(merged);await save();syncCards();render();toast('Respaldo restaurado');}catch(x){toast('Archivo de respaldo inválido','err');}
   e.target.value='';
 };
 
 function render(){renderFiles();renderCards();renderMonth();}
 (async()=>{
+  await window._boot;
   const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
   await load();await loadLogo();applyBrand();applyLayout();syncCards();render();
   tab(S.cfg.tab||(S.files.length?'month':'files'));
   const _sv=setView;setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings')renderStyle();};setTimeout(renderHome,1500);
 })();
 })();
-
 </script>
 </body>
 </html>
