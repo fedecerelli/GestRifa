@@ -181,8 +181,20 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .topbar-actions .iconbtn{width:42px;height:42px}
 }
 </style>
+<style>
+html.locked body>:not(#lockScreen):not(script):not(style){display:none!important}
+#lockScreen{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;padding:20px}
+html.locked #lockScreen{display:flex}
+#lockScreen .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;width:100%;max-width:340px;text-align:center}
+#lockScreen input{width:100%;margin:14px 0 10px;text-align:center;font-size:16px}
+#lockScreen .msg{color:var(--danger);font-size:12.5px;min-height:18px;margin-top:8px}
+</style>
+<script>try{if(localStorage.getItem('nora_lock_v1'))document.documentElement.classList.add('locked')}catch(e){}</script>
 </head>
 <body>
+<div id="lockScreen"><div class="box"><div style="font-size:30px">🔒</div><b>Nora · Suite de gestión</b>
+<input type="password" id="lkPass" placeholder="Clave de acceso" autocomplete="current-password">
+<button class="primary" id="lkGo" style="width:100%">Entrar</button><div class="msg" id="lkMsg"></div></div></div>
 <div class="app">
 <nav class="sidebar">
   <div class="brand">
@@ -226,6 +238,15 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
     </div>
     <div id="status" class="status-line">Sin archivo cargado.</div>
     <div id="filesList" class="batchlist"></div>
+    <div id="syncBox" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="secondary miniBtn" id="btnLinkExcel">🔄 Vincular Excel (se actualizan solos)</button>
+        <button class="ghost miniBtn hidden" id="btnSyncPerm">Reconectar archivos vinculados</button>
+        <button class="ghost miniBtn" id="btnSyncNow">Actualizar ahora</button>
+      </div>
+      <div class="hint" id="syncInfo" style="margin-top:6px"></div>
+      <div id="syncList" class="batchlist"></div>
+    </div>
     <div id="filesActions" class="hidden" style="margin-top:10px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="ghost miniBtn" id="btnClearFiles">Vaciar todos los archivos</button>
@@ -331,6 +352,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
     <div class="card">
       <h2>Números de legajo faltantes <span class="tag" id="gapsTag">-</span></h2>
       <div class="hint" id="gapsSummary"></div>
+      <button class="secondary miniBtn" id="btnMissingPdf" style="margin-top:8px">📄 Listado de faltantes (PDF A4 vertical)</button>
       <div class="scrollx" style="margin-top:8px"><div id="gapsList"></div></div>
     </div>
     <div class="card">
@@ -356,6 +378,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
       <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches">Preparar / recalcular lotes</button></div>
       <div class="field" style="max-width:230px"><button class="secondary" id="btnResetBatches">Reiniciar control de impresión</button></div>
     </div>
+    <div id="printDocs" style="margin-top:14px"></div>
     <div id="batchProgressWrap" class="hidden" style="margin-top:16px">
       <div class="batch-progress"><div class="batch-progress-bar" id="batchProgressBar"></div></div>
       <div class="hint" id="batchProgressText"></div>
@@ -514,6 +537,22 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
 
 <!-- VISTA: SETTINGS -->
 <section class="view" id="view-settings">
+  <div class="card" id="secCard">
+    <h2>🔒 Seguridad <span class="tag" id="secState">sin clave</span></h2>
+    <p class="hint">Con clave activa, la app se bloquea al abrirla y tras un rato sin uso. Tus datos viven solo en este dispositivo (no están en GitHub). Cada dispositivo (PC, iPhone) tiene su propia clave.</p>
+    <div class="row">
+      <div class="field hidden" id="secCurF"><label>Clave actual</label><input type="password" id="secCur" autocomplete="current-password"></div>
+      <div class="field"><label>Nueva clave (mín. 8)</label><input type="password" id="secP1" autocomplete="new-password"></div>
+      <div class="field"><label>Repetir</label><input type="password" id="secP2" autocomplete="new-password"></div>
+      <div class="field" style="max-width:170px"><label>Bloquear tras</label><select id="secMins"><option value="2">2 min</option><option value="5">5 min</option><option value="15" selected>15 min</option><option value="60">1 hora</option></select></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="secSave">Guardar clave</button>
+      <button class="secondary" id="secNow">Bloquear ahora</button>
+      <button class="danger hidden" id="secOff">Quitar clave</button>
+    </div>
+    <div class="status-line" id="secMsg"></div>
+  </div>
   <div class="card">
     <h2>Paletas temáticas <span class="tag">20 estilos</span></h2>
     <p class="hint">Un clic aplica la combinación de acento principal + secundario.</p>
@@ -628,7 +667,7 @@ async function readAllState(){
       const rq=os.openCursor();
       rq.onsuccess=()=>{
         const c=rq.result;
-        if(c){ if(c.key!=='backupHandle') out[c.key]=c.value; c.continue(); }
+        if(c){ if(c.key!=='backupHandle'&&c.key!=='syncSources') out[c.key]=c.value; c.continue(); }
         else res();
       };
       rq.onerror=()=>res();
@@ -1186,7 +1225,7 @@ function parseDate(v){
   return null;
 }
 function reparseDebe(){
-  FILES.forEach(f=>f.records.forEach(r=>{r.debe=Math.max(0,CFG.cuotas-r.pago);}));
+  FILES.forEach(f=>f.records.forEach(r=>{r.debe=r.vacio?0:Math.max(0,CFG.cuotas-r.pago);}));
   rebuildRecords();
   refreshPreview();updateDashboard();saveState();
 }
@@ -1203,7 +1242,7 @@ function parseRecords(rows,sourceName){
     const num=(r[0]+'').trim();
     const ape=(r[1]+'').trim();
     if(!num&&!ape)continue;
-    if(!ape)continue;
+    if(!ape){ if(/\d/.test(num)) out.push({num,apellido:'',nombre:'',calle:'',nroCalle:'',piso:'',dpto:'',pago:0,debe:0,mes:'',situacion:'',localidad:'',fcarga:null,source:sourceName,_excluded:false,vacio:true}); continue; }
     const pago=Math.max(0,Math.min(CFG.cuotas,toNum(r[7])));
     const fcarga=parseDate(r[12]);
     out.push({
@@ -1243,7 +1282,7 @@ async function handleFiles(files){
       if(!recs.length){errors.push(file.name+': sin filas válidas');continue;}
       const idx=FILES.findIndex(f=>f.name===file.name);
       const entry={name:file.name,records:recs};
-      if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}
+      if(idx>=0){const K=r=>r.num+'|'+r.apellido+'|'+r.nombre;const ex=new Set(FILES[idx].records.filter(r=>r._excluded).map(K));entry.records.forEach(r=>{if(ex.has(K(r)))r._excluded=true;});FILES[idx]=entry;replaced.push(file.name);}
       else{FILES.push(entry);added.push(file.name);}
     }catch(err){errors.push(file.name+': '+err.message);}
   }
@@ -1339,6 +1378,7 @@ function fillSourceSelect(id){
 function applyFilters(f){
   return RECORDS.filter(r=>{
     if(f.source && r.source!==f.source) return false;
+    if(r.vacio && (f.sit||f.mes||f.loc||f.chip)) return false;
     if(f.sit && r.situacion!==f.sit) return false;
     if(f.mes && r.mes!==f.mes) return false;
     if(f.loc && r.localidad!==f.loc) return false;
@@ -1399,7 +1439,7 @@ function refreshPreview(){
   document.getElementById('previewTag').textContent=data.length+' registros';
   const rows=data.slice(0,10);
   const head='<tr><th>N°</th><th>Apellido</th><th>Nombre</th><th>Domicilio</th><th>Pago</th><th>Debe</th></tr>';
-  const body=rows.map(r=>`<tr><td>${r.num}</td><td>${r.apellido}</td><td>${r.nombre}</td><td>${domicilio(r)}</td><td>${r.pago}</td><td>${r.debe}</td></tr>`).join('');
+  const body=rows.map(r=>`<tr><td>${r.num}</td><td>${r.apellido}</td><td>${r.nombre}</td><td>${r.vacio?'':domicilio(r)}</td><td>${r.vacio?'':r.pago}</td><td>${r.vacio?'':r.debe}</td></tr>`).join('');
   document.getElementById('previewTable').innerHTML=head+body+(data.length>10?`<tr><td colspan="6" style="color:var(--sub)">… y ${data.length-10} más</td></tr>`:'');
 }
 function sortLabel(v){
@@ -1441,7 +1481,7 @@ function measureText(doc,text,style,size){
 }
 function buildTableSpec(data){
   const head=[['N°','Apellido','Nombre','Domicilio','Pago','Debe',...Array.from({length:CFG.cuotas},(_,i)=>String(i+1))]];
-  const body=data.map(r=>[r.num,r.apellido,r.nombre,domicilio(r),String(r.pago),String(r.debe),
+  const body=data.map(r=>r.vacio?[r.num,'','','','','',...Array.from({length:CFG.cuotas},()=>'')]:[r.num,r.apellido,r.nombre,domicilio(r),String(r.pago),String(r.debe),
     ...Array.from({length:CFG.cuotas},(_,i)=> i<r.pago?'X':'')]);
   return{head,body};
 }
@@ -1566,8 +1606,8 @@ document.getElementById('btnPdf').onclick=async()=>{
   }else{doc.save(fname);prev.className='status-line ok';prev.textContent='PDF generado: '+fname+' ('+total+' páginas).';}
   document.getElementById('printStatus').textContent='PDF listo: '+total+' página(s).';
   addHistory(fname,data.length,total);
-  resetBatchState();
-  prepareBatches(true);
+  registerGenerated(fname,doc,rowPageMap,total,data,f);
+  document.getElementById('printStatus').textContent='PDF listo. Andá a “Impresión por lotes” para elegir qué imprimir.';
 };
 let HISTORY=[];
 function addHistory(fname,count,pages){
@@ -1597,92 +1637,84 @@ async function getDownloads(){
 }
 
 /* ======================= IMPRESION POR LOTES ======================= */
-let batchState={size:2,ranges:[],printed:new Set()};
-function resetBatchState(){
-  batchState={size:2,ranges:[],printed:new Set()};
-  document.getElementById('batchList').innerHTML='';
-  document.getElementById('batchProgressWrap').classList.add('hidden');
+const GEN=[];
+const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function batchSz(){return Math.max(1,parseInt(document.getElementById('batchSize').value)||2);}
+function registerGenerated(fname,doc,rowPageMap,total,data,f){
+  GEN.forEach(x=>x.sel=false);
+  const g={fname,doc,rowPageMap,total,data,f,sel:true,size:0,ranges:[],printed:new Set()};
+  GEN.unshift(g); if(GEN.length>15)GEN.pop();
+  calcRanges(g); renderPrint();
+}
+function calcRanges(g){
+  const size=batchSz(); if(g.size===size&&g.ranges.length)return;
+  g.size=size; g.ranges=[]; g.printed=new Set();
+  for(let s=1;s<=g.total;s+=size)g.ranges.push({start:s,end:Math.min(g.total,s+size-1)});
+}
+function renderPrint(){
+  const box=document.getElementById('printDocs');
+  box.innerHTML=GEN.length?'<div class="hint" style="margin-bottom:6px"><b>Elegí qué documentos imprimir</b> (tildá uno o varios):</div>'+GEN.map((g,i)=>`<div class="hrow" style="cursor:default"><label style="display:flex;gap:8px;align-items:center;text-transform:none;font-size:13px;color:var(--ink);flex:1"><input type="checkbox" data-gsel="${i}" ${g.sel?'checked':''}> <span>${E(g.fname)}</span></label><span class="pill">${g.total} pág.</span><button class="ghost miniBtn" data-gdel="${i}" title="Quitar de la lista">✕</button></div>`).join(''):'<div class="hint">Todavía no generaste ningún PDF. Los que generes en “Generar PDF” quedan acá para elegir cuáles imprimir.</div>';
+  box.querySelectorAll('[data-gsel]').forEach(c=>c.onchange=()=>{GEN[+c.dataset.gsel].sel=c.checked;renderBatchList();updateBatchProgress();});
+  box.querySelectorAll('[data-gdel]').forEach(c=>c.onclick=()=>{GEN.splice(+c.dataset.gdel,1);renderPrint();});
+  renderBatchList();updateBatchProgress();
 }
 document.getElementById('btnResetBatches').onclick=()=>{
-  batchState.printed=new Set();
-  if(batchState.ranges.length){renderBatchList();updateBatchProgress();}
+  GEN.filter(g=>g.sel).forEach(g=>g.printed=new Set());renderBatchList();updateBatchProgress();
   document.getElementById('printStatus').textContent='Control de impresión reiniciado.';
 };
-document.getElementById('btnPrepBatches').onclick=()=>prepareBatches(false);
-function prepareBatches(silent){
-  const stEl=document.getElementById('printStatus');
-  if(!lastDoc||!lastPdfData){
-    if(!silent){stEl.className='status-line err';stEl.textContent='Primero generá el PDF en la pestaña "Generar PDF".';}
-    return;
-  }
-  const size=Math.max(1,parseInt(document.getElementById('batchSize').value)||2);
-  batchState.size=size;
-  batchState.ranges=[];
-  for(let start=1;start<=lastPageCount;start+=size){
-    const end=Math.min(lastPageCount,start+size-1);
-    batchState.ranges.push({start,end});
-  }
-  renderBatchList();
-  updateBatchProgress();
-  document.getElementById('batchProgressWrap').classList.remove('hidden');
-  if(!silent){
-    stEl.className='status-line ok';
-    stEl.textContent='Se prepararon '+batchState.ranges.length+' lote(s) para '+lastPageCount+' página(s).';
-  }else{
-    stEl.className='status-line';
-    stEl.textContent='PDF generado. '+batchState.ranges.length+' lote(s) preparados — andá a "Impresión por lotes".';
-  }
-}
+document.getElementById('btnPrepBatches').onclick=()=>{
+  GEN.forEach(calcRanges);renderPrint();
+  const n=GEN.filter(g=>g.sel).length;
+  const st=document.getElementById('printStatus');st.className=n?'status-line ok':'status-line err';
+  st.textContent=n?'Lotes recalculados para '+n+' documento(s).':'Tildá al menos un documento.';
+};
 function renderBatchList(){
   const list=document.getElementById('batchList'); list.innerHTML='';
   const SVG='<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>';
-  batchState.ranges.forEach((r,idx)=>{
-    const done=batchState.printed.has(idx);
-    const btn=document.createElement('button');
-    btn.className='secondary batch-item'+(done?' done':'');
-    const pages=r.end-r.start+1;
-    btn.innerHTML=SVG+'Lote '+(idx+1)+': páginas '+r.start+'–'+r.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>';
-    btn.onclick=()=>printBatch(idx);
-    list.appendChild(btn);
+  GEN.filter(g=>g.sel).forEach(g=>{
+    const h=document.createElement('div');h.className='hint';h.style.cssText='width:100%;margin-top:10px';
+    h.innerHTML='<b>'+E(g.fname)+'</b>';list.appendChild(h);
+    g.ranges.forEach((r,idx)=>{
+      const btn=document.createElement('button');
+      btn.className='secondary batch-item'+(g.printed.has(idx)?' done':'');
+      const pages=r.end-r.start+1;
+      btn.innerHTML=SVG+'Lote '+(idx+1)+': páginas '+r.start+'–'+r.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>';
+      btn.onclick=()=>printBatch(g,idx);list.appendChild(btn);
+    });
   });
 }
 function updateBatchProgress(){
-  const total=batchState.ranges.length;
-  const done=batchState.printed.size;
+  const sel=GEN.filter(g=>g.sel);
+  document.getElementById('batchProgressWrap').classList.toggle('hidden',!sel.length);
+  const total=sel.reduce((s,g)=>s+g.ranges.length,0), done=sel.reduce((s,g)=>s+g.printed.size,0);
   const pct=total?Math.round(done/total*100):0;
   document.getElementById('batchProgressBar').style.width=pct+'%';
-  const pagesDone=batchState.ranges.reduce((s,r,i)=>s+(batchState.printed.has(i)?(r.end-r.start+1):0),0);
-  document.getElementById('batchProgressText').textContent=done+' de '+total+' lotes impresos ('+pct+'%) · '+pagesDone+' de '+lastPageCount+' hojas.';
+  const pagesDone=sel.reduce((s,g)=>s+g.ranges.reduce((a,r,i)=>a+(g.printed.has(i)?r.end-r.start+1:0),0),0);
+  const pagesTot=sel.reduce((s,g)=>s+g.total,0);
+  document.getElementById('batchProgressText').textContent=done+' de '+total+' lotes impresos ('+pct+'%) · '+pagesDone+' de '+pagesTot+' hojas.';
 }
-function printBatch(idx){
-  const range=batchState.ranges[idx];
-  if(!range||!lastPdfData) return;
-  const rows=lastPdfData.filter((_,i)=>{
-    const gp=lastRowPageMap[i];
-    return gp>=range.start && gp<=range.end;
-  });
+function printBatch(g,idx){
+  const range=g.ranges[idx]; if(!range) return;
+  const rows=g.data.filter((_,i)=>{const gp=g.rowPageMap[i];return gp>=range.start&&gp<=range.end;});
   if(!rows.length) return;
-  const {doc}=generatePdf(rows,lastPdfFilters,{pageOffset:range.start-1,totalPages:lastPageCount});
-  const blob=doc.output('blob'); const url=URL.createObjectURL(blob);
+  const {doc}=generatePdf(rows,g.f,{pageOffset:range.start-1,totalPages:g.total});
+  const url=URL.createObjectURL(doc.output('blob'));
   const iframe=document.createElement('iframe');
-  iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
-  iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
-  iframe.src=url;
-  document.body.appendChild(iframe);
+  iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  iframe.src=url; document.body.appendChild(iframe);
   iframe.onload=()=>{
     setTimeout(()=>{
       try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}
       setTimeout(()=>{
-        batchState.printed.add(idx);
-        renderBatchList(); updateBatchProgress();
-        const remaining=batchState.ranges.length-batchState.printed.size;
-        document.getElementById('printStatus').className='status-line ok';
-        document.getElementById('printStatus').textContent='Lote '+(idx+1)+' ('+range.start+'–'+range.end+') marcado como impreso. '+remaining+' pendiente(s).';
+        g.printed.add(idx); renderBatchList(); updateBatchProgress();
+        const st=document.getElementById('printStatus'); st.className='status-line ok';
+        st.textContent='Lote '+(idx+1)+' ('+range.start+'–'+range.end+') de “'+g.fname+'” marcado como impreso. '+(g.ranges.length-g.printed.size)+' pendiente(s).';
       },800);
       setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);
     },300);
   };
 }
+renderPrint();
 
 /* ======================= DASHBOARD ======================= */
 ['dSit','dMes','dLoc','dSource'].forEach(id=>{const el=document.getElementById(id);if(el) el.onchange=updateDashboard;});
@@ -1708,7 +1740,8 @@ function updateDashboard(){
     loc:document.getElementById('dLoc').value,
     chip:quickChip
   };
-  const data=applySort(applyFilters(f),'num','asc');
+  const dataAll=applySort(applyFilters(f),'num','asc');
+  const data=dataAll.filter(r=>!r.vacio);
   const total=data.length;
   const cuotasPagadas=data.reduce((s,r)=>s+r.pago,0), cuotasDebe=data.reduce((s,r)=>s+r.debe,0);
   const alDia=data.filter(r=>r.debe===0).length;
@@ -1754,7 +1787,7 @@ function updateDashboard(){
     `(${cash.totalPagado} pagadas de ${cash.totalPagado+cash.totalDebe} emitidas). `+
     `Proyección de ingreso esperado: <b>${Math.round(cash.proyeccionTotal)} cuotas</b>.`;
 
-  const gaps=computeGaps(data);
+  const gaps=computeGaps(dataAll);
   document.getElementById('gapsTag').textContent=gaps.missing+' faltantes';
   document.getElementById('gapsSummary').textContent=`Rango de legajos: ${gaps.min} a ${gaps.max}. Faltan ${gaps.missing} números en ${gaps.segments.length} segmento(s).`;
   document.getElementById('gapsList').innerHTML=gaps.segments.length?gaps.segments.map(s=>`<span class="pill">${s}</span>`).join(''):'<span class="hint">Sin faltantes.</span>';
@@ -2041,7 +2074,7 @@ initSheet('toggleSheetDash','dashFiltersCard');
 
 /* ======================= INICIALIZACION ======================= */
 document.getElementById('batchSize').addEventListener('change',()=>{
-  if(batchState.ranges.length) prepareBatches(true);
+  GEN.forEach(calcRanges);renderPrint();
 });
 
 (async function restoreState(){
@@ -2076,6 +2109,84 @@ document.getElementById('batchSize').addEventListener('change',()=>{
   }catch(e){console.warn('restoreState',e);}
   try{ await tryReconnectBackup(); }catch(e){}
 })();
+
+/* ======================= AUTO-SYNC DE EXCEL ======================= */
+const HAS_FS=!!window.showOpenFilePicker;
+let SYNC=[],syncBusy=false;
+async function syncSave(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(SYNC.map(s=>({name:s.name,handle:s.handle,mtime:s.mtime})),'syncSources');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}}
+async function syncLoad(){try{const db=await openDB();const rq=db.transaction(STORE,'readonly').objectStore(STORE).get('syncSources');const v=await new Promise(r=>{rq.onsuccess=()=>r(rq.result);rq.onerror=()=>r(null);});SYNC=(v||[]).map(s=>({...s,state:''}));}catch(e){}}
+function syncRender(needPerm){
+  document.getElementById('btnLinkExcel').classList.toggle('hidden',!HAS_FS);
+  document.getElementById('btnSyncNow').classList.toggle('hidden',!SYNC.length);
+  document.getElementById('btnSyncPerm').classList.toggle('hidden',!needPerm);
+  document.getElementById('syncInfo').textContent=HAS_FS?(SYNC.length?'Se revisan cada 20 s y al volver a la pestaña. Trabajá en Excel y guardá: la app se actualiza sola. Tip: si los Excel están en tu carpeta de OneDrive o Google Drive de la PC, también se sincronizan.':'Vinculá tus Excel una vez y no hace falta volver a cargarlos.'):'Este navegador (Safari/iPhone) no permite vincular archivos. Usá Chrome o Edge en la PC.';
+  const L=document.getElementById('syncList');
+  L.innerHTML=SYNC.map((s,i)=>`<span class="file-pill"><b>${E(s.name)}</b> · ${s.state==='ok'?'✓ al día':s.state==='perm'?'⚠ falta permiso':s.state==='err'?'⚠ error':'…'} <button data-unl="${i}" title="Desvincular">✕</button></span>`).join('');
+  L.querySelectorAll('[data-unl]').forEach(b=>b.onclick=async()=>{SYNC.splice(+b.dataset.unl,1);await syncSave();syncRender();});
+}
+async function syncNow(force,gesture){
+  if(syncBusy||!SYNC.length)return; syncBusy=true; let changed=0,needPerm=false;
+  for(const s of SYNC){
+    try{
+      let p=await s.handle.queryPermission({mode:'read'});
+      if(p!=='granted'&&gesture)p=await s.handle.requestPermission({mode:'read'});
+      if(p!=='granted'){s.state='perm';needPerm=true;continue;}
+      const file=await s.handle.getFile();
+      if(force||file.lastModified!==s.mtime){
+        await handleFiles([file]);
+        if(window.sorteosLoadFiles) await window.sorteosLoadFiles([file]);
+        s.mtime=file.lastModified; changed++;
+      }
+      s.state='ok';
+    }catch(e){s.state='err';}
+  }
+  syncBusy=false; await syncSave(); syncRender(needPerm);
+  if(changed&&window.sorteoToast)window.sorteoToast('🔄 '+changed+' Excel actualizado(s) automáticamente');
+}
+document.getElementById('btnLinkExcel').onclick=async()=>{
+  try{
+    const hs=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm'],'application/vnd.ms-excel':['.xls']}}]});
+    for(const h of hs){let dup=false;for(const s of SYNC){if(await s.handle.isSameEntry(h)){dup=true;break;}}if(!dup)SYNC.push({name:h.name,handle:h,mtime:0});}
+    await syncSave(); await syncNow(false,true);
+  }catch(e){}
+};
+document.getElementById('btnSyncNow').onclick=()=>syncNow(true,true);
+document.getElementById('btnSyncPerm').onclick=()=>syncNow(false,true);
+setInterval(()=>{if(!document.hidden)syncNow(false,false);},20000);
+window.addEventListener('focus',()=>syncNow(false,false));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow(false,false);});
+syncLoad().then(()=>{syncRender();setTimeout(()=>syncNow(false,false),2500);});
+
+/* ======================= LISTADO DE FALTANTES (A4 vertical) ======================= */
+document.getElementById('btnMissingPdf').onclick=()=>{
+  const f={source:document.getElementById('dSource').value,sit:document.getElementById('dSit').value,mes:document.getElementById('dMes').value,loc:document.getElementById('dLoc').value,chip:quickChip};
+  const data=applyFilters(f);
+  const set=new Set(data.map(r=>toNum(r.num)).filter(n=>n>0));
+  const nums=[...set].sort((a,b)=>a-b);
+  if(!nums.length){alert('No hay números cargados.');return;}
+  const min=nums[0],max=nums[nums.length-1],miss=[];
+  for(let n=min;n<=max;n++)if(!set.has(n))miss.push(n);
+  if(!miss.length){alert('No hay números faltantes entre '+min+' y '+max+'.');return;}
+  const {jsPDF}=window.jspdf, doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=36;
+  const srcName=f.source?f.source.replace(/\.(xlsx|xls|xlsm)$/i,''):'Todos los archivos';
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('Números faltantes',M,M+8);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text(srcName+' · Rango '+min+'–'+max+' · '+miss.length+' faltante(s) · '+new Date().toLocaleDateString('es-AR'),M,M+24);
+  const top=M+44,aw=W-2*M,ah=H-top-M-14;
+  const fit=items=>{for(let s=12;s>=4;s-=0.5){doc.setFontSize(s);const cw=Math.max(...items.map(t=>doc.getTextWidth(t)))+s*1.4;const cols=Math.max(1,Math.floor(aw/cw));const rows=Math.ceil(items.length/cols);if(rows*s*1.4<=ah)return{s,cols,rows,cw:aw/cols};}return null;};
+  let items=miss.map(String),ranged=false,L=fit(items);
+  if(!L){
+    ranged=true;items=[];let st=miss[0],pv=miss[0];
+    for(let i=1;i<=miss.length;i++){if(miss[i]===pv+1){pv=miss[i];continue;}items.push(st===pv?String(st):st+'–'+pv);st=miss[i];pv=miss[i];}
+    L=fit(items)||(()=>{const s=4;const cw=aw/Math.floor(aw/(s*7));return{s,cols:Math.floor(aw/(s*7)),rows:Math.ceil(items.length/Math.floor(aw/(s*7))),cw};})();
+  }
+  doc.setFontSize(L.s);
+  items.forEach((t,i)=>{const c=Math.floor(i/L.rows),r=i%L.rows;doc.text(t,M+c*L.cw,top+(r+1)*L.s*1.4);});
+  if(ranged){doc.setFontSize(8);doc.text('Agrupados en rangos para que entren en una sola hoja.',M,H-M+6);}
+  const d=new Date(),pad=n=>String(n).padStart(2,'0');
+  doc.save('Faltantes - '+srcName+' - '+pad(d.getDate())+'-'+pad(d.getMonth()+1)+'-'+d.getFullYear()+'.pdf');
+};
 
 /* ======================= SORTEOS v2 ======================= */
 (function(){
@@ -2161,6 +2272,7 @@ async function loadFiles(files){
   if(ok.length)toast(`${ok.length} archivo(s) guardados`);
   await save();render();
 }
+window.sorteosLoadFiles=loadFiles;
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
 function renderFiles(){
@@ -2596,6 +2708,43 @@ function render(){renderFiles();renderCards();renderMonth();}
   tab(S.cfg.tab||(S.files.length?'month':'files'));
   const _sv=setView;setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings')renderStyle();};setTimeout(renderHome,1500);
 })();
+})();
+</script>
+<script>
+(function(){
+const K='nora_lock_v1',$=id=>document.getElementById(id);
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function hash(p,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:310000},k,256));}
+const get=()=>{try{return JSON.parse(localStorage.getItem(K)||'null')}catch(e){return null}};
+let last=Date.now(),fails=0,until=0;
+const root=document.documentElement;
+function lock(){if(!get())return;root.classList.add('locked');$('lkPass').value='';$('lkMsg').textContent='';setTimeout(()=>$('lkPass').focus(),50);}
+async function unlock(){
+  const c=get();if(!c){root.classList.remove('locked');return;}
+  if(Date.now()<until){$('lkMsg').textContent='Esperá '+Math.ceil((until-Date.now())/1000)+' s…';return;}
+  if(await hash($('lkPass').value,unb64(c.salt))===c.hash){fails=0;last=Date.now();$('lkPass').value='';root.classList.remove('locked');}
+  else{fails++;if(fails>=3)until=Date.now()+Math.min(300,Math.pow(2,fails-2)*5)*1000;$('lkMsg').textContent='Clave incorrecta.';}
+}
+$('lkGo').onclick=unlock;$('lkPass').onkeydown=e=>{if(e.key==='Enter')unlock();};
+['pointerdown','keydown','touchstart','scroll'].forEach(ev=>addEventListener(ev,()=>{if(!root.classList.contains('locked'))last=Date.now();},{passive:true,capture:true}));
+setInterval(()=>{const c=get();if(c&&!root.classList.contains('locked')&&Date.now()-last>(c.mins||15)*60000)lock();},10000);
+document.addEventListener('visibilitychange',()=>{const c=get();if(c&&!document.hidden&&!root.classList.contains('locked')&&Date.now()-last>(c.mins||15)*60000)lock();});
+function ui(){const c=get();$('secState').textContent=c?'activa':'sin clave';$('secCurF').classList.toggle('hidden',!c);$('secOff').classList.toggle('hidden',!c);if(c)$('secMins').value=String(c.mins||15);}
+const msg=(t,ok)=>{const m=$('secMsg');m.textContent=t;m.className='status-line '+(ok?'ok':'err');};
+$('secSave').onclick=async()=>{
+  const c=get(),p1=$('secP1').value;
+  if(c&&await hash($('secCur').value,unb64(c.salt))!==c.hash)return msg('La clave actual no es correcta.');
+  if(!p1&&c){c.mins=+$('secMins').value;localStorage.setItem(K,JSON.stringify(c));ui();return msg('Tiempo de bloqueo actualizado.',1);}
+  if(p1.length<8)return msg('La clave debe tener al menos 8 caracteres.');
+  if(p1!==$('secP2').value)return msg('Las claves no coinciden.');
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(p1,salt),mins:+$('secMins').value}));
+  ['secCur','secP1','secP2'].forEach(i=>$(i).value='');ui();msg('Clave guardada. Recordala: no se puede recuperar.',1);
+};
+$('secOff').onclick=async()=>{const c=get();if(!c)return;if(await hash($('secCur').value,unb64(c.salt))!==c.hash)return msg('Ingresá la clave actual para quitarla.');localStorage.removeItem(K);ui();msg('Clave quitada.',1);};
+$('secNow').onclick=()=>{if(!get())return msg('Primero guardá una clave.');lock();};
+ui();
+setTimeout(()=>{if(!get()&&window.sorteoToast)window.sorteoToast('🔒 Configurá tu clave en Ajustes → Seguridad');},3500);
 })();
 </script>
 </body>
