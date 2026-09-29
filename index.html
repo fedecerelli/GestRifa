@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nora - Suite de Gestión</title>
 
-<!-- Favicon -->
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<!-- Ícono para dispositivos móviles -->
 <link rel="apple-touch-icon" href="icon-512.png">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -50,10 +48,11 @@ a{color:var(--accent)}
 .topbar h1{font-size:19px;margin:0;line-height:1.2}
 .topbar .muted{color:var(--sub);font-size:12.5px;margin-top:3px;line-height:1.35}
 .topbar-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
-.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px;cursor:pointer;color:var(--ink);font-size:13px;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px;cursor:pointer;color:var(--ink);font-size:13px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;position:relative}
 .iconbtn .icon{margin:0}
 .iconbtn:hover{background:var(--panel2)}
 .iconbtn.active{background:color-mix(in srgb,var(--accent) 15%,var(--panel));color:var(--accent);border-color:var(--accent)}
+.iconbtn .dot{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:var(--danger);border:2px solid var(--panel)}
 
 .view{display:none}
 .view.active{display:block}
@@ -67,8 +66,9 @@ a{color:var(--accent)}
 .field{display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1}
 .field.grow{flex:2}
 label{font-size:11.5px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
-select,button,input[type=file],input[type=text],input[type=number],input[type=color]{font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink)}
+select,button,input[type=file],input[type=text],input[type=number],input[type=color],input[type=month],input[type=date],textarea{font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink)}
 select,input[type=text],input[type=number]{width:100%}
+textarea{font:inherit;width:100%}
 button{cursor:pointer;font-weight:600;font-size:13px}
 button.primary{background:var(--accent);color:var(--accent-ink);border:none}
 button.primary:hover{filter:brightness(1.08)}
@@ -142,6 +142,67 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .bottom-nav button.active{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
 .bottom-nav button:active{transform:scale(.94)}
 
+/* Settings section nav */
+.set-grid{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start}
+.set-menu{position:sticky;top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:2px}
+.set-menu button{all:unset;cursor:pointer;padding:10px 12px;border-radius:8px;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:9px;font-weight:500}
+.set-menu button:hover{background:var(--panel2)}
+.set-menu button.active{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.set-pane{display:none}
+.set-pane.active{display:block}
+@media(max-width:900px){
+  .set-grid{grid-template-columns:1fr}
+  .set-menu{position:static;flex-direction:row;overflow-x:auto;padding:6px}
+  .set-menu button{white-space:nowrap;font-size:12px;padding:8px 12px}
+  .set-menu button span{display:none}
+}
+
+/* Alerts / home */
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:12.5px;margin-bottom:8px}
+.alert.warn{border-color:color-mix(in srgb,var(--warn) 40%, var(--line));background:color-mix(in srgb,var(--warn) 8%, var(--panel))}
+.alert.err{border-color:color-mix(in srgb,var(--danger) 40%, var(--line));background:color-mix(in srgb,var(--danger) 6%, var(--panel))}
+.alert.ok{border-color:color-mix(in srgb,var(--accent2) 40%, var(--line));background:color-mix(in srgb,var(--accent2) 6%, var(--panel))}
+.alert .ico{flex:0 0 auto;font-size:16px;line-height:1.3}
+.alert .body{flex:1;min-width:0}
+.alert .body b{display:block;margin-bottom:2px}
+.alert .act{align-self:center;font-size:11.5px;font-weight:600;color:var(--accent);cursor:pointer;background:none;border:none;padding:4px 8px;border-radius:6px}
+.alert .act:hover{background:color-mix(in srgb,var(--accent) 12%, transparent)}
+
+.hero{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+.hero-top{background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 10%, var(--panel)), var(--panel));border:1px solid var(--line);border-radius:14px;padding:20px 22px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
+.hero-top::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--accent)}
+.hero-top.okk::before{background:var(--accent2)}
+.hero-top .tx{flex:1;min-width:220px}
+.hero-top .eyebrow{font-size:10.5px;letter-spacing:.08em;color:var(--sub);text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.hero-top h3{margin:0 0 6px;font-size:19px;line-height:1.25}
+.hero-top .desc{font-size:12.5px;color:var(--sub);line-height:1.5;margin:0}
+.hero-top .btn{flex:0 0 auto}
+.hero-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.hero-kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.hero-kpi .n{font-size:24px;font-weight:700;line-height:1.1}
+.hero-kpi .l{font-size:11px;color:var(--sub);margin-top:3px;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.hero-kpi .sub{font-size:11.5px;color:var(--sub);margin-top:6px}
+.hero-kpi.accent .n{color:var(--accent)}
+.hero-kpi.ok .n{color:var(--accent2)}
+.hero-kpi.warn .n{color:var(--warn)}
+.hero-kpi.err .n{color:var(--danger)}
+
+.activity-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center}
+.activity-item:last-child{border-bottom:none}
+.activity-item .ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--panel2);flex:0 0 auto;font-size:13px}
+.activity-item .b{flex:1;min-width:0}
+.activity-item .when{color:var(--sub);font-size:11px;white-space:nowrap}
+
+.toastbox{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--bottomnav-h) + 16px);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;max-width:92vw}
+.toast{background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.35);animation:tin .22s ease-out;display:flex;gap:9px;align-items:center;pointer-events:auto;max-width:420px}
+.toast.err{background:var(--danger);color:#fff}
+.toast.ok{background:var(--accent2);color:#fff}
+.toast.warn{background:var(--warn);color:#fff}
+.toast .ic{font-size:15px;line-height:1}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}}
+.nbadge{margin-left:auto;background:var(--warn);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 7px;font-weight:700}
+.bottom-nav .nbadge{position:absolute;margin:0;top:2px;right:8px}.bottom-nav button{position:relative}
+
 @media(max-width:820px){
   .grid2{grid-template-columns:1fr}
   .app{flex-direction:column}
@@ -158,7 +219,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .row{gap:10px}
   .field{min-width:130px}
   .chartbox{height:220px}
-  select,button,input[type=file],input[type=text],input[type=number]{font-size:16px}
+  select,button,input[type=file],input[type=text],input[type=number],input[type=month],input[type=date],textarea{font-size:16px}
   .kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px}
   .kpi .n{font-size:19px}
   .card{padding:14px;border-radius:11px}
@@ -174,6 +235,8 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .palette-grid{grid-template-columns:1fr 1fr}
   .filter-card.sheet-closed .sheet-body{display:none}
   .filter-card.sheet-closed h2{margin-bottom:0}
+  .hero-top{padding:16px}
+  .hero-top h3{font-size:16px}
 }
 @media(max-width:480px){
   .batch-item{min-width:100%}
@@ -181,20 +244,8 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
   .topbar-actions .iconbtn{width:42px;height:42px}
 }
 </style>
-<style>
-html.locked body>:not(#lockScreen):not(script):not(style){display:none!important}
-#lockScreen{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;padding:20px}
-html.locked #lockScreen{display:flex}
-#lockScreen .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;width:100%;max-width:340px;text-align:center}
-#lockScreen input{width:100%;margin:14px 0 10px;text-align:center;font-size:16px}
-#lockScreen .msg{color:var(--danger);font-size:12.5px;min-height:18px;margin-top:8px}
-</style>
-<script>try{if(localStorage.getItem('nora_lock_v1'))document.documentElement.classList.add('locked')}catch(e){}</script>
 </head>
 <body>
-<div id="lockScreen"><div class="box"><div style="font-size:30px">🔒</div><b>Nora · Suite de gestión</b>
-<input type="password" id="lkPass" placeholder="Clave de acceso" autocomplete="current-password">
-<button class="primary" id="lkGo" style="width:100%">Entrar</button><div class="msg" id="lkMsg"></div></div></div>
 <div class="app">
 <nav class="sidebar">
   <div class="brand">
@@ -219,8 +270,8 @@ html.locked #lockScreen{display:flex}
 
 <div class="topbar">
   <div class="topbar-text">
-    <h1 id="pageTitle">Generador de Informes PDF</h1>
-    <div class="muted" id="pageSub">Cargá el Excel (solapa "Datos") y generá el informe.</div>
+    <h1 id="pageTitle">Inicio</h1>
+    <div class="muted" id="pageSub">Tu resumen del mes y lo que sigue.</div>
   </div>
   <div class="topbar-actions">
     <button class="iconbtn" id="btnOmni" title="Buscar (Ctrl+K)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
@@ -228,6 +279,30 @@ html.locked #lockScreen{display:flex}
     <button class="iconbtn" id="btnTheme" title="Cambiar tema"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
   </div>
 </div>
+
+<!-- VISTA: INICIO -->
+<section class="view active" id="view-home">
+  <div id="hHero" class="hero"></div>
+  <div class="grid2">
+    <div class="card"><h2>Sorteos del mes <span class="tag" id="hMonth"></span></h2><div id="hSorteos"></div></div>
+    <div class="card"><h2>Cobranza <span class="tag">datos cargados</span></h2><div id="hCob"></div></div>
+  </div>
+  <div class="card">
+    <h2>⚠ Alertas y pendientes <span class="tag" id="hAlertCount">0</span></h2>
+    <div id="hAlerts"></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>🕐 Actividad reciente</h2><div id="hActivity"></div></div>
+    <div class="card"><h2>⚡ Accesos rápidos</h2>
+      <div class="row" style="gap:8px">
+        <button class="secondary" data-go="pdf">📄 Informe PDF</button>
+        <button class="secondary" data-go="dash">📊 Dashboard cobranza</button>
+        <button class="secondary" data-go="print">🖨 Impresión por lotes</button>
+        <button class="secondary" data-go="sorteos">🎯 Sorteos</button>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- VISTA: PDF -->
 <section class="view" id="view-pdf">
@@ -238,15 +313,6 @@ html.locked #lockScreen{display:flex}
     </div>
     <div id="status" class="status-line">Sin archivo cargado.</div>
     <div id="filesList" class="batchlist"></div>
-    <div id="syncBox" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="secondary miniBtn" id="btnLinkExcel">🔄 Vincular Excel (se actualizan solos)</button>
-        <button class="ghost miniBtn hidden" id="btnSyncPerm">Reconectar archivos vinculados</button>
-        <button class="ghost miniBtn" id="btnSyncNow">Actualizar ahora</button>
-      </div>
-      <div class="hint" id="syncInfo" style="margin-top:6px"></div>
-      <div id="syncList" class="batchlist"></div>
-    </div>
     <div id="filesActions" class="hidden" style="margin-top:10px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="ghost miniBtn" id="btnClearFiles">Vaciar todos los archivos</button>
@@ -350,10 +416,8 @@ html.locked #lockScreen{display:flex}
       <div class="card"><h2>Días de mayor carga</h2><div class="chartbox"><canvas id="chDias"></canvas></div></div>
     </div>
     <div class="card">
-      <h2>Números de legajo faltantes <span class="tag" id="gapsTag">-</span></h2>
-      <div class="hint" id="gapsSummary"></div>
-      <button class="secondary miniBtn" id="btnMissingPdf" style="margin-top:8px">📄 Listado de faltantes (PDF A4 vertical)</button>
-      <div class="scrollx" style="margin-top:8px"><div id="gapsList"></div></div>
+      <h2>Análisis de legajos faltantes <span class="tag" id="gapsTag">-</span></h2>
+      <div id="gapsReport"></div>
     </div>
     <div class="card">
       <h2>Números de rifa duplicados <span class="tag" id="dupTag">-</span></h2>
@@ -378,7 +442,6 @@ html.locked #lockScreen{display:flex}
       <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches">Preparar / recalcular lotes</button></div>
       <div class="field" style="max-width:230px"><button class="secondary" id="btnResetBatches">Reiniciar control de impresión</button></div>
     </div>
-    <div id="printDocs" style="margin-top:14px"></div>
     <div id="batchProgressWrap" class="hidden" style="margin-top:16px">
       <div class="batch-progress"><div class="batch-progress-bar" id="batchProgressBar"></div></div>
       <div class="hint" id="batchProgressText"></div>
@@ -386,19 +449,6 @@ html.locked #lockScreen{display:flex}
     <div id="printStatus" class="status-line"></div>
     <div class="batchlist" id="batchList"></div>
   </div>
-</section>
-
-<!-- VISTA: INICIO -->
-<section class="view active" id="view-home">
-  <div class="card next" id="hNext"></div>
-  <div class="kpis" id="hKpis" style="margin-bottom:16px"></div>
-  <div class="hgrid">
-    <div class="card"><h2>Sorteos del mes <span class="tag" id="hMonth"></span></h2><div id="hSorteos"></div></div>
-    <div class="card"><h2>Cobranza <span class="tag">datos cargados</span></h2><div id="hCob"></div></div>
-  </div>
-  <div class="card"><h2>Accesos rápidos</h2><div class="row" style="gap:8px">
-    <button class="secondary" data-go="pdf">📄 Informe PDF</button><button class="secondary" data-go="dash">📊 Dashboard cobranza</button>
-    <button class="secondary" data-go="print">🖨 Impresión por lotes</button><button class="secondary" data-go="sorteos">🎯 Sorteos</button></div></div>
 </section>
 
 <!-- VISTA: SORTEOS -->
@@ -432,7 +482,7 @@ html.locked #lockScreen{display:flex}
           <select id="cUnsold"><option value="1">Mostrarlos en la lista</option><option value="0">Saltearlos (solo vendidos)</option></select></div>
       </div>
       <details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Texto del mensaje de WhatsApp</summary>
-        <textarea id="cWa" rows="2" style="margin-top:8px;font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:100%"></textarea>
+        <textarea id="cWa" rows="2" style="margin-top:8px"></textarea>
         <div class="hint">Podés usar {localidad} {institucion} {quiniela} {fecha} {titulo}</div></details>
     </div>
     <h2 style="font-size:14.5px;margin:6px 2px 10px"><span class="tag" style="font-size:10.5px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);padding:2px 7px;border-radius:6px">Paso 3</span> Generar y enviar</h2>
@@ -448,6 +498,12 @@ html.locked #lockScreen{display:flex}
       <div id="sDz" class="dropzone"><svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Hacé clic o arrastrá uno o más archivos .xlsx (solapa "Datos")<div class="hint">Se leen las columnas <b>N°, N°2 … N°10</b> y las <b>cifras (3 o 4) se detectan solas</b>. Los archivos quedan guardados; para actualizar uno, subilo de nuevo con el mismo nombre.</div>
         <input id="sFile" type="file" accept=".xlsx,.xlsm,.xls" multiple class="hidden"></div>
       <div id="sFilesMsg" class="status-line">Sin archivos cargados.</div>
+      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="ghost miniBtn" id="btnLinkSorteoFiles">🔗 Vincular archivos de sorteo a disco</button>
+        <button class="ghost miniBtn hidden" id="btnReconnectSorteoFiles">Reconectar archivos de sorteo</button>
+        <button class="ghost miniBtn" id="btnReloadSorteoFiles">↻ Releer archivos vinculados</button>
+      </div>
+      <div id="sorteoLinkStatus" class="hint" style="margin-top:6px"></div>
       <div id="sFilesList" class="sfiles"></div>
     </div>
   </div>
@@ -482,7 +538,163 @@ html.locked #lockScreen{display:flex}
     </div>
   </div>
 </section>
-<div id="toastBox" class="toastbox"></div><style>
+
+<!-- VISTA: SETTINGS -->
+<section class="view" id="view-settings">
+  <div class="set-grid">
+    <div class="set-menu" id="setMenu">
+      <button data-set="look" class="active">🎨 <span>Apariencia</span></button>
+      <button data-set="pdf">📄 <span>Informe PDF</span></button>
+      <button data-set="headerfooter">🧾 <span>Cabecera y pie</span></button>
+      <button data-set="sorteo">🎯 <span>Sorteos</span></button>
+      <button data-set="ident">🏷️ <span>Identidad</span></button>
+      <button data-set="ui">🧭 <span>Interfaz</span></button>
+      <button data-set="data">💾 <span>Datos y respaldos</span></button>
+    </div>
+
+    <div>
+      <div class="set-pane active" id="pane-look">
+        <div class="card">
+          <h2>Paletas temáticas <span class="tag">20 estilos</span></h2>
+          <p class="hint">Un clic aplica la combinación de acento principal + secundario.</p>
+          <div class="palette-grid" id="paletteGrid"></div>
+        </div>
+        <div class="card">
+          <h2>Colores y tipografía</h2>
+          <div class="row">
+            <div class="field" style="max-width:120px"><label>Color principal</label><input id="cfgAccent" type="color" class="swatch" value="#1f4e8c"></div>
+            <div class="field" style="max-width:120px"><label>Color secundario</label><input id="cfgAccent2" type="color" class="swatch" value="#2f7a4f"></div>
+            <div class="field" style="max-width:170px"><label>Tema</label><select id="cfgTheme"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
+            <div class="field" style="max-width:220px"><label>Densidad</label><select id="cfgDensity"><option value="comoda">Cómoda (espaciada)</option><option value="compacta">Compacta (planilla)</option></select></div>
+            <div class="field" style="max-width:220px"><label>Tipografía interfaz</label><select id="cfgFont"><option value="system">Sistema (default)</option><option value="serif">Serif (Georgia)</option><option value="mono">Monoespaciada</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-pdf">
+        <div class="card">
+          <h2>Contenido del informe</h2>
+          <div class="row">
+            <div class="field grow"><label>Título del informe</label><input id="cfgTitle" type="text" value="Informe de Cobranza"></div>
+            <div class="field" style="max-width:170px"><label>Total de cuotas</label><input id="cfgCuotas" type="number" min="1" max="30" value="10"></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div class="field" style="max-width:220px"><label>Tipografía PDF</label>
+              <select id="cfgPdfFont"><option value="helvetica">Helvetica (moderna)</option><option value="times">Times (clásica)</option><option value="courier">Courier (técnica)</option></select>
+            </div>
+            <div class="field" style="max-width:180px"><label>Tamaño del texto PDF</label>
+              <select id="cfgPdfSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select>
+            </div>
+            <div class="field" style="max-width:260px"><label>Modo ahorro de tóner</label>
+              <select id="cfgToner"><option value="on">Activado (recomendado)</option><option value="off">Desactivado (con relleno gris)</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Vista previa en vivo</h2>
+          <div style="background:#eaecef;padding:10px;border-radius:10px;overflow-x:auto">
+            <canvas id="pdfPrev" style="max-width:100%;display:block;border:1px solid var(--line);box-shadow:0 4px 12px rgba(0,0,0,.08);background:#fff"></canvas>
+          </div>
+          <div class="hint" style="margin-top:8px">Vista previa del encabezado, tabla y pie del PDF (A4 horizontal). Se actualiza sola al cambiar título, tipografía, tamaño, tóner o las líneas de cabecera/pie.</div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-headerfooter">
+        <div class="card">
+          <h2>Cabecera del PDF <span class="tag">editable</span></h2>
+          <p class="hint">Las líneas se muestran en una sola fila. Tokens: <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code> <code>{{fecha_generacion}}</code></p>
+          <div id="headerEditor"></div>
+          <button class="ghost miniBtn" id="btnAddHeaderRow">+ Agregar línea</button>
+        </div>
+        <div class="card">
+          <h2>Pie de página del PDF <span class="tag">editable</span></h2>
+          <p class="hint">Tokens: <code>{{pagina}}</code> <code>{{total_paginas}}</code> <code>{{fecha_generacion}}</code> <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code></p>
+          <div id="footerEditor"></div>
+          <button class="ghost miniBtn" id="btnAddFooterRow">+ Agregar elemento</button>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-sorteo">
+        <div class="card">
+          <h2>Diseño del JPG y PDF de sorteos</h2>
+          <div class="row">
+            <div class="field"><label>Color del encabezado</label><div class="row" style="gap:8px;align-items:center"><div id="stHead" class="swatches"></div><input type="color" id="stHeadC" style="width:46px;padding:2px"></div></div>
+            <div class="field"><label>Tipografía</label><select id="stFont"><option>Calibri</option><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Tahoma</option><option>Trebuchet MS</option></select></div>
+            <div class="field" style="max-width:140px"><label>Tamaño de letra</label><input type="number" id="stSize" min="9" max="13"></div>
+          </div>
+          <div class="row" style="margin-top:12px;gap:18px">
+            <label><input type="checkbox" id="stZebra"> Filas alternadas</label>
+            <label><input type="checkbox" id="stSeal"> Sello de verificación invisible</label>
+            <span><button class="secondary miniBtn" id="stLogoBtn">Subir logo</button> <button class="ghost miniBtn" id="stLogoDel">Quitar</button> <span class="hint" id="stLogoName" style="margin:0"></span><input type="file" id="stLogoF" accept="image/*" class="hidden"></span>
+          </div>
+          <div style="overflow-x:auto;margin-top:14px"><canvas id="stPrev" style="max-width:100%;border:1px solid var(--line)"></canvas></div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-ident">
+        <div class="card">
+          <h2>Identidad de la suite</h2>
+          <div class="row">
+            <div class="field"><label>Nombre</label><input type="text" id="nmName" maxlength="28"></div>
+            <div class="field"><label>Subtítulo</label><input type="text" id="nmSub" maxlength="40"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-ui">
+        <div class="card">
+          <h2>Barra lateral y menú</h2>
+          <div class="row" style="gap:18px"><label><input type="checkbox" id="stMini"> Modo compacto (solo íconos)</label>
+          <label><input type="checkbox" id="stHide-pdf"> Mostrar Generar PDF</label><label><input type="checkbox" id="stHide-dash"> Mostrar Dashboard</label><label><input type="checkbox" id="stHide-print"> Mostrar Impresión por lotes</label></div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-data">
+        <div class="card">
+          <h2>Respaldo automático</h2>
+          <p class="hint">Elegí cuándo se guarda la copia en el archivo vinculado. Podés forzarlo manualmente cuando quieras.</p>
+          <div class="row">
+            <div class="field" style="max-width:260px"><label>Frecuencia del respaldo</label>
+              <select id="cfgBackupMode">
+                <option value="open">Solo al abrir el programa</option>
+                <option value="change" selected>Solo cuando hay cambios (recomendado)</option>
+                <option value="manual">Solo manual</option>
+                <option value="interval">Cada X minutos</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:180px"><label>Minutos (si elegís "cada X")</label><input type="number" id="cfgBackupMinutes" min="1" max="240" value="30"></div>
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px">
+            <button class="secondary" id="btnLinkBackup2">🔗 Vincular archivo de respaldo</button>
+            <button class="secondary" id="btnForceBackup">💾 Guardar respaldo ahora</button>
+          </div>
+          <div id="backupStatus2" class="hint" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h2>Archivos de sorteo vinculados</h2>
+          <p class="hint">Vinculá los Excel de sorteo para que se relean automáticamente al abrir el programa.</p>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <button class="secondary" id="btnLinkSorteoFiles2">🔗 Vincular Excel de sorteos</button>
+            <button class="secondary" id="btnReconnectSorteoFiles2">↻ Reconectar</button>
+            <button class="secondary" id="btnReloadSorteoFiles2">🔁 Releer ahora</button>
+          </div>
+          <div id="sorteoLinkStatus2" class="hint" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h2>Preferencias generales</h2>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <button class="secondary" id="btnSaveCfg">💾 Guardar preferencias</button>
+            <span class="status-line" id="cfgStatus"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="toastBox" class="toastbox"></div>
+
+<style>
 .swatches{display:flex;gap:6px}.sw-c{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid var(--line)}.sw-c.on{outline:2px solid var(--accent);outline-offset:1px}
 .qcard textarea{font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:100%}
 body.sb-mini{--sidebar-w:68px}body.sb-mini .sidebar{padding-left:8px;padding-right:8px}
@@ -493,7 +705,6 @@ body.sb-mini .brand{justify-content:center;padding:4px 0 16px;gap:0}
 body.sb-mini #sbToggle{padding:8px 0}
 body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .status{display:none}
 body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padding:0 5px;margin:0}
-
 </style>
 
 <style>
@@ -517,119 +728,18 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
 .sw.done{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 6%,var(--panel))}
 .sw .row{gap:8px}.sw .field{min-width:110px}
 .tres{display:grid;gap:8px;margin-top:10px}.tres div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px}
-.toastbox{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--bottomnav-h) + 16px);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
-.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 6px 24px #0005;animation:tin .2s}
-.toast.err{background:var(--danger);color:#fff}
-@keyframes tin{from{opacity:0;transform:translateY(8px)}}
-.nbadge{margin-left:auto;background:var(--warn);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 7px;font-weight:700}
-.bottom-nav .nbadge{position:absolute;margin:0;top:2px;right:8px}.bottom-nav button{position:relative}
 </style>
 <style>
 .navlbl{font-size:10.5px;letter-spacing:.07em;color:var(--sub);text-transform:uppercase;padding:14px 12px 4px;opacity:.8}
-.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
-.next{border-left:5px solid var(--accent);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.next.okk{border-left-color:var(--accent2)}.next .tx{flex:1;min-width:220px}.next h3{margin:0 0 4px;font-size:18px}
 .hrow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;cursor:pointer}
 .hrow:last-child{border:none}.hrow .meta{margin:0;display:flex;gap:5px;flex-wrap:wrap}
 .sw details{margin-top:10px}.sw summary{cursor:pointer;font-size:12px;color:var(--sub)}
 .sw .prim{width:100%;margin-top:10px;padding:10px;font-weight:600}
+.gaps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.gaps-kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.gaps-kpi .n{font-size:19px;font-weight:700}
+.gaps-kpi .l{font-size:11px;color:var(--sub);margin-top:2px;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
 </style>
-
-<!-- VISTA: SETTINGS -->
-<section class="view" id="view-settings">
-  <div class="card" id="secCard">
-    <h2>🔒 Seguridad <span class="tag" id="secState">sin clave</span></h2>
-    <p class="hint">Con clave activa, la app se bloquea al abrirla y tras un rato sin uso. Tus datos viven solo en este dispositivo (no están en GitHub). Cada dispositivo (PC, iPhone) tiene su propia clave.</p>
-    <div class="row">
-      <div class="field hidden" id="secCurF"><label>Clave actual</label><input type="password" id="secCur" autocomplete="current-password"></div>
-      <div class="field"><label>Nueva clave (mín. 8)</label><input type="password" id="secP1" autocomplete="new-password"></div>
-      <div class="field"><label>Repetir</label><input type="password" id="secP2" autocomplete="new-password"></div>
-      <div class="field" style="max-width:170px"><label>Bloquear tras</label><select id="secMins"><option value="2">2 min</option><option value="5">5 min</option><option value="15" selected>15 min</option><option value="60">1 hora</option></select></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="primary" id="secSave">Guardar clave</button>
-      <button class="secondary" id="secNow">Bloquear ahora</button>
-      <button class="danger hidden" id="secOff">Quitar clave</button>
-    </div>
-    <div class="status-line" id="secMsg"></div>
-  </div>
-  <div class="card">
-    <h2>Paletas temáticas <span class="tag">20 estilos</span></h2>
-    <p class="hint">Un clic aplica la combinación de acento principal + secundario.</p>
-    <div class="palette-grid" id="paletteGrid"></div>
-  </div>
-  <div class="card">
-    <h2>Personalización de la interfaz</h2>
-    <div class="row">
-      <div class="field" style="max-width:120px"><label>Color principal</label><input id="cfgAccent" type="color" class="swatch" value="#1f4e8c"></div>
-      <div class="field" style="max-width:120px"><label>Color secundario</label><input id="cfgAccent2" type="color" class="swatch" value="#2f7a4f"></div>
-      <div class="field" style="max-width:160px"><label>Tema</label><select id="cfgTheme"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
-      <div class="field" style="max-width:200px"><label>Densidad</label><select id="cfgDensity"><option value="comoda">Cómoda (espaciada)</option><option value="compacta">Compacta (planilla)</option></select></div>
-      <div class="field" style="max-width:200px"><label>Tipografía interfaz</label><select id="cfgFont"><option value="system">Sistema (default)</option><option value="serif">Serif (Georgia)</option><option value="mono">Monoespaciada</option></select></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Personalización del informe PDF</h2>
-    <div class="row">
-      <div class="field grow"><label>Título del informe</label><input id="cfgTitle" type="text" value="Informe de Cobranza"></div>
-      <div class="field" style="max-width:170px"><label>Total de cuotas</label><input id="cfgCuotas" type="number" min="1" max="30" value="10"></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <div class="field" style="max-width:220px"><label>Tipografía PDF</label>
-        <select id="cfgPdfFont"><option value="helvetica">Helvetica (moderna)</option><option value="times">Times (clásica)</option><option value="courier">Courier (técnica)</option></select>
-      </div>
-      <div class="field" style="max-width:180px"><label>Tamaño del texto PDF</label>
-        <select id="cfgPdfSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select>
-      </div>
-      <div class="field" style="max-width:260px"><label>Modo ahorro de tóner</label>
-        <select id="cfgToner"><option value="on">Activado (recomendado)</option><option value="off">Desactivado (con relleno gris)</option></select>
-      </div>
-    </div>
-    <div style="margin-top:16px;background:#eaecef;padding:10px;border-radius:10px;overflow-x:auto">
-      <canvas id="pdfPrev" style="max-width:100%;display:block;border:1px solid var(--line);box-shadow:0 4px 12px rgba(0,0,0,.08);background:#fff"></canvas>
-    </div>
-    <div class="hint" style="margin-top:8px">Vista previa del encabezado, tabla y pie del PDF (A4 horizontal). Se actualiza sola al cambiar título, tipografía, tamaño, tóner o las líneas de cabecera/pie.</div>
-  </div>
-
-  <div class="card">
-    <h2>Cabecera del PDF <span class="tag">editable</span></h2>
-    <p class="hint">Las líneas se muestran en una sola fila. Tokens: <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code> <code>{{fecha_generacion}}</code></p>
-    <div id="headerEditor"></div>
-    <button class="ghost miniBtn" id="btnAddHeaderRow">+ Agregar línea</button>
-  </div>
-
-  <div class="card">
-    <h2>Pie de página del PDF <span class="tag">editable</span></h2>
-    <p class="hint">Tokens: <code>{{pagina}}</code> <code>{{total_paginas}}</code> <code>{{fecha_generacion}}</code> <code>{{localidad}}</code> <code>{{mes}}</code> <code>{{situacion}}</code> <code>{{total}}</code></p>
-    <div id="footerEditor"></div>
-    <button class="ghost miniBtn" id="btnAddFooterRow">+ Agregar elemento</button>
-  </div>
-
-  <div class="row" style="margin-top:4px"><button class="secondary" id="btnSaveCfg">Guardar preferencias</button><span class="status-line" id="cfgStatus"></span></div>
-  <div id="sp-style">
-    <div class="card"><h2>Identidad de la suite <span class="tag">nombre propio</span></h2>
-      <div class="row"><div class="field"><label>Nombre</label><input type="text" id="nmName" maxlength="28"></div><div class="field"><label>Subtítulo</label><input type="text" id="nmSub" maxlength="40"></div></div></div>
-    <div class="card"><h2>Sorteos · Diseño del JPG y del PDF <span class="tag">personalizable</span></h2>
-      <div class="row">
-        <div class="field"><label>Color del encabezado</label><div class="row" style="gap:8px;align-items:center"><div id="stHead" class="swatches"></div><input type="color" id="stHeadC" style="width:46px;padding:2px"></div></div>
-        <div class="field"><label>Tipografía</label><select id="stFont"><option>Calibri</option><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Tahoma</option><option>Trebuchet MS</option></select></div>
-        <div class="field" style="max-width:140px"><label>Tamaño de letra</label><input type="number" id="stSize" min="9" max="13"></div>
-      </div>
-      <div class="row" style="margin-top:12px;gap:18px">
-        <label><input type="checkbox" id="stZebra"> Filas alternadas</label>
-        <label><input type="checkbox" id="stSeal"> Sello de verificación invisible</label>
-        <span><button class="secondary miniBtn" id="stLogoBtn">Subir logo</button> <button class="ghost miniBtn" id="stLogoDel">Quitar</button> <span class="hint" id="stLogoName" style="margin:0"></span><input type="file" id="stLogoF" accept="image/*" class="hidden"></span>
-      </div>
-      <div style="overflow-x:auto;margin-top:14px"><canvas id="stPrev" style="max-width:100%;border:1px solid var(--line)"></canvas></div>
-    </div>
-    <div class="card"><h2>Barra lateral y menú</h2>
-      <div class="row" style="gap:18px"><label><input type="checkbox" id="stMini"> Modo compacto (solo íconos)</label>
-      <label><input type="checkbox" id="stHide-pdf"> Mostrar Generar PDF</label><label><input type="checkbox" id="stHide-dash"> Mostrar Dashboard</label><label><input type="checkbox" id="stHide-print"> Mostrar Impresión por lotes</label></div>
-    </div>
-  </div>
-
-</section>
-
 </main>
 </div>
 
@@ -641,7 +751,7 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
   <button data-view="settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
 </nav>
 
-<footer class="app-footer">Procesamiento 100% local en el navegador · respaldo automático activo · Nora Suite · v4.3</footer>
+<footer class="app-footer">Procesamiento 100% local en el navegador · respaldo automático configurable · Nora Suite · v4.4</footer>
 
 <div class="omni-overlay hidden" id="omniOverlay">
   <div class="omni-box">
@@ -652,10 +762,31 @@ body.sb-mini .nav .nbadge{position:absolute;top:2px;right:4px;font-size:9px;padd
 </div>
 
 <script>
+/* ======================= SISTEMA DE NOTIFICACIONES Y TOASTS ======================= */
+const _toasts=[];
+function notify(msg,type,opts){
+  opts=opts||{};
+  const box=document.getElementById('toastBox');
+  if(!box) return;
+  const t=document.createElement('div');
+  t.className='toast'+(type?' '+type:'');
+  const ic=type==='err'?'⚠':type==='ok'?'✓':type==='warn'?'⚠':'ℹ';
+  t.innerHTML='<span class="ic">'+ic+'</span><span>'+msg+'</span>';
+  box.appendChild(t);
+  const dur=opts.duration||(type==='err'?5000:3200);
+  setTimeout(()=>{t.style.transition='opacity .3s, transform .3s';t.style.opacity='0';t.style.transform='translateY(8px)';setTimeout(()=>t.remove(),320);},dur);
+  _toasts.push({msg,type,ts:Date.now()});
+  if(_toasts.length>50)_toasts.splice(0,_toasts.length-50);
+}
+window.notify=notify;
+// Alias compatible con el código de sorteos
+window.sorteoToast=(m,k)=>notify(m,k==='err'?'err':k==='ok'?'ok':k==='warn'?'warn':'');
+
 /* ======================= AUTO BACKUP SYSTEM ======================= */
 const MIRROR_KEY='cobranza_mirror_v4';
 let backupFileHandle=null;
 let _autoSaveTimer=null;
+let _intervalBackupTimer=null;
 
 async function readAllState(){
   const out={};
@@ -667,7 +798,7 @@ async function readAllState(){
       const rq=os.openCursor();
       rq.onsuccess=()=>{
         const c=rq.result;
-        if(c){ if(c.key!=='backupHandle'&&c.key!=='syncSources') out[c.key]=c.value; c.continue(); }
+        if(c){ if(c.key!=='backupHandle') out[c.key]=c.value; c.continue(); }
         else res();
       };
       rq.onerror=()=>res();
@@ -698,7 +829,7 @@ async function storeBackupHandle(h){
     await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
   }catch(e){}
 }
-async function writeAutoBackup(){
+async function writeAutoBackup(reason){
   if(!backupFileHandle) return;
   try{
     let perm='prompt';
@@ -710,28 +841,60 @@ async function writeAutoBackup(){
     const w=await backupFileHandle.createWritable();
     await w.write(new Blob([JSON.stringify({v:1,ts:Date.now(),state})],{type:'application/json'}));
     await w.close();
-    updateBackupStatus('✓ Respaldo automático guardado · '+new Date().toLocaleTimeString('es-AR'));
+    const msg='✓ Respaldo guardado · '+new Date().toLocaleTimeString('es-AR')+(reason?' ('+reason+')':'');
+    updateBackupStatus(msg);
+    updateBackupStatus2(msg);
   }catch(e){ console.warn('writeAutoBackup',e); }
 }
+window.writeAutoBackup=writeAutoBackup;
+
 function scheduleAutoBackup(){
-  clearTimeout(_autoSaveTimer);
-  _autoSaveTimer=setTimeout(async()=>{
-    await mirrorToLocalStorage();
-    await writeAutoBackup();
-  },400);
+  // Modo configurable: open | change | manual | interval
+  const mode=(CFG&&CFG.backupMode)||'change';
+  if(mode==='manual') return;
+  if(mode==='open') return; // se ejecuta solo al abrir
+  if(mode==='change'){
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer=setTimeout(async()=>{
+      await mirrorToLocalStorage();
+      await writeAutoBackup('cambios');
+    },2000);
+    return;
+  }
+  if(mode==='interval'){
+    // Con debounce corto escribimos mirror local; el archivo se escribe según timer
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer=setTimeout(mirrorToLocalStorage,500);
+    if(!_intervalBackupTimer){
+      const mins=Math.max(1,CFG.backupMinutes||30);
+      _intervalBackupTimer=setInterval(()=>writeAutoBackup('intervalo '+mins+'min'),mins*60000);
+    }
+    return;
+  }
 }
 window.scheduleAutoBackup=scheduleAutoBackup;
+
+function _restartIntervalBackup(){
+  if(_intervalBackupTimer){clearInterval(_intervalBackupTimer);_intervalBackupTimer=null;}
+  if((CFG.backupMode||'change')==='interval'){
+    const mins=Math.max(1,CFG.backupMinutes||30);
+    _intervalBackupTimer=setInterval(()=>writeAutoBackup('intervalo '+mins+'min'),mins*60000);
+  }
+}
+
 function updateBackupStatus(msg,showButton){
   const el=document.getElementById('backupStatus');
+  const el2=document.getElementById('backupStatus2');
   const btn=document.getElementById('btnReconnectBackup');
   if(el) el.textContent=msg||'';
+  if(el2) el2.textContent=msg||'';
   if(btn) btn.classList.toggle('hidden',!showButton);
 }
 window.updateBackupStatus=updateBackupStatus;
 
 async function linkAutoBackup(){
   if(!window.showSaveFilePicker){
-    alert('Tu navegador no permite guardar automáticamente en un archivo.\n\nProbá con Chrome, Edge u Opera. Mientras tanto, el respaldo local del navegador sigue activo.');
+    notify('Tu navegador no permite guardar automáticamente en un archivo. Probá con Chrome, Edge u Opera.','warn');
     return;
   }
   try{
@@ -742,7 +905,8 @@ async function linkAutoBackup(){
     backupFileHandle=h;
     await storeBackupHandle(h);
     updateBackupStatus('✓ Respaldo automático activo en "'+h.name+'"',false);
-    await writeAutoBackup();
+    notify('Respaldo vinculado: '+h.name,'ok');
+    await writeAutoBackup('vinculación');
   }catch(e){ if(e.name!=='AbortError') console.warn(e); }
 }
 async function tryReconnectBackup(){
@@ -755,7 +919,7 @@ async function tryReconnectBackup(){
     else perm='granted';
     if(perm==='granted'){
       updateBackupStatus('✓ Respaldo automático activo en "'+h.name+'"',false);
-      await writeAutoBackup();
+      if((CFG.backupMode||'change')==='open') await writeAutoBackup('apertura');
     } else {
       updateBackupStatus('⚠ Reconectar respaldo automático en "'+h.name+'"',true);
     }
@@ -767,16 +931,125 @@ async function reconnectBackupGesture(){
     const perm=await backupFileHandle.requestPermission({mode:'readwrite'});
     if(perm==='granted'){
       updateBackupStatus('✓ Respaldo automático reconectado',false);
-      await writeAutoBackup();
+      notify('Respaldo reconectado','ok');
+      await writeAutoBackup('reconexión');
     } else {
       updateBackupStatus('⚠ Permiso denegado',true);
+      notify('Permiso denegado para escribir el respaldo','err');
     }
   }catch(e){ console.warn(e); }
 }
 
+/* ======================= VINCULACIÓN DE ARCHIVOS DE SORTEO ======================= */
+let sorteoFileHandles=[]; // [{name, handle}]
+async function getSorteoFileHandles(){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readonly');
+    const rq=tx.objectStore(STORE).get('sorteoHandles');
+    return await new Promise(r=>{rq.onsuccess=()=>r(rq.result||[]);rq.onerror=()=>r([]);});
+  }catch(e){ return []; }
+}
+async function storeSorteoFileHandles(list){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(list,'sorteoHandles');
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+  }catch(e){}
+}
+function updateSorteoLinkStatus(msg,showBtn){
+  const el=document.getElementById('sorteoLinkStatus');
+  const el2=document.getElementById('sorteoLinkStatus2');
+  const btn=document.getElementById('btnReconnectSorteoFiles');
+  const btn2=document.getElementById('btnReconnectSorteoFiles2');
+  if(el) el.textContent=msg||'';
+  if(el2) el2.textContent=msg||'';
+  if(btn) btn.classList.toggle('hidden',!showBtn);
+  if(btn2) btn2.classList.toggle('hidden',!showBtn);
+}
+async function linkSorteoFiles(){
+  if(!window.showOpenFilePicker){
+    notify('Tu navegador no permite vincular archivos. Usá Chrome, Edge u Opera.','warn');
+    return;
+  }
+  try{
+    const handles=await window.showOpenFilePicker({
+      multiple:true,
+      types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]
+    });
+    const list=[];
+    for(const h of handles){ list.push({name:h.name, handle:h}); }
+    sorteoFileHandles=list;
+    await storeSorteoFileHandles(list);
+    updateSorteoLinkStatus('✓ '+list.length+' archivo(s) vinculado(s): '+list.map(x=>x.name).join(', '),false);
+    notify(list.length+' archivo(s) de sorteo vinculados','ok');
+    await reloadLinkedSorteoFiles();
+  }catch(e){ if(e.name!=='AbortError') console.warn(e); }
+}
+async function reconnectSorteoFiles(){
+  if(!sorteoFileHandles.length){ await reloadLinkedSorteoFiles(true); return; }
+  try{
+    for(const item of sorteoFileHandles){
+      if(item.handle.requestPermission){
+        try{ await item.handle.requestPermission({mode:'read'}); }catch(e){}
+      }
+    }
+    await reloadLinkedSorteoFiles();
+  }catch(e){ console.warn(e); }
+}
+async function reloadLinkedSorteoFiles(silentIfNone){
+  if(!sorteoFileHandles.length){
+    sorteoFileHandles=await getSorteoFileHandles();
+  }
+  if(!sorteoFileHandles.length){
+    if(!silentIfNone){
+      updateSorteoLinkStatus('No hay archivos vinculados. Usá "Vincular archivos".',false);
+      notify('No hay archivos de sorteo vinculados','warn');
+    }
+    return;
+  }
+  const files=[]; let failed=0;
+  for(const item of sorteoFileHandles){
+    try{
+      let perm='granted';
+      if(item.handle.queryPermission) perm=await item.handle.queryPermission({mode:'read'});
+      if(perm!=='granted'){ failed++; continue; }
+      const f=await item.handle.getFile();
+      files.push(f);
+    }catch(e){ failed++; }
+  }
+  if(!files.length){
+    updateSorteoLinkStatus('⚠ No se pudo leer ningún archivo vinculado. Reconectá o volvé a vincular.',true);
+    notify('No se pudieron releer los archivos vinculados','err');
+    return;
+  }
+  updateSorteoLinkStatus('Releyendo '+files.length+' archivo(s) vinculado(s)…',failed>0);
+  try{
+    await window.__sorteoLoadFiles(files,true);
+    const msg='✓ '+files.length+' archivo(s) releído(s)'+(failed?' · '+failed+' sin permiso':'');
+    updateSorteoLinkStatus(msg,failed>0);
+    notify('Archivos de sorteo actualizados ('+files.length+')','ok');
+  }catch(e){
+    updateSorteoLinkStatus('⚠ Error al releer: '+e.message,true);
+  }
+}
+window.linkSorteoFiles=linkSorteoFiles;
+window.reconnectSorteoFiles=reconnectSorteoFiles;
+window.reloadLinkedSorteoFiles=reloadLinkedSorteoFiles;
+
 document.getElementById('btnLinkBackup').onclick=linkAutoBackup;
 document.getElementById('btnReconnectBackup').onclick=reconnectBackupGesture;
+document.getElementById('btnLinkBackup2').onclick=linkAutoBackup;
+document.getElementById('btnForceBackup').onclick=async()=>{ await mirrorToLocalStorage(); await writeAutoBackup('manual'); notify('Respaldo guardado','ok'); };
+document.getElementById('btnLinkSorteoFiles').onclick=linkSorteoFiles;
+document.getElementById('btnLinkSorteoFiles2').onclick=linkSorteoFiles;
+document.getElementById('btnReconnectSorteoFiles').onclick=reconnectSorteoFiles;
+document.getElementById('btnReconnectSorteoFiles2').onclick=reconnectSorteoFiles;
+document.getElementById('btnReloadSorteoFiles').onclick=()=>reloadLinkedSorteoFiles();
+document.getElementById('btnReloadSorteoFiles2').onclick=()=>reloadLinkedSorteoFiles();
 
+/* ======================= BOOT ======================= */
 const _boot=(async()=>{
   try{
     if(navigator.storage&&navigator.storage.persist){
@@ -805,7 +1078,7 @@ window._boot=_boot;
 
 /* ======================= CONFIG ======================= */
 const CFG_KEY='cobranza_suite_cfg_v4';
-const CFG_VERSION=4;
+const CFG_VERSION=5;
 const DEFAULT_HEADER_ROWS=[
   {label:'Localidad:',value:'{{localidad}}',sep:false},
   {label:'Mes:',value:'{{mes}}',sep:false},
@@ -842,6 +1115,7 @@ let CFG={
   version:CFG_VERSION, accent:'#1f4e8c', accent2:'#2f7a4f', theme:'auto', density:'comoda',
   font:'system', title:'Informe de Cobranza', cuotas:10, toner:'on', palette:'clasico',
   pdfFont:'helvetica', pdfSize:'normal',
+  backupMode:'change', backupMinutes:30,
   headerRows:JSON.parse(JSON.stringify(DEFAULT_HEADER_ROWS)),
   footerItems:JSON.parse(JSON.stringify(DEFAULT_FOOTER_ITEMS))
 };
@@ -853,6 +1127,7 @@ try{
     if(saved.version!==CFG_VERSION){
       if(!saved.headerRows||saved.version<2){CFG.headerRows=JSON.parse(JSON.stringify(DEFAULT_HEADER_ROWS));}
       if(!saved.footerItems||saved.version<2){CFG.footerItems=JSON.parse(JSON.stringify(DEFAULT_FOOTER_ITEMS));}
+      if(!saved.backupMode){CFG.backupMode='change';CFG.backupMinutes=30;}
       CFG.version=CFG_VERSION;
     }
   }
@@ -875,12 +1150,15 @@ function applyCfg(){
   document.getElementById('cfgToner').value=CFG.toner;
   document.getElementById('cfgPdfFont').value=CFG.pdfFont||'helvetica';
   document.getElementById('cfgPdfSize').value=CFG.pdfSize||'normal';
+  document.getElementById('cfgBackupMode').value=CFG.backupMode||'change';
+  document.getElementById('cfgBackupMinutes').value=CFG.backupMinutes||30;
   renderPaletteGrid();
   renderHeaderEditor(); renderFooterEditor();
   previewPdfStyle();
 }
 function renderPaletteGrid(){
   const grid=document.getElementById('paletteGrid');
+  if(!grid) return;
   grid.innerHTML=Object.entries(PALETTES).map(([k,p])=>`
     <div class="palette-btn ${CFG.palette===k?'active':''}" data-pal="${k}">
       <div class="sw" style="background:linear-gradient(135deg,${p.accent} 0%,${p.accent2} 100%)"></div>
@@ -892,11 +1170,13 @@ function renderPaletteGrid(){
       CFG.palette=k; CFG.accent=PALETTES[k].accent; CFG.accent2=PALETTES[k].accent2;
       try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
       applyCfg();
+      notify('Paleta aplicada: '+PALETTES[k].name,'ok');
     };
   });
 }
 function renderHeaderEditor(){
-  const box=document.getElementById('headerEditor'); box.innerHTML='';
+  const box=document.getElementById('headerEditor'); if(!box) return;
+  box.innerHTML='';
   CFG.headerRows.forEach((row,i)=>{
     const div=document.createElement('div'); div.className='editor-row';
     div.innerHTML=`<input type="text" data-f="label" placeholder="Etiqueta (opcional)" value="${(row.label||'').replace(/"/g,'&quot;')}">
@@ -913,7 +1193,8 @@ function renderHeaderEditor(){
   });
 }
 function renderFooterEditor(){
-  const box=document.getElementById('footerEditor'); box.innerHTML='';
+  const box=document.getElementById('footerEditor'); if(!box) return;
+  box.innerHTML='';
   CFG.footerItems.forEach((it,i)=>{
     const div=document.createElement('div'); div.className='editor-row';
     div.innerHTML=`<input type="text" data-f="text" placeholder="Texto / tokens" value="${(it.text||'').replace(/"/g,'&quot;')}">
@@ -1032,6 +1313,20 @@ function previewPdfStyle(){
 document.getElementById('btnAddHeaderRow').onclick=()=>{CFG.headerRows.push({label:'',value:'',sep:false});renderHeaderEditor();previewPdfStyle();};
 document.getElementById('btnAddFooterRow').onclick=()=>{CFG.footerItems.push({text:'',align:'left'});renderFooterEditor();previewPdfStyle();};
 applyCfg();
+_restartIntervalBackup();
+
+document.getElementById('cfgBackupMode').onchange=e=>{
+  CFG.backupMode=e.target.value;
+  try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
+  _restartIntervalBackup();
+  if(CFG.backupMode==='open') writeAutoBackup('apertura');
+  notify('Frecuencia de respaldo: '+({open:'al abrir',change:'en cada cambio',manual:'manual',interval:'cada '+CFG.backupMinutes+' min'}[CFG.backupMode]),'ok');
+};
+document.getElementById('cfgBackupMinutes').oninput=e=>{
+  CFG.backupMinutes=Math.max(1,Math.min(240,parseInt(e.target.value)||30));
+  try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
+  _restartIntervalBackup();
+};
 document.getElementById('btnSaveCfg').onclick=()=>{
   CFG.accent=document.getElementById('cfgAccent').value;
   CFG.accent2=document.getElementById('cfgAccent2').value;
@@ -1043,11 +1338,15 @@ document.getElementById('btnSaveCfg').onclick=()=>{
   CFG.toner=document.getElementById('cfgToner').value;
   CFG.pdfFont=document.getElementById('cfgPdfFont').value;
   CFG.pdfSize=document.getElementById('cfgPdfSize').value;
+  CFG.backupMode=document.getElementById('cfgBackupMode').value;
+  CFG.backupMinutes=Math.max(1,parseInt(document.getElementById('cfgBackupMinutes').value)||30);
   CFG.palette='custom';
   CFG.version=CFG_VERSION;
   try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
   applyCfg();
+  _restartIntervalBackup();
   document.getElementById('cfgStatus').textContent='Preferencias guardadas ✓';
+  notify('Preferencias guardadas','ok');
   setTimeout(()=>document.getElementById('cfgStatus').textContent='',2500);
   if(RECORDS.length){reparseDebe();refreshPreview();updateDashboard();}
 };
@@ -1064,6 +1363,19 @@ document.getElementById('btnDensity').onclick=()=>{
 };
 document.getElementById('btnDensity').classList.toggle('active',CFG.density==='compacta');
 
+/* Settings side menu */
+document.getElementById('setMenu').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-set]'); if(!b) return;
+  const pane=b.dataset.set;
+  document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+pane));
+  if(pane==='look') renderPaletteGrid();
+  if(pane==='pdf'||pane==='headerfooter') previewPdfStyle();
+  if(pane==='sorteo') { try{ renderStyle(); }catch(e){} }
+  if(pane==='ident'||pane==='ui') { try{ renderStyle(); }catch(e){} }
+  if(pane==='data'){ updateBackupStatus(document.getElementById('backupStatus').textContent||'',!document.getElementById('btnReconnectBackup').classList.contains('hidden')); }
+});
+
 /* ======================= NAVEGACION ======================= */
 const TITLES={
   home:['Inicio','Tu resumen del mes y lo que sigue.'],
@@ -1071,7 +1383,7 @@ const TITLES={
   pdf:['Generador de Informes PDF','Cargá el Excel (solapa "Datos") y generá el informe.'],
   dash:['Dashboard de cobranza','Indicadores, tendencias y hallazgos automáticos.'],
   print:['Impresión por lotes','Imprimí en tandas, con control de lo impreso.'],
-  settings:['Personalización','Colores, tema, tipografía y comportamiento.']
+  settings:['Personalización','Colores, tema, tipografía, PDF, sorteos y respaldos.']
 };
 function setView(v){
   document.querySelectorAll('.nav button, .bottom-nav button').forEach(x=>x.classList.toggle('active', x.dataset.view===v));
@@ -1080,7 +1392,8 @@ function setView(v){
   document.getElementById('pageSub').textContent=TITLES[v][1];
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='dash'&&RECORDS.length){setTimeout(updateDashboard,60);}
-  if(v==='settings'){setTimeout(previewPdfStyle,50);}
+  if(v==='settings'){setTimeout(()=>{previewPdfStyle();try{renderStyle();}catch(e){}},50);}
+  if(v==='home'){setTimeout(renderHome,30);}
 }
 document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
@@ -1225,7 +1538,7 @@ function parseDate(v){
   return null;
 }
 function reparseDebe(){
-  FILES.forEach(f=>f.records.forEach(r=>{r.debe=r.vacio?0:Math.max(0,CFG.cuotas-r.pago);}));
+  FILES.forEach(f=>f.records.forEach(r=>{r.debe=Math.max(0,CFG.cuotas-r.pago);}));
   rebuildRecords();
   refreshPreview();updateDashboard();saveState();
 }
@@ -1241,12 +1554,13 @@ function parseRecords(rows,sourceName){
     const r=rows[i];
     const num=(r[0]+'').trim();
     const ape=(r[1]+'').trim();
-    if(!num&&!ape)continue;
-    if(!ape){ if(/\d/.test(num)) out.push({num,apellido:'',nombre:'',calle:'',nroCalle:'',piso:'',dpto:'',pago:0,debe:0,mes:'',situacion:'',localidad:'',fcarga:null,source:sourceName,_excluded:false,vacio:true}); continue; }
+    const nom=(r[2]+'').trim();
+    // Solo se saltea si no hay NADA: sin N°, sin apellido y sin nombre.
+    if(!num && !ape && !nom) continue;
     const pago=Math.max(0,Math.min(CFG.cuotas,toNum(r[7])));
     const fcarga=parseDate(r[12]);
     out.push({
-      num, apellido:cap(ape), nombre:cap((r[2]+'').trim()),
+      num, apellido:cap(ape), nombre:cap(nom),
       calle:cap((r[3]+'').trim()),
       nroCalle:cap((r[4]+'').trim()), piso:(r[5]+'').trim(), dpto:(r[6]+'').trim(),
       pago, debe:Math.max(0,CFG.cuotas-pago),
@@ -1282,7 +1596,7 @@ async function handleFiles(files){
       if(!recs.length){errors.push(file.name+': sin filas válidas');continue;}
       const idx=FILES.findIndex(f=>f.name===file.name);
       const entry={name:file.name,records:recs};
-      if(idx>=0){const K=r=>r.num+'|'+r.apellido+'|'+r.nombre;const ex=new Set(FILES[idx].records.filter(r=>r._excluded).map(K));entry.records.forEach(r=>{if(ex.has(K(r)))r._excluded=true;});FILES[idx]=entry;replaced.push(file.name);}
+      if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}
       else{FILES.push(entry);added.push(file.name);}
     }catch(err){errors.push(file.name+': '+err.message);}
   }
@@ -1299,6 +1613,10 @@ async function handleFiles(files){
   document.getElementById('dashBody').classList.remove('hidden');
   refreshPreview(); updateDashboard(); updateFilenamePreview();
   await saveState();
+  if(added.length) notify('Archivo(s) cargado(s): '+added.join(', '),'ok');
+  if(replaced.length) notify('Archivo(s) reemplazado(s): '+replaced.join(', '),'ok');
+  if(errors.length) notify('Errores al leer: '+errors.join(' · '),'err');
+  renderHome();
 }
 function refreshSelects(){
   fillSourceSelect('fSource');
@@ -1340,6 +1658,7 @@ function renderFilesList(){
     } else {
       refreshPreview(); updateDashboard(); await saveState();
     }
+    renderHome();
   });
 }
 document.getElementById('btnClearFiles').onclick=async()=>{
@@ -1354,6 +1673,8 @@ document.getElementById('btnClearFiles').onclick=async()=>{
   dz.classList.remove('ready');
   document.getElementById('status').textContent='Sin archivo cargado.';
   document.getElementById('sideStatus').innerHTML='Sin datos cargados.<br>Cargá un Excel para empezar.';
+  notify('Archivos vaciados','ok');
+  renderHome();
 };
 
 function uniq(field){return[...new Set(RECORDS.map(r=>r[field]).filter(Boolean))].sort();}
@@ -1378,7 +1699,6 @@ function fillSourceSelect(id){
 function applyFilters(f){
   return RECORDS.filter(r=>{
     if(f.source && r.source!==f.source) return false;
-    if(r.vacio && (f.sit||f.mes||f.loc||f.chip)) return false;
     if(f.sit && r.situacion!==f.sit) return false;
     if(f.mes && r.mes!==f.mes) return false;
     if(f.loc && r.localidad!==f.loc) return false;
@@ -1439,7 +1759,7 @@ function refreshPreview(){
   document.getElementById('previewTag').textContent=data.length+' registros';
   const rows=data.slice(0,10);
   const head='<tr><th>N°</th><th>Apellido</th><th>Nombre</th><th>Domicilio</th><th>Pago</th><th>Debe</th></tr>';
-  const body=rows.map(r=>`<tr><td>${r.num}</td><td>${r.apellido}</td><td>${r.nombre}</td><td>${r.vacio?'':domicilio(r)}</td><td>${r.vacio?'':r.pago}</td><td>${r.vacio?'':r.debe}</td></tr>`).join('');
+  const body=rows.map(r=>`<tr><td>${r.num}</td><td>${r.apellido||'—'}</td><td>${r.nombre||'—'}</td><td>${domicilio(r)}</td><td>${r.pago}</td><td>${r.debe}</td></tr>`).join('');
   document.getElementById('previewTable').innerHTML=head+body+(data.length>10?`<tr><td colspan="6" style="color:var(--sub)">… y ${data.length-10} más</td></tr>`:'');
 }
 function sortLabel(v){
@@ -1481,7 +1801,7 @@ function measureText(doc,text,style,size){
 }
 function buildTableSpec(data){
   const head=[['N°','Apellido','Nombre','Domicilio','Pago','Debe',...Array.from({length:CFG.cuotas},(_,i)=>String(i+1))]];
-  const body=data.map(r=>r.vacio?[r.num,'','','','','',...Array.from({length:CFG.cuotas},()=>'')]:[r.num,r.apellido,r.nombre,domicilio(r),String(r.pago),String(r.debe),
+  const body=data.map(r=>[r.num,r.apellido||'—',r.nombre||'—',domicilio(r),String(r.pago),String(r.debe),
     ...Array.from({length:CFG.cuotas},(_,i)=> i<r.pago?'X':'')]);
   return{head,body};
 }
@@ -1593,7 +1913,7 @@ document.getElementById('btnPdf').onclick=async()=>{
   const f=currentPdfFilters();
   const data=buildDataForPdf(f);
   const prev=document.getElementById('preview');
-  if(!data.length){prev.className='status-line err';prev.textContent='No hay registros para esa combinación.';return;}
+  if(!data.length){prev.className='status-line err';prev.textContent='No hay registros para esa combinación.';notify('No hay registros para esa combinación','warn');return;}
   prev.className='status-line';prev.textContent='Generando PDF con '+data.length+' registros…';
   const {doc,rowPageMap,total}=generatePdf(data,f);
   lastDoc=doc; lastRowPageMap=rowPageMap; lastPageCount=total; lastPdfData=data; lastPdfFilters=f;
@@ -1601,13 +1921,14 @@ document.getElementById('btnPdf').onclick=async()=>{
   const blob=doc.output('blob');
   const dl=await getDownloads();
   if(dl){
-    try{await dl.save({filename:fname,data:blob});prev.className='status-line ok';prev.textContent='PDF generado: '+fname+' ('+total+' páginas).';}
-    catch(err){prev.className='status-line err';prev.textContent='No se pudo guardar ('+(err&&err.code||err)+').';}
-  }else{doc.save(fname);prev.className='status-line ok';prev.textContent='PDF generado: '+fname+' ('+total+' páginas).';}
+    try{await dl.save({filename:fname,data:blob});prev.className='status-line ok';prev.textContent='PDF generado: '+fname+' ('+total+' páginas).';notify('PDF generado: '+fname,'ok');}
+    catch(err){prev.className='status-line err';prev.textContent='No se pudo guardar ('+(err&&err.code||err)+').';notify('No se pudo guardar el PDF','err');}
+  }else{doc.save(fname);prev.className='status-line ok';prev.textContent='PDF generado: '+fname+' ('+total+' páginas).';notify('PDF generado: '+fname,'ok');}
   document.getElementById('printStatus').textContent='PDF listo: '+total+' página(s).';
   addHistory(fname,data.length,total);
-  registerGenerated(fname,doc,rowPageMap,total,data,f);
-  document.getElementById('printStatus').textContent='PDF listo. Andá a “Impresión por lotes” para elegir qué imprimir.';
+  resetBatchState();
+  prepareBatches(true);
+  renderHome();
 };
 let HISTORY=[];
 function addHistory(fname,count,pages){
@@ -1619,15 +1940,15 @@ function addHistory(fname,count,pages){
 }
 document.getElementById('btnXlsx').onclick=async()=>{
   const f=currentPdfFilters(); const data=buildDataForPdf(f);
-  if(!data.length)return;
+  if(!data.length){notify('No hay registros para exportar','warn');return;}
   const ws=XLSX.utils.json_to_sheet(data.map(r=>({N:r.num,Apellido:r.apellido,Nombre:r.nombre,Domicilio:domicilio(r),Pago:r.pago,Debe:r.debe,Mes:r.mes,Situacion:r.situacion,Localidad:r.localidad,Fuente:r.source})));
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Filtro');
   const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const fname=buildFilename().replace('.pdf','.xlsx');
   const dl=await getDownloads();
   const blob=new Blob([out],{type:'application/octet-stream'});
-  if(dl){try{await dl.save({filename:fname,data:blob});}catch(e){}}
-  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();}
+  if(dl){try{await dl.save({filename:fname,data:blob});notify('Excel exportado','ok');}catch(e){notify('No se pudo guardar','err');}}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();notify('Excel descargado','ok');}
 };
 let _dl;
 async function getDownloads(){
@@ -1637,84 +1958,92 @@ async function getDownloads(){
 }
 
 /* ======================= IMPRESION POR LOTES ======================= */
-const GEN=[];
-const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function batchSz(){return Math.max(1,parseInt(document.getElementById('batchSize').value)||2);}
-function registerGenerated(fname,doc,rowPageMap,total,data,f){
-  GEN.forEach(x=>x.sel=false);
-  const g={fname,doc,rowPageMap,total,data,f,sel:true,size:0,ranges:[],printed:new Set()};
-  GEN.unshift(g); if(GEN.length>15)GEN.pop();
-  calcRanges(g); renderPrint();
-}
-function calcRanges(g){
-  const size=batchSz(); if(g.size===size&&g.ranges.length)return;
-  g.size=size; g.ranges=[]; g.printed=new Set();
-  for(let s=1;s<=g.total;s+=size)g.ranges.push({start:s,end:Math.min(g.total,s+size-1)});
-}
-function renderPrint(){
-  const box=document.getElementById('printDocs');
-  box.innerHTML=GEN.length?'<div class="hint" style="margin-bottom:6px"><b>Elegí qué documentos imprimir</b> (tildá uno o varios):</div>'+GEN.map((g,i)=>`<div class="hrow" style="cursor:default"><label style="display:flex;gap:8px;align-items:center;text-transform:none;font-size:13px;color:var(--ink);flex:1"><input type="checkbox" data-gsel="${i}" ${g.sel?'checked':''}> <span>${E(g.fname)}</span></label><span class="pill">${g.total} pág.</span><button class="ghost miniBtn" data-gdel="${i}" title="Quitar de la lista">✕</button></div>`).join(''):'<div class="hint">Todavía no generaste ningún PDF. Los que generes en “Generar PDF” quedan acá para elegir cuáles imprimir.</div>';
-  box.querySelectorAll('[data-gsel]').forEach(c=>c.onchange=()=>{GEN[+c.dataset.gsel].sel=c.checked;renderBatchList();updateBatchProgress();});
-  box.querySelectorAll('[data-gdel]').forEach(c=>c.onclick=()=>{GEN.splice(+c.dataset.gdel,1);renderPrint();});
-  renderBatchList();updateBatchProgress();
+let batchState={size:2,ranges:[],printed:new Set()};
+function resetBatchState(){
+  batchState={size:2,ranges:[],printed:new Set()};
+  document.getElementById('batchList').innerHTML='';
+  document.getElementById('batchProgressWrap').classList.add('hidden');
 }
 document.getElementById('btnResetBatches').onclick=()=>{
-  GEN.filter(g=>g.sel).forEach(g=>g.printed=new Set());renderBatchList();updateBatchProgress();
+  batchState.printed=new Set();
+  if(batchState.ranges.length){renderBatchList();updateBatchProgress();}
   document.getElementById('printStatus').textContent='Control de impresión reiniciado.';
+  notify('Control de impresión reiniciado','ok');
 };
-document.getElementById('btnPrepBatches').onclick=()=>{
-  GEN.forEach(calcRanges);renderPrint();
-  const n=GEN.filter(g=>g.sel).length;
-  const st=document.getElementById('printStatus');st.className=n?'status-line ok':'status-line err';
-  st.textContent=n?'Lotes recalculados para '+n+' documento(s).':'Tildá al menos un documento.';
-};
+document.getElementById('btnPrepBatches').onclick=()=>prepareBatches(false);
+function prepareBatches(silent){
+  const stEl=document.getElementById('printStatus');
+  if(!lastDoc||!lastPdfData){
+    if(!silent){stEl.className='status-line err';stEl.textContent='Primero generá el PDF en la pestaña "Generar PDF".';notify('Generá primero el PDF','warn');}
+    return;
+  }
+  const size=Math.max(1,parseInt(document.getElementById('batchSize').value)||2);
+  batchState.size=size;
+  batchState.ranges=[];
+  for(let start=1;start<=lastPageCount;start+=size){
+    const end=Math.min(lastPageCount,start+size-1);
+    batchState.ranges.push({start,end});
+  }
+  renderBatchList();
+  updateBatchProgress();
+  document.getElementById('batchProgressWrap').classList.remove('hidden');
+  if(!silent){
+    stEl.className='status-line ok';
+    stEl.textContent='Se prepararon '+batchState.ranges.length+' lote(s) para '+lastPageCount+' página(s).';
+    notify(batchState.ranges.length+' lote(s) preparado(s)','ok');
+  }else{
+    stEl.className='status-line';
+    stEl.textContent='PDF generado. '+batchState.ranges.length+' lote(s) preparados — andá a "Impresión por lotes".';
+  }
+}
 function renderBatchList(){
   const list=document.getElementById('batchList'); list.innerHTML='';
   const SVG='<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>';
-  GEN.filter(g=>g.sel).forEach(g=>{
-    const h=document.createElement('div');h.className='hint';h.style.cssText='width:100%;margin-top:10px';
-    h.innerHTML='<b>'+E(g.fname)+'</b>';list.appendChild(h);
-    g.ranges.forEach((r,idx)=>{
-      const btn=document.createElement('button');
-      btn.className='secondary batch-item'+(g.printed.has(idx)?' done':'');
-      const pages=r.end-r.start+1;
-      btn.innerHTML=SVG+'Lote '+(idx+1)+': páginas '+r.start+'–'+r.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>';
-      btn.onclick=()=>printBatch(g,idx);list.appendChild(btn);
-    });
+  batchState.ranges.forEach((r,idx)=>{
+    const done=batchState.printed.has(idx);
+    const btn=document.createElement('button');
+    btn.className='secondary batch-item'+(done?' done':'');
+    const pages=r.end-r.start+1;
+    btn.innerHTML=SVG+'Lote '+(idx+1)+': páginas '+r.start+'–'+r.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>';
+    btn.onclick=()=>printBatch(idx);
+    list.appendChild(btn);
   });
 }
 function updateBatchProgress(){
-  const sel=GEN.filter(g=>g.sel);
-  document.getElementById('batchProgressWrap').classList.toggle('hidden',!sel.length);
-  const total=sel.reduce((s,g)=>s+g.ranges.length,0), done=sel.reduce((s,g)=>s+g.printed.size,0);
+  const total=batchState.ranges.length;
+  const done=batchState.printed.size;
   const pct=total?Math.round(done/total*100):0;
   document.getElementById('batchProgressBar').style.width=pct+'%';
-  const pagesDone=sel.reduce((s,g)=>s+g.ranges.reduce((a,r,i)=>a+(g.printed.has(i)?r.end-r.start+1:0),0),0);
-  const pagesTot=sel.reduce((s,g)=>s+g.total,0);
-  document.getElementById('batchProgressText').textContent=done+' de '+total+' lotes impresos ('+pct+'%) · '+pagesDone+' de '+pagesTot+' hojas.';
+  const pagesDone=batchState.ranges.reduce((s,r,i)=>s+(batchState.printed.has(i)?(r.end-r.start+1):0),0);
+  document.getElementById('batchProgressText').textContent=done+' de '+total+' lotes impresos ('+pct+'%) · '+pagesDone+' de '+lastPageCount+' hojas.';
 }
-function printBatch(g,idx){
-  const range=g.ranges[idx]; if(!range) return;
-  const rows=g.data.filter((_,i)=>{const gp=g.rowPageMap[i];return gp>=range.start&&gp<=range.end;});
+function printBatch(idx){
+  const range=batchState.ranges[idx];
+  if(!range||!lastPdfData) return;
+  const rows=lastPdfData.filter((_,i)=>{
+    const gp=lastRowPageMap[i];
+    return gp>=range.start && gp<=range.end;
+  });
   if(!rows.length) return;
-  const {doc}=generatePdf(rows,g.f,{pageOffset:range.start-1,totalPages:g.total});
-  const url=URL.createObjectURL(doc.output('blob'));
-  const iframe=document.createElement('iframe');
-  iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-  iframe.src=url; document.body.appendChild(iframe);
+  const {doc}=generatePdf(rows,lastPdfFilters,{pageOffset:range.start-1,totalPages:lastPageCount});
+  const blob=doc.output('blob'); const url=URL.createObjectURL(blob);
+  const iframe=document.createElement('iframe'); iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';iframe.src=url;
+  document.body.appendChild(iframe);
   iframe.onload=()=>{
     setTimeout(()=>{
       try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}
       setTimeout(()=>{
-        g.printed.add(idx); renderBatchList(); updateBatchProgress();
-        const st=document.getElementById('printStatus'); st.className='status-line ok';
-        st.textContent='Lote '+(idx+1)+' ('+range.start+'–'+range.end+') de “'+g.fname+'” marcado como impreso. '+(g.ranges.length-g.printed.size)+' pendiente(s).';
+        batchState.printed.add(idx);
+        renderBatchList(); updateBatchProgress();
+        const remaining=batchState.ranges.length-batchState.printed.size;
+        document.getElementById('printStatus').className='status-line ok';
+        document.getElementById('printStatus').textContent='Lote '+(idx+1)+' ('+range.start+'–'+range.end+') marcado como impreso. '+remaining+' pendiente(s).';
+        notify('Lote '+(idx+1)+' impreso'+(remaining?(' · '+remaining+' pendientes'):' · ¡completo!'),'ok');
       },800);
       setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);
     },300);
   };
 }
-renderPrint();
 
 /* ======================= DASHBOARD ======================= */
 ['dSit','dMes','dLoc','dSource'].forEach(id=>{const el=document.getElementById(id);if(el) el.onchange=updateDashboard;});
@@ -1740,8 +2069,7 @@ function updateDashboard(){
     loc:document.getElementById('dLoc').value,
     chip:quickChip
   };
-  const dataAll=applySort(applyFilters(f),'num','asc');
-  const data=dataAll.filter(r=>!r.vacio);
+  const data=applySort(applyFilters(f),'num','asc');
   const total=data.length;
   const cuotasPagadas=data.reduce((s,r)=>s+r.pago,0), cuotasDebe=data.reduce((s,r)=>s+r.debe,0);
   const alDia=data.filter(r=>r.debe===0).length;
@@ -1787,11 +2115,7 @@ function updateDashboard(){
     `(${cash.totalPagado} pagadas de ${cash.totalPagado+cash.totalDebe} emitidas). `+
     `Proyección de ingreso esperado: <b>${Math.round(cash.proyeccionTotal)} cuotas</b>.`;
 
-  const gaps=computeGaps(dataAll);
-  document.getElementById('gapsTag').textContent=gaps.missing+' faltantes';
-  document.getElementById('gapsSummary').textContent=`Rango de legajos: ${gaps.min} a ${gaps.max}. Faltan ${gaps.missing} números en ${gaps.segments.length} segmento(s).`;
-  document.getElementById('gapsList').innerHTML=gaps.segments.length?gaps.segments.map(s=>`<span class="pill">${s}</span>`).join(''):'<span class="hint">Sin faltantes.</span>';
-
+  renderGapsReport(data);
   renderDuplicates();
 
   const totalExcluded=FILES.reduce((s,f)=>s+f.records.filter(r=>r._excluded).length,0);
@@ -1801,11 +2125,81 @@ function updateDashboard(){
     infoEl.querySelector('#btnRestoreAll').onclick=()=>{
       FILES.forEach(f=>f.records.forEach(r=>r._excluded=false));
       rebuildRecords(); updateDashboard(); refreshPreview(); renderFilesList(); saveState();
+      notify('Registros restaurados','ok');
     };
   } else infoEl.textContent='';
 
+  const gaps=computeGaps(data);
   document.getElementById('concl').innerHTML=buildConclusions(data,total,pct,alDia,byCalle,byMes,gaps,findDuplicates(data)).map(c=>`<li>${c}</li>`).join('');
 }
+
+/* ======================= ANALISIS DE FALTANTES (PRO) ======================= */
+function computeGaps(data){
+  const items=data.map(r=>({n:toNum(r.num),loc:r.localidad||'(sin localidad)',sit:r.situacion||'(sin situación)',src:r.source||''}))
+    .filter(x=>x.n>0).sort((a,b)=>a.n-b.n);
+  if(!items.length) return {min:0,max:0,total:0,present:0,missing:0,segments:[],byLoc:[],ocupacion:0,biggest:null};
+  const min=items[0].n, max=items[items.length-1].n;
+  const present=new Set(items.map(x=>x.n));
+  const segments=[]; let segStart=null, prev=null;
+  for(let n=min;n<=max;n++){
+    if(!present.has(n)){ if(segStart===null) segStart=n; }
+    else { if(segStart!==null){segments.push({from:segStart,to:n-1,size:n-segStart});segStart=null;} }
+    prev=n;
+  }
+  if(segStart!==null) segments.push({from:segStart,to:max,size:max-segStart+1});
+  segments.sort((a,b)=>b.size-a.size);
+
+  // Por localidad
+  const byLocMap={};
+  items.forEach(x=>{
+    if(!byLocMap[x.loc]) byLocMap[x.loc]={loc:x.loc,nums:[],set:new Set()};
+    byLocMap[x.loc].nums.push(x.n); byLocMap[x.loc].set.add(x.n);
+  });
+  const byLoc=Object.values(byLocMap).map(g=>{
+    const lmin=Math.min(...g.nums), lmax=Math.max(...g.nums);
+    let lmiss=0;
+    for(let n=lmin;n<=lmax;n++) if(!g.set.has(n)) lmiss++;
+    return {loc:g.loc,count:g.nums.length,min:lmin,max:lmax,range:lmax-lmin+1,missing:lmiss,ocupacion:Math.round(g.nums.length/(lmax-lmin+1)*100)};
+  }).sort((a,b)=>b.missing-a.missing);
+
+  const totalRange=max-min+1;
+  const missing=totalRange-items.length;
+  const ocupacion=Math.round(items.length/totalRange*100);
+  const biggest=segments[0]||null;
+  return {min,max,total:totalRange,present:items.length,missing,segments,byLoc,ocupacion,biggest};
+}
+function renderGapsReport(data){
+  const g=computeGaps(data);
+  const tag=document.getElementById('gapsTag');
+  const box=document.getElementById('gapsReport');
+  if(!g.present){tag.textContent='sin datos';box.innerHTML='<div class="hint">No hay legajos numéricos en la selección actual.</div>';return;}
+  tag.textContent=g.missing+' faltantes ('+g.ocupacion+'% ocupación)';
+  const segsHtml=g.segments.length
+    ? `<div class="scrollx"><table class="mini"><thead><tr><th>#</th><th>Desde</th><th>Hasta</th><th>Cantidad</th></tr></thead><tbody>${
+        g.segments.slice(0,40).map((s,i)=>`<tr><td>${i+1}</td><td>${s.from}</td><td>${s.to}</td><td><b>${s.size}</b></td></tr>`).join('')
+      }</tbody></table></div>${g.segments.length>40?`<div class="hint">… y ${g.segments.length-40} segmento(s) más.</div>`:''}`
+    : '<div class="hint" style="color:var(--accent2)">✓ Sin faltantes: el rango está completo.</div>';
+  const locHtml=g.byLoc.length
+    ? `<div class="scrollx"><table class="mini"><thead><tr><th>Localidad</th><th>Legajos</th><th>Desde</th><th>Hasta</th><th>Ocupación</th><th>Faltantes</th></tr></thead><tbody>${
+        g.byLoc.map(l=>`<tr><td><b>${l.loc}</b></td><td>${l.count}</td><td>${l.min}</td><td>${l.max}</td><td>${l.ocupacion}%</td><td>${l.missing?`<span style="color:var(--warn);font-weight:600">${l.missing}</span>`:'<span style="color:var(--accent2)">0</span>'}</td></tr>`).join('')
+      }</tbody></table></div>`
+    : '<div class="hint">Sin datos de localidad.</div>';
+  box.innerHTML=`
+    <div class="gaps-grid">
+      <div class="gaps-kpi"><div class="n">${g.min} – ${g.max}</div><div class="l">Rango total</div></div>
+      <div class="gaps-kpi"><div class="n">${g.present}</div><div class="l">Legajos activos</div></div>
+      <div class="gaps-kpi"><div class="n" style="color:${g.missing?'var(--warn)':'var(--accent2)'}">${g.missing}</div><div class="l">Faltantes</div></div>
+      <div class="gaps-kpi"><div class="n">${g.ocupacion}%</div><div class="l">Ocupación</div></div>
+      ${g.biggest?`<div class="gaps-kpi"><div class="n">${g.biggest.size}</div><div class="l">Bache más grande (${g.biggest.from}–${g.biggest.to})</div></div>`:''}
+    </div>
+    <h3 style="font-size:12.5px;margin:14px 0 6px;color:var(--sub);text-transform:uppercase;letter-spacing:.04em">Segmentos faltantes</h3>
+    ${segsHtml}
+    <h3 style="font-size:12.5px;margin:14px 0 6px;color:var(--sub);text-transform:uppercase;letter-spacing:.04em">Análisis por localidad</h3>
+    ${locHtml}
+  `;
+}
+
+/* ======================= DUPLICADOS / GRÁFICOS ======================= */
 function cashflowProjection(data){
   const byMes={};
   data.forEach(r=>{
@@ -1858,8 +2252,7 @@ function renderDuplicates(){
   const dups=findDuplicates(data);
   document.getElementById('dupTag').textContent=dups.length+' rifa(s) repetida(s)';
   const wrap=document.getElementById('dupTable').parentElement;
-  const old=wrap.querySelector('.dup-msg');
-  if(old) old.remove();
+  const old=wrap.querySelector('.dup-msg'); if(old) old.remove();
   if(!dups.length){
     document.getElementById('dupTable').innerHTML='<tr><td class="hint" style="border:none">No se detectaron números de rifa repetidos. ✓</td></tr>';
     return;
@@ -1869,8 +2262,8 @@ function renderDuplicates(){
     dups.slice(0,80).map(d=>
       d.records.map((r,i)=>`<tr>
         ${i===0?`<td rowspan="${d.count}" style="font-weight:700;color:var(--danger);vertical-align:top">${d.num}</td>`:''}
-        <td>${r.apellido}</td>
-        <td>${r.nombre}</td>
+        <td>${r.apellido||'—'}</td>
+        <td>${r.nombre||'—'}</td>
         <td>${domicilio(r)}</td>
         <td style="color:var(--sub);font-size:11px">${r.source||'-'}</td>
         ${i===0?`<td rowspan="${d.count}" style="text-align:right;vertical-align:top">
@@ -1901,6 +2294,7 @@ function resolveDup(key,action){
   refreshSelects();
   updateStatusLine([],[],[]);
   saveState();
+  notify('Duplicados resueltos ('+action+')','ok');
 }
 function groupCount(data,field){
   const m={}; data.forEach(r=>{const k=r[field]||'Sin dato'; m[k]=(m[k]||0)+1;});
@@ -1913,18 +2307,6 @@ function payDistribution(data){
 function diasCarga(data){
   const m={}; data.forEach(r=>{ if(r.fcarga instanceof Date && !isNaN(r.fcarga)){ const k=DIAS[r.fcarga.getDay()]; m[k]=(m[k]||0)+1; } });
   return DIAS.slice(1).concat(DIAS[0]).map(d=>[d,m[d]||0]);
-}
-function computeGaps(data){
-  const nums=data.map(r=>toNum(r.num)).filter(n=>!isNaN(n)&&n>0).sort((a,b)=>a-b);
-  if(!nums.length)return{min:0,max:0,missing:0,segments:[]};
-  const min=nums[0], max=nums[nums.length-1]; const set=new Set(nums);
-  const segments=[]; let segStart=null;
-  for(let n=min;n<=max;n++){
-    if(!set.has(n)){if(segStart===null)segStart=n;}
-    else{if(segStart!==null){segments.push(segStart===n-1?String(segStart):segStart+'–'+(n-1));segStart=null;}}
-  }
-  if(segStart!==null) segments.push(segStart===max?String(segStart):segStart+'–'+max);
-  return{min,max,missing:max-min+1-nums.length,segments:segments.slice(0,60)};
 }
 function drawBar(canvasId,pairs,drillField){
   const ctx=document.getElementById(canvasId); if(!ctx) return;
@@ -1958,7 +2340,7 @@ function buildConclusions(data,total,pct,alDia,byCalle,byMes,gaps,dups){
   if(byMes.length) out.push(`Mes con más registros: <b>${byMes[0][0]}</b> (${byMes[0][1]}).`);
   const debeAlto=data.filter(r=>r.debe>=Math.ceil(CFG.cuotas*0.8)).length;
   if(debeAlto) out.push(`<b>${debeAlto}</b> registros (${Math.round(debeAlto/total*100)}%) con 80%+ pendiente — prioritarios.`);
-  if(gaps.missing) out.push(`Hay <b>${gaps.missing}</b> legajos sin usar entre ${gaps.min} y ${gaps.max}.`);
+  if(gaps.missing) out.push(`Hay <b>${gaps.missing}</b> legajos sin usar entre ${gaps.min} y ${gaps.max} (ocupación ${gaps.ocupacion}%).`);
   if(dups&&dups.length) out.push(`<b>${dups.length}</b> número(s) de rifa repetido(s) — revisar antes de imprimir.`);
   return out;
 }
@@ -2018,7 +2400,7 @@ function renderOmni(q){
     omniResults.innerHTML='<div class="omni-empty">Sin resultados para "'+q+'"</div>';
     return;
   }
-  html=found.map((r,i)=>`<div class="omni-item" data-act="rec" data-idx="${i}"><span><b>${r.num}</b> · ${r.apellido}, ${r.nombre}</span><span class="meta">${domicilio(r)} · ${r.localidad||'-'}</span></div>`).join('');
+  html=found.map((r,i)=>`<div class="omni-item" data-act="rec" data-idx="${i}"><span><b>${r.num||'s/n'}</b> · ${r.apellido||'—'}, ${r.nombre||'—'}</span><span class="meta">${domicilio(r)} · ${r.localidad||'-'}</span></div>`).join('');
   omniResults.innerHTML=html;
   omniItems=found.map(r=>({_go:()=>{jumpToRecord(r);closeOmni();}}));
   wireOmni();
@@ -2039,7 +2421,7 @@ function paintOmniSel(){
   items.forEach((el,i)=>el.style.background=i===omniSel?'var(--panel2)':'');
 }
 function jumpToRecord(r){
-  setView('home');
+  setView('pdf');
   document.getElementById('fSearch').value=r.apellido;
   document.getElementById('fSit').value='';
   document.getElementById('fMes').value='';
@@ -2074,7 +2456,7 @@ initSheet('toggleSheetDash','dashFiltersCard');
 
 /* ======================= INICIALIZACION ======================= */
 document.getElementById('batchSize').addEventListener('change',()=>{
-  GEN.forEach(calcRanges);renderPrint();
+  if(batchState.ranges.length) prepareBatches(true);
 });
 
 (async function restoreState(){
@@ -2082,6 +2464,7 @@ document.getElementById('batchSize').addEventListener('change',()=>{
   const st=await loadState();
   if(!st||!st.files||!st.files.length){
     try{ await tryReconnectBackup(); }catch(e){}
+    try{ await reloadLinkedSorteoFiles(true); }catch(e){}
     return;
   }
   try{
@@ -2108,94 +2491,159 @@ document.getElementById('batchSize').addEventListener('change',()=>{
     document.getElementById('status').textContent='✓ Datos restaurados: '+RECORDS.length+' registros desde '+FILES.length+' archivo(s).';
   }catch(e){console.warn('restoreState',e);}
   try{ await tryReconnectBackup(); }catch(e){}
+  try{ await reloadLinkedSorteoFiles(true); }catch(e){}
 })();
 
-/* ======================= AUTO-SYNC DE EXCEL ======================= */
-const HAS_FS=!!window.showOpenFilePicker;
-let SYNC=[],syncBusy=false;
-async function syncSave(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(SYNC.map(s=>({name:s.name,handle:s.handle,mtime:s.mtime})),'syncSources');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}}
-async function syncLoad(){try{const db=await openDB();const rq=db.transaction(STORE,'readonly').objectStore(STORE).get('syncSources');const v=await new Promise(r=>{rq.onsuccess=()=>r(rq.result);rq.onerror=()=>r(null);});SYNC=(v||[]).map(s=>({...s,state:''}));}catch(e){}}
-function syncRender(needPerm){
-  document.getElementById('btnLinkExcel').classList.toggle('hidden',!HAS_FS);
-  document.getElementById('btnSyncNow').classList.toggle('hidden',!SYNC.length);
-  document.getElementById('btnSyncPerm').classList.toggle('hidden',!needPerm);
-  document.getElementById('syncInfo').textContent=HAS_FS?(SYNC.length?'Se revisan cada 20 s y al volver a la pestaña. Trabajá en Excel y guardá: la app se actualiza sola. Tip: si los Excel están en tu carpeta de OneDrive o Google Drive de la PC, también se sincronizan.':'Vinculá tus Excel una vez y no hace falta volver a cargarlos.'):'Este navegador (Safari/iPhone) no permite vincular archivos. Usá Chrome o Edge en la PC.';
-  const L=document.getElementById('syncList');
-  L.innerHTML=SYNC.map((s,i)=>`<span class="file-pill"><b>${E(s.name)}</b> · ${s.state==='ok'?'✓ al día':s.state==='perm'?'⚠ falta permiso':s.state==='err'?'⚠ error':'…'} <button data-unl="${i}" title="Desvincular">✕</button></span>`).join('');
-  L.querySelectorAll('[data-unl]').forEach(b=>b.onclick=async()=>{SYNC.splice(+b.dataset.unl,1);await syncSave();syncRender();});
-}
-async function syncNow(force,gesture){
-  if(syncBusy||!SYNC.length)return; syncBusy=true; let changed=0,needPerm=false;
-  for(const s of SYNC){
-    try{
-      let p=await s.handle.queryPermission({mode:'read'});
-      if(p!=='granted'&&gesture)p=await s.handle.requestPermission({mode:'read'});
-      if(p!=='granted'){s.state='perm';needPerm=true;continue;}
-      const file=await s.handle.getFile();
-      if(force||file.lastModified!==s.mtime){
-        await handleFiles([file]);
-        if(window.sorteosLoadFiles) await window.sorteosLoadFiles([file]);
-        s.mtime=file.lastModified; changed++;
-      }
-      s.state='ok';
-    }catch(e){s.state='err';}
+// Guardar respaldo al cerrar (siempre)
+window.addEventListener('beforeunload',()=>{
+  try{ if(backupFileHandle) writeAutoBackup('cierre'); }catch(e){}
+});
+
+/* ======================= HOME ======================= */
+const MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const mlabel=m=>{if(!m)return '';const [y,mm]=m.split('-');return MN[mm-1]+' '+y;};
+
+function computeAlerts(){
+  const alerts=[];
+  // Cobranza
+  if(RECORDS.length){
+    const dups=findDuplicates(RECORDS);
+    if(dups.length) alerts.push({type:'warn',ico:'⚠',title:dups.length+' número(s) de rifa duplicado(s)',desc:'Revisalos antes de imprimir o enviar.',act:'dash',actLabel:'Ver en Dashboard'});
+    const g=computeGaps(RECORDS);
+    if(g.missing>0 && g.ocupacion<95) alerts.push({type:'warn',ico:'📉',title:g.missing+' legajos faltantes',desc:'Ocupación del rango: '+g.ocupacion+'% ('+g.min+'–'+g.max+').',act:'dash',actLabel:'Ver análisis'});
+    const excl=FILES.reduce((s,f)=>s+f.records.filter(r=>r._excluded).length,0);
+    if(excl) alerts.push({type:'warn',ico:'🚫',title:excl+' registro(s) excluidos manualmente',desc:'Revisá si querés restaurarlos.',act:'dash',actLabel:'Restaurar'});
+  } else {
+    alerts.push({type:'',ico:'📁',title:'Sin datos de cobranza',desc:'Cargá un Excel en "Generar PDF" para empezar.',act:'pdf',actLabel:'Cargar Excel'});
   }
-  syncBusy=false; await syncSave(); syncRender(needPerm);
-  if(changed&&window.sorteoToast)window.sorteoToast('🔄 '+changed+' Excel actualizado(s) automáticamente');
-}
-document.getElementById('btnLinkExcel').onclick=async()=>{
+  // Sorteos
   try{
-    const hs=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm'],'application/vnd.ms-excel':['.xls']}}]});
-    for(const h of hs){let dup=false;for(const s of SYNC){if(await s.handle.isSameEntry(h)){dup=true;break;}}if(!dup)SYNC.push({name:h.name,handle:h,mtime:0});}
-    await syncSave(); await syncNow(false,true);
+    if(S && S.files){
+      const m=(document.getElementById('cMonth')||{}).value;
+      if(!S.files.length) alerts.push({type:'',ico:'🎯',title:'Sin archivos de sorteo',desc:'Subí los Excel de cada institución.',act:'sorteos-files',actLabel:'Cargar archivos'});
+      else if(m){
+        const st=S.files.map(status);
+        const pending=st.filter(x=>x<3).length;
+        if(pending) alerts.push({type:'warn',ico:'🎯',title:pending+' sorteo(s) pendientes en '+mlabel(m),desc:'Faltan generar, enviar o finalizar.',act:'sorteos',actLabel:'Ver sorteos'});
+      }
+    }
   }catch(e){}
-};
-document.getElementById('btnSyncNow').onclick=()=>syncNow(true,true);
-document.getElementById('btnSyncPerm').onclick=()=>syncNow(false,true);
-setInterval(()=>{if(!document.hidden)syncNow(false,false);},20000);
-window.addEventListener('focus',()=>syncNow(false,false));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow(false,false);});
-syncLoad().then(()=>{syncRender();setTimeout(()=>syncNow(false,false),2500);});
+  // Respaldo
+  if(!backupFileHandle) alerts.push({type:'',ico:'💾',title:'Respaldo automático no vinculado',desc:'Vinculá un archivo JSON para guardar copia de seguridad.',act:'settings-data',actLabel:'Configurar'});
+  return alerts;
+}
 
-/* ======================= LISTADO DE FALTANTES (A4 vertical) ======================= */
-document.getElementById('btnMissingPdf').onclick=()=>{
-  const f={source:document.getElementById('dSource').value,sit:document.getElementById('dSit').value,mes:document.getElementById('dMes').value,loc:document.getElementById('dLoc').value,chip:quickChip};
-  const data=applyFilters(f);
-  const set=new Set(data.map(r=>toNum(r.num)).filter(n=>n>0));
-  const nums=[...set].sort((a,b)=>a-b);
-  if(!nums.length){alert('No hay números cargados.');return;}
-  const min=nums[0],max=nums[nums.length-1],miss=[];
-  for(let n=min;n<=max;n++)if(!set.has(n))miss.push(n);
-  if(!miss.length){alert('No hay números faltantes entre '+min+' y '+max+'.');return;}
-  const {jsPDF}=window.jspdf, doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
-  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=36;
-  const srcName=f.source?f.source.replace(/\.(xlsx|xls|xlsm)$/i,''):'Todos los archivos';
-  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('Números faltantes',M,M+8);
-  doc.setFont('helvetica','normal');doc.setFontSize(10);
-  doc.text(srcName+' · Rango '+min+'–'+max+' · '+miss.length+' faltante(s) · '+new Date().toLocaleDateString('es-AR'),M,M+24);
-  const top=M+44,aw=W-2*M,ah=H-top-M-14;
-  const fit=items=>{for(let s=12;s>=4;s-=0.5){doc.setFontSize(s);const cw=Math.max(...items.map(t=>doc.getTextWidth(t)))+s*1.4;const cols=Math.max(1,Math.floor(aw/cw));const rows=Math.ceil(items.length/cols);if(rows*s*1.4<=ah)return{s,cols,rows,cw:aw/cols};}return null;};
-  let items=miss.map(String),ranged=false,L=fit(items);
-  if(!L){
-    ranged=true;items=[];let st=miss[0],pv=miss[0];
-    for(let i=1;i<=miss.length;i++){if(miss[i]===pv+1){pv=miss[i];continue;}items.push(st===pv?String(st):st+'–'+pv);st=miss[i];pv=miss[i];}
-    L=fit(items)||(()=>{const s=4;const cw=aw/Math.floor(aw/(s*7));return{s,cols:Math.floor(aw/(s*7)),rows:Math.ceil(items.length/Math.floor(aw/(s*7))),cw};})();
+function renderHome(){
+  const hero=document.getElementById('hHero'); if(!hero) return;
+  const alerts=computeAlerts();
+  const ns=nextStep();
+  // Hero
+  hero.innerHTML=`
+    <div class="hero-top ${ns.ok?'okk':''}">
+      <div class="tx">
+        <div class="eyebrow">Siguiente paso · ${mlabel((document.getElementById('cMonth')||{}).value)||'—'}</div>
+        <h3>${ns.ok?'✅ ':''}${esc(ns.t)}</h3>
+        <p class="desc">${esc(ns.d)}</p>
+      </div>
+      <button class="primary btn" id="hNextBtn">${ns.b} →</button>
+    </div>
+    <div class="hero-kpis">
+      <div class="hero-kpi accent"><div class="n">${RECORDS.length.toLocaleString('es-AR')}</div><div class="l">Registros cobranza</div><div class="sub">${FILES.length} archivo(s)</div></div>
+      <div class="hero-kpi ${S.files&&S.files.length?'':'warn'}"><div class="n">${S.files?S.files.length:0}</div><div class="l">Instituciones sorteo</div><div class="sub">${S.draws?S.draws.filter(d=>d.date.slice(0,7)===(document.getElementById('cMonth')||{}).value).length:0} quinielas del mes</div></div>
+      <div class="hero-kpi ok"><div class="n">${S.files?S.files.filter(f=>status(f)===3).length:0}/${S.files?S.files.length:0}</div><div class="l">Sorteos finalizados</div><div class="sub">Este mes</div></div>
+      <div class="hero-kpi ${alerts.some(a=>a.type==='warn')?'warn':'ok'}"><div class="n">${alerts.length}</div><div class="l">Alertas activas</div><div class="sub">${alerts.filter(a=>a.type==='warn').length} requieren atención</div></div>
+    </div>`;
+  document.getElementById('hNextBtn').onclick=ns.go;
+
+  // Sorteos del mes
+  document.getElementById('hMonth').textContent=mlabel((document.getElementById('cMonth')||{}).value)||'';
+  const hSorteos=document.getElementById('hSorteos');
+  if(S.files&&S.files.length){
+    hSorteos.innerHTML=S.files.map(f=>{
+      const x=status(f);
+      return `<div class="hrow" data-go="sorteos"><b>${esc(f.title)}</b><span class="meta">
+        <span class="pill ${x>=1?'ok':'pend'}">${x>=1?'✔':'○'} Generado</span>
+        <span class="pill ${x>=2?'ok':'pend'}">${x>=2?'✔':'○'} Enviado</span>
+        <span class="pill ${x>=3?'ok':'pend'}">${x>=3?'✔':'○'} Final</span></span></div>`;
+    }).join('');
+  } else hSorteos.innerHTML='<span class="hint">Sin archivos de sorteo cargados.</span>';
+
+  // Cobranza
+  const hCob=document.getElementById('hCob');
+  if(RECORDS.length){
+    const deb=RECORDS.filter(r=>r.debe>0).length;
+    const locs=new Set(RECORDS.map(r=>r.localidad).filter(Boolean)).size;
+    const pag=RECORDS.reduce((s,r)=>s+r.pago,0), debT=RECORDS.reduce((s,r)=>s+r.debe,0);
+    const pct=Math.round(pag/((pag+debT)||1)*100);
+    hCob.innerHTML=`
+      <div class="hrow" data-go="dash"><span>Registros</span><b>${RECORDS.length.toLocaleString('es-AR')}</b></div>
+      <div class="hrow" data-go="dash"><span>Con cuotas adeudadas</span><b>${deb.toLocaleString('es-AR')}</b></div>
+      <div class="hrow" data-go="dash"><span>Localidades</span><b>${locs}</b></div>
+      <div class="hrow" data-go="dash"><span>% cuotas cobradas</span><b>${pct}%</b></div>`;
+  } else {
+    hCob.innerHTML='<span class="hint">Todavía no cargaste un Excel de cobranza.</span><div style="margin-top:10px"><button class="secondary" data-go="pdf">Cargar Excel de cobranza</button></div>';
   }
-  doc.setFontSize(L.s);
-  items.forEach((t,i)=>{const c=Math.floor(i/L.rows),r=i%L.rows;doc.text(t,M+c*L.cw,top+(r+1)*L.s*1.4);});
-  if(ranged){doc.setFontSize(8);doc.text('Agrupados en rangos para que entren en una sola hoja.',M,H-M+6);}
-  const d=new Date(),pad=n=>String(n).padStart(2,'0');
-  doc.save('Faltantes - '+srcName+' - '+pad(d.getDate())+'-'+pad(d.getMonth()+1)+'-'+d.getFullYear()+'.pdf');
-};
 
-/* ======================= SORTEOS v2 ======================= */
+  // Alertas
+  document.getElementById('hAlertCount').textContent=alerts.length;
+  const hA=document.getElementById('hAlerts');
+  if(!alerts.length) hA.innerHTML='<div class="alert ok"><span class="ico">✓</span><div class="body"><b>Todo en orden</b><div class="hint" style="margin:0">No hay alertas activas.</div></div></div>';
+  else hA.innerHTML=alerts.map(a=>`
+    <div class="alert ${a.type||''}">
+      <span class="ico">${a.ico||'•'}</span>
+      <div class="body"><b>${esc(a.title)}</b><div class="hint" style="margin:0">${esc(a.desc)}</div></div>
+      ${a.act?`<button class="act" data-act="${a.act}">${a.actLabel||'Ir'}</button>`:''}
+    </div>`).join('');
+  hA.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.act;
+    if(a==='settings-data'){ setView('settings'); document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x.dataset.set==='data')); document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-data')); }
+    else if(a==='sorteos-files'){ setView('sorteos'); try{tab('files');}catch(e){} }
+    else setView(a);
+  });
+
+  // Actividad
+  const acts=[];
+  (HISTORY||[]).slice(0,5).forEach(h=>acts.push({ico:'📄',t:'PDF generado: '+h.fname,w:h.time}));
+  try{
+    Object.keys(S.control||{}).sort().reverse().slice(0,3).forEach(m=>{
+      S.files.forEach(f=>{const c=(S.control[m]||{})[f.name];if(c&&c.fin)acts.push({ico:'🎯',t:'Sorteo finalizado: '+f.title,w:new Date(c.fin).toLocaleDateString('es-AR')});});
+    });
+  }catch(e){}
+  document.getElementById('hActivity').innerHTML=acts.length?acts.slice(0,8).map(a=>`
+    <div class="activity-item"><div class="ico">${a.ico}</div><div class="b">${esc(a.t)}</div><div class="when">${a.w}</div></div>`).join(''):'<div class="hint">Todavía no hay actividad reciente.</div>';
+}
+document.addEventListener('click',e=>{const g=e.target.closest('#view-home [data-go]');if(g)setView(g.dataset.go);});
+// Si no hay sorteo cargado, nextStep devuelve algo aunque el módulo no haya corrido
+function nextStep(){
+  try{
+    if(typeof S!=='undefined' && S.files){
+      const m=(document.getElementById('cMonth')||{}).value||'';
+      const st=S.files.map(status),n=k=>st.filter(x=>x===k).length,go=()=>{setView('sorteos');try{tab('month');}catch(e){}};
+      if(!S.files.length)return {t:'Cargá los archivos de sorteo',d:'Subí los Excel de cada institución. Quedan guardados para todos los meses siguientes.',b:'Cargar archivos',go:()=>{setView('sorteos');try{tab('files');}catch(e){}}};
+      if(!S.draws.some(d=>d.date.slice(0,7)===m))return {t:'Cargá la quiniela de '+(mlabel(m)||'este mes'),d:'Necesitás los 20 números de la quiniela para determinar los ganadores.',b:'Cargar quiniela',go};
+      if(n(0))return {t:'Generar '+n(0)+' sorteo(s) pendiente(s)',d:'Creá el PDF y el JPG de cada institución.',b:'Ir a generar',go};
+      if(n(1))return {t:'Enviar '+n(1)+' sorteo(s) por WhatsApp',d:'Ya tienen PDF y JPG. Falta mandárselos.',b:'Ir a enviar',go};
+      if(n(2))return {t:'Finalizar '+n(2)+' sorteo(s)',d:'Ya se enviaron. Marcalos como finalizados para cerrar el mes.',b:'Ir a finalizar',go};
+      return {t:'¡Mes completo!',d:'Todos los sorteos de '+(mlabel(m)||'este mes')+' están generados, enviados y finalizados.',b:'Ver detalle',go,ok:1};
+    }
+  }catch(e){}
+  if(RECORDS.length) return {t:'Cobranza con '+RECORDS.length+' registros',d:'Revisá el dashboard o generá el informe PDF.',b:'Ir a PDF',go:()=>setView('pdf')};
+  return {t:'Empecemos cargando un Excel',d:'Podés cargar archivos de cobranza o de sorteo.',b:'Cargar cobranza',go:()=>setView('pdf')};
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+window.addEventListener('resize',()=>{if(document.getElementById('view-home').classList.contains('active'))renderHome();});
+setInterval(()=>{if(document.getElementById('view-home').classList.contains('active'))renderHome();},30000);
+
+/* ======================= SORTEOS v2 (MODIFICADO) ======================= */
 (function(){
 const $=id=>document.getElementById(id);
 const DEFWA='{localidad} - {institucion}\nSorteo {quiniela} · {fecha}';
 const S={files:[],draws:[],control:{},cfg:{n:20,unsold:true,cifras:4,wa:DEFWA,tab:''}};
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-window.sorteoToast=(m,k)=>{const t=document.createElement('div');t.className='toast '+(k||'');t.textContent=m;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3200);};
-const toast=window.sorteoToast;
+window.S=S; // exponer para home y alerts
+
+// Exponer tab() para home alert
+const S_ = S;
+
 async function save(){
   try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(JSON.parse(JSON.stringify(S)),'sorteos');
   await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){console.warn('sorteos save',e);}
@@ -2225,6 +2673,7 @@ function tab(t){
   document.querySelectorAll('.sp').forEach(p=>p.classList.toggle('active',p.id==='sp-'+t));
   if(t==='month')renderMonth();if(t==='hist')renderHist();
 }
+window.tab=tab;
 $('sTabs').onclick=e=>{const c=e.target.closest('.chip');if(c)tab(c.dataset.sp);};
 
 const dz=$('sDz'),fi=$('sFile');
@@ -2233,7 +2682,11 @@ dz.ondragover=e=>{e.preventDefault();dz.classList.add('ready')};
 dz.ondragleave=()=>dz.classList.remove('ready');
 dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ready');loadFiles([...e.dataTransfer.files]);};
 fi.onchange=()=>{loadFiles([...fi.files]);fi.value='';};
-async function loadFiles(files){
+
+// Exponer para la vinculación
+window.__sorteoLoadFiles=async(files,silent)=>{ await loadFiles(files,silent); };
+
+async function loadFiles(files,silent){
   const ok=[],err=[];
   $('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';
   for(const file of files){
@@ -2248,11 +2701,16 @@ async function loadFiles(files){
       const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});
       const people=[];let maxLen=0;
       for(let i=h+1;i<rows.length;i++){
-        const r=rows[i];if(!(r[1]+'').trim())continue;
+        const r=rows[i];
+        const ape=(r[1]+'').trim();
+        const nom=(r[2]+'').trim();
         const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});
-        if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});
+        // Solo saltear si no hay apellido, nombre, ni números
+        if(!ape && !nom && !nums.length) continue;
+        if(!nums.length) continue;
+        nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});
         const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};
-        people.push({nums,ape:cap(r[1]+''),nom:cap(r[2]+''),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});
+        people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});
       }
       let loc='',ins='';
       const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));
@@ -2269,10 +2727,10 @@ async function loadFiles(files){
   }
   const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');
   m.textContent=(ok.length?'✓ Cargado: '+ok.join(', ')+'. Revisá que las cifras detectadas sean correctas. ':'')+err.join(' | ');
-  if(ok.length)toast(`${ok.length} archivo(s) guardados`);
-  await save();render();
+  if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');
+  if(err.length)notify('Errores de lectura: '+err.join(' · '),'err');
+  await save();render();renderHome();
 }
-window.sorteosLoadFiles=loadFiles;
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
 function renderFiles(){
@@ -2339,15 +2797,17 @@ ql.addEventListener('click',e=>{
     c.dirty=true;card.classList.add('dirty');return;}
   const b=e.target.closest('[data-a]');if(!b)return;const i=+b.closest('.qcard').dataset.i,c=cards[i];
   if(b.dataset.a==='save'){
-    if(!c.name.trim()||!c.date)return toast('Completá el nombre y la fecha','err');
-    if(c.nums.some(n=>!n))return toast(`Faltan ${c.nums.filter(n=>!n).length} números: deben ser 20`,'err');
+    if(!c.name.trim()||!c.date)return notify('Completá el nombre y la fecha','err');
+    if(c.nums.some(n=>!n))return notify(`Faltan ${c.nums.filter(n=>!n).length} números: deben ser 20`,'err');
     const o={id:c.id,name:c.name.trim(),date:c.date,nums:c.nums.map(n=>n.padStart(4,'0'))};
     const k=S.draws.findIndex(d=>d.id===c.id);if(k>=0)S.draws[k]=o;else S.draws.push(o);
-    c.saved=true;c.dirty=false;c.nums=o.nums;save();syncCards();renderCards();renderTop();toast(o.date.slice(0,7)===month()?'Quiniela guardada: '+o.name:'Guardada, pero su fecha es de otro mes: cambiá el mes para verla','')
+    c.saved=true;c.dirty=false;c.nums=o.nums;save();syncCards();renderCards();renderTop();renderHome();
+    notify(o.date.slice(0,7)===month()?'Quiniela guardada: '+o.name:'Guardada, pero su fecha es de otro mes','ok');
   }else if(b.dataset.a==='dup'){cards.splice(i+1,0,{...blank(),name:c.name,nums:[...c.nums]});renderCards();}
   else if(b.dataset.a==='del'){
     if(c.saved&&!confirm('¿Eliminar la quiniela "'+c.name+'"?'))return;
-    S.draws=S.draws.filter(d=>d.id!==c.id);cards.splice(i,1);save();syncCards();renderCards();renderTop();toast('Quiniela eliminada');}
+    S.draws=S.draws.filter(d=>d.id!==c.id);cards.splice(i,1);save();syncCards();renderCards();renderTop();renderHome();
+    notify('Quiniela eliminada','ok');}
 });
 $('qAdd').onclick=()=>{cards.unshift(blank());renderCards();ql.querySelector('[data-f="name"]').focus();};
 
@@ -2429,13 +2889,14 @@ async function wa(f,d,m){
   mark(f,d,m,'jpg');
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});ctl(m,f.name).wa=Date.now();save();renderMonth();return;}}catch(e){if(e.name==='AbortError')return;}
   dl(b,file.name);try{await navigator.clipboard.writeText(text);}catch(e){}
-  toast('JPG descargado y texto copiado: adjuntalo y pegá en WhatsApp');
+  notify('JPG descargado y texto copiado: adjuntalo y pegá en WhatsApp','ok');
   window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');ctl(m,f.name).wa=Date.now();save();renderMonth();
 }
 
 const drawOf=(f)=>{const c=ctl(month(),f.name),s=sortedDraws(),m=month();
   return S.draws.find(d=>d.id===c.drawKey)||s.find(d=>d.date.slice(0,7)===m)||s[0];};
 const status=f=>{const c=ctl(month(),f.name);return c.fin?3:c.wa?2:(c.pdf&&c.jpg)?1:0;};
+window.status=status;
 const stp=(ok,t,ts)=>`<span class="pill ${ok?'ok':'pend'}">${ok?'✔':'○'} ${t}${ts?' '+dtf(ts):''}</span>`;
 function renderMonth(){
   const m=month();if(!m)return;
@@ -2465,14 +2926,15 @@ $('cList').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(
 async function act(a,i){
   const m=month(),f=S.files[i],c=ctl(m,f.name);
   if(a==='sent'){c.wa=c.wa?undefined:Date.now();c.inicio=c.inicio||Date.now();save();return renderMonth();}
-  if(a==='fin'){if(c.fin)delete c.fin;else{c.fin=Date.now();c.inicio=c.inicio||c.fin;toast('Sorteo finalizado: '+f.title);}save();return renderMonth();}
-  const d=drawOf(f);if(!d)return toast('Elegí una quiniela para este sorteo','err');
+  if(a==='fin'){if(c.fin)delete c.fin;else{c.fin=Date.now();c.inicio=c.inicio||c.fin;notify('Sorteo finalizado: '+f.title,'ok');}save();return renderMonth();}
+  const d=drawOf(f);if(!d)return notify('Elegí una quiniela para este sorteo','err');
   c.drawKey=d.id;
   if(a==='prev'){draw(f,d,$('cPrev'));$('cPrevWrap').classList.remove('hidden');$('cPrevWrap').scrollIntoView({behavior:'smooth',block:'center'});}
-  if(a==='gen'){doPdf(f,d,m);await doJpg(f,d,m);toast('PDF y JPG generados');}
-  if(a==='pdf'){doPdf(f,d,m);toast('PDF generado');}
-  if(a==='jpg'){await doJpg(f,d,m);toast('JPG generado');}
+  if(a==='gen'){doPdf(f,d,m);await doJpg(f,d,m);notify('PDF y JPG generados','ok');}
+  if(a==='pdf'){doPdf(f,d,m);notify('PDF generado','ok');}
+  if(a==='jpg'){await doJpg(f,d,m);notify('JPG generado','ok');}
   if(a==='wa')await wa(f,d,m);
+  renderHome();
 }
 $('cAll').onclick=async()=>{
   const m=month();let n=0;
@@ -2480,9 +2942,11 @@ $('cAll').onclick=async()=>{
     const f=S.files[i],c=ctl(m,f.name),d=drawOf(f);if(c.pdf&&c.jpg)continue;if(!d)continue;
     if(!c.pdf)doPdf(f,d,m);if(!c.jpg)await doJpg(f,d,m);n++;await new Promise(r=>setTimeout(r,500));
   }
-  toast(n?`Generados ${n} sorteo(s)`:'No hay pendientes (o falta elegir quiniela)',n?'':'err');
+  notify(n?`Generados ${n} sorteo(s)`:'No hay pendientes (o falta elegir quiniela)',n?'ok':'err');
+  renderHome();
 };
-$('cMonth').onchange=renderMonth;$('mGo').onclick=()=>tab('files');
+$('cMonth').onchange=()=>{renderMonth();renderHome();};
+$('mGo').onclick=()=>tab('files');
 $('cN').onchange=e=>{S.cfg.n=Math.max(1,Math.min(20,+e.target.value||20));save();renderMonth();};
 $('cUnsold').onchange=e=>{S.cfg.unsold=e.target.value==='1';save();renderMonth();};
 $('cWa').oninput=e=>{S.cfg.wa=e.target.value;save();};
@@ -2495,34 +2959,6 @@ function renderTop(){
     if(!p){if(s)s.remove();return;}if(!s){s=document.createElement('span');s.className='nbadge';b.appendChild(s);}s.textContent=p;});
   renderHome();
 }
-const MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const mlabel=m=>{const [y,mm]=m.split('-');return MN[mm-1]+' '+y;};
-window.goSorteos=t=>{setView('sorteos');tab(t||'month');};
-function nextStep(){
-  const m=month(),st=S.files.map(status),n=k=>st.filter(x=>x===k).length,go=()=>goSorteos('month');
-  if(!S.files.length)return {t:'Cargá los archivos de sorteo',d:'Subí los Excel de cada institución. Quedan guardados para todos los meses siguientes.',b:'Cargar archivos',go:()=>goSorteos('files')};
-  if(!S.draws.some(d=>d.date.slice(0,7)===m))return {t:'Cargá la quiniela de '+mlabel(m),d:'Necesitás los 20 números de la quiniela para determinar los ganadores.',b:'Cargar quiniela',go};
-  if(n(0))return {t:`Generar ${n(0)} sorteo(s) pendiente(s)`,d:'Creá el PDF y el JPG de cada institución.',b:'Ir a generar',go};
-  if(n(1))return {t:`Enviar ${n(1)} sorteo(s) por WhatsApp`,d:'Ya tienen PDF y JPG. Falta mandárselos a tu jefe.',b:'Ir a enviar',go};
-  if(n(2))return {t:`Finalizar ${n(2)} sorteo(s)`,d:'Ya se enviaron. Marcalos como finalizados para cerrar el mes.',b:'Ir a finalizar',go};
-  return {t:'¡Mes completo!',d:'Todos los sorteos de '+mlabel(m)+' están generados, enviados y finalizados.',b:'Ver detalle',go,ok:1};
-}
-function renderHome(){
-  const m=month();if(!m||!$('hNext'))return;
-  const ns=nextStep();
-  $('hNext').className='card next'+(ns.ok?' okk':'');
-  $('hNext').innerHTML=`<div class="tx"><div class="hint" style="margin:0">SIGUIENTE PASO · ${mlabel(m).toUpperCase()}</div><h3>${ns.ok?'✅ ':''}${esc(ns.t)}</h3><div class="hint" style="margin:0">${esc(ns.d)}</div></div><button class="primary" id="hNextBtn">${ns.b} →</button>`;
-  $('hNextBtn').onclick=ns.go;
-  const st=S.files.map(status),rec=typeof RECORDS!=='undefined'?RECORDS:[],fl=typeof FILES!=='undefined'?FILES:[];
-  const k=(n,l)=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`;
-  $('hKpis').innerHTML=k(`${st.filter(x=>x===3).length}/${S.files.length}`,'Sorteos finalizados')+k(S.draws.filter(d=>d.date.slice(0,7)===m).length,'Quinielas del mes')+k(S.files.reduce((a,f)=>a+f.people.length,0).toLocaleString('es-AR'),'Participantes en sorteos')+k(rec.length.toLocaleString('es-AR'),'Registros de cobranza');
-  $('hMonth').textContent=mlabel(m);
-  $('hSorteos').innerHTML=S.files.length?S.files.map(f=>{const c=ctl(m,f.name),x=status(f);
-    return `<div class="hrow" data-go="sorteos"><b>${esc(f.title)}</b><span class="meta">${stp(x>=1,'Generado')}${stp(x>=2,'Enviado')}${stp(x>=3,'Final')}</span></div>`;}).join(''):'<span class="hint">Sin archivos de sorteo cargados.</span>';
-  const deb=rec.filter(r=>r.debe>0).length,locs=new Set(rec.map(r=>r.localidad)).size;
-  $('hCob').innerHTML=rec.length?`<div class="hrow" data-go="dash"><span>Registros</span><b>${rec.length.toLocaleString('es-AR')}</b></div><div class="hrow" data-go="dash"><span>Con cuotas adeudadas</span><b>${deb.toLocaleString('es-AR')}</b></div><div class="hrow" data-go="dash"><span>Localidades</span><b>${locs}</b></div><div class="hrow" data-go="pdf"><span>Archivos cargados</span><b>${fl.length}</b></div>`:'<span class="hint">Todavía no cargaste un Excel de cobranza.</span><div style="margin-top:10px"><button class="secondary" data-go="pdf">Cargar Excel de cobranza</button></div>';
-}
-document.addEventListener('click',e=>{const g=e.target.closest('#view-home [data-go]');if(g)setView(g.dataset.go);});
 
 function renderHist(){
   const q=($('hSearch').value||'').toLowerCase(),rows=[],cnt={};
@@ -2570,8 +3006,9 @@ function renderStyle(){
   $('stLogoName').textContent=st.logo?'Logo cargado ✓':'Sin logo (se muestra arriba a la derecha)';
   previewStyle();
 }
+window.renderStyle=renderStyle;
 function setStyle(k,v){S.cfg.style=Object.assign(ST(),{[k]:v});save();}
-const sp=$('sp-style');
+const sp=$('sp-style')||document.getElementById('pane-sorteo');
 sp.addEventListener('click',e=>{const s=e.target.closest('[data-h]');if(s){setStyle('head',s.dataset.h);renderStyle();}});
 sp.addEventListener('input',e=>{const t=e.target;
   if(t.id==='nmName'){S.cfg.appName=t.value;save();applyBrand();return;}
@@ -2584,7 +3021,7 @@ sp.addEventListener('change',e=>{const t=e.target;
   else if(t.id==='stSeal'){setStyle('seal',t.checked);previewStyle();}
   else if(t.id==='stMini'){S.cfg.mini=t.checked;save();applyLayout();}
   else if(t.id.startsWith('stHide-')){const v=t.id.slice(7),hd=new Set(S.cfg.hide||[]);t.checked?hd.delete(v):hd.add(v);S.cfg.hide=[...hd];save();applyLayout();}
-  else if(t.id==='stLogoF'&&t.files[0]){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=async()=>{const s=Math.min(1,240/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*s;cv.height=im.height*s;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);setStyle('logo',cv.toDataURL('image/png'));await loadLogo();renderStyle();toast('Logo guardado');};im.src=fr.result;};fr.readAsDataURL(t.files[0]);t.value='';}
+  else if(t.id==='stLogoF'&&t.files[0]){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=async()=>{const s=Math.min(1,240/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*s;cv.height=im.height*s;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);setStyle('logo',cv.toDataURL('image/png'));await loadLogo();renderStyle();notify('Logo guardado','ok');};im.src=fr.result;};fr.readAsDataURL(t.files[0]);t.value='';}
 });
 $('stLogoBtn').onclick=()=>$('stLogoF').click();
 $('stLogoDel').onclick=async()=>{setStyle('logo','');await loadLogo();renderStyle();};
@@ -2673,19 +3110,19 @@ $('tReporte').onclick=async ()=>{
     ws['!cols']=[{wch:25},{wch:12},{wch:10},{wch:80}];
     XLSX.utils.book_append_sheet(wb,ws,'Quinielas');
   }
-  if(!wb.SheetNames.length)return toast('No hay datos para exportar','err');
+  if(!wb.SheetNames.length)return notify('No hay datos para exportar','err');
   const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const fname=`Resumen sorteos ${m}.xlsx`;
   const r=await saveBlobSmart(blob,fname);
-  if(r==='picker') toast('Reporte guardado donde elegiste');
-  else if(r==='download') toast('Reporte descargado');
+  if(r==='picker') notify('Reporte guardado donde elegiste','ok');
+  else if(r==='download') notify('Reporte descargado','ok');
 };
 
 $('tXlsx').onclick=()=>{
   const m=month(),data=[];
   S.files.forEach(f=>{const d=drawOf(f);if(!d)return;rowsOf(f,d).forEach(r=>data.push({Sorteo:f.title,Quiniela:d.name,Fecha:d.date,'#':r.pos,'N°':r.num,Apellido:r.p?r.p.ape:'Sin Vender',Nombre:r.p?r.p.nom:'',Domicilio:r.p?r.p.dom:'',Situación:r.p?r.p.sit:'',Localidad:r.p?r.p.loc:''}));});
-  if(!data.length)return toast('No hay ganadores para exportar','err');
+  if(!data.length)return notify('No hay ganadores para exportar','err');
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Ganadores');XLSX.writeFile(wb,`Ganadores ${m||''}.xlsx`);
 };
 $('tRestore').onclick=()=>$('tRestoreF').click();
@@ -2696,55 +3133,21 @@ $('tRestoreF').onchange=async e=>{
     else if(v.state && v.state.sorteos){ merged=v.state.sorteos; }
     if(!merged) throw 0;
     if(!confirm('Esto reemplaza los datos actuales de Sorteos. ¿Continuar?'))return;
-    merge(merged);await save();syncCards();render();toast('Respaldo restaurado');}catch(x){toast('Archivo de respaldo inválido','err');}
+    merge(merged);await save();syncCards();render();notify('Respaldo restaurado','ok');}catch(x){notify('Archivo de respaldo inválido','err');}
   e.target.value='';
 };
 
-function render(){renderFiles();renderCards();renderMonth();}
+function render(){renderFiles();renderCards();renderMonth();renderHome();}
 (async()=>{
   await window._boot;
   const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
   await load();await loadLogo();applyBrand();applyLayout();syncCards();render();
   tab(S.cfg.tab||(S.files.length?'month':'files'));
-  const _sv=setView;setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings')renderStyle();};setTimeout(renderHome,1500);
+  // Releer archivos vinculados si existen
+  try{ sorteoFileHandles=await getSorteoFileHandles(); if(sorteoFileHandles.length){ updateSorteoLinkStatus('✓ '+sorteoFileHandles.length+' archivo(s) vinculado(s)',false); } }catch(e){}
+  const _sv=setView;setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};
+  setTimeout(renderHome,300);
 })();
-})();
-</script>
-<script>
-(function(){
-const K='nora_lock_v1',$=id=>document.getElementById(id);
-const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-async function hash(p,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:310000},k,256));}
-const get=()=>{try{return JSON.parse(localStorage.getItem(K)||'null')}catch(e){return null}};
-let last=Date.now(),fails=0,until=0;
-const root=document.documentElement;
-function lock(){if(!get())return;root.classList.add('locked');$('lkPass').value='';$('lkMsg').textContent='';setTimeout(()=>$('lkPass').focus(),50);}
-async function unlock(){
-  const c=get();if(!c){root.classList.remove('locked');return;}
-  if(Date.now()<until){$('lkMsg').textContent='Esperá '+Math.ceil((until-Date.now())/1000)+' s…';return;}
-  if(await hash($('lkPass').value,unb64(c.salt))===c.hash){fails=0;last=Date.now();$('lkPass').value='';root.classList.remove('locked');}
-  else{fails++;if(fails>=3)until=Date.now()+Math.min(300,Math.pow(2,fails-2)*5)*1000;$('lkMsg').textContent='Clave incorrecta.';}
-}
-$('lkGo').onclick=unlock;$('lkPass').onkeydown=e=>{if(e.key==='Enter')unlock();};
-['pointerdown','keydown','touchstart','scroll'].forEach(ev=>addEventListener(ev,()=>{if(!root.classList.contains('locked'))last=Date.now();},{passive:true,capture:true}));
-setInterval(()=>{const c=get();if(c&&!root.classList.contains('locked')&&Date.now()-last>(c.mins||15)*60000)lock();},10000);
-document.addEventListener('visibilitychange',()=>{const c=get();if(c&&!document.hidden&&!root.classList.contains('locked')&&Date.now()-last>(c.mins||15)*60000)lock();});
-function ui(){const c=get();$('secState').textContent=c?'activa':'sin clave';$('secCurF').classList.toggle('hidden',!c);$('secOff').classList.toggle('hidden',!c);if(c)$('secMins').value=String(c.mins||15);}
-const msg=(t,ok)=>{const m=$('secMsg');m.textContent=t;m.className='status-line '+(ok?'ok':'err');};
-$('secSave').onclick=async()=>{
-  const c=get(),p1=$('secP1').value;
-  if(c&&await hash($('secCur').value,unb64(c.salt))!==c.hash)return msg('La clave actual no es correcta.');
-  if(!p1&&c){c.mins=+$('secMins').value;localStorage.setItem(K,JSON.stringify(c));ui();return msg('Tiempo de bloqueo actualizado.',1);}
-  if(p1.length<8)return msg('La clave debe tener al menos 8 caracteres.');
-  if(p1!==$('secP2').value)return msg('Las claves no coinciden.');
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(p1,salt),mins:+$('secMins').value}));
-  ['secCur','secP1','secP2'].forEach(i=>$(i).value='');ui();msg('Clave guardada. Recordala: no se puede recuperar.',1);
-};
-$('secOff').onclick=async()=>{const c=get();if(!c)return;if(await hash($('secCur').value,unb64(c.salt))!==c.hash)return msg('Ingresá la clave actual para quitarla.');localStorage.removeItem(K);ui();msg('Clave quitada.',1);};
-$('secNow').onclick=()=>{if(!get())return msg('Primero guardá una clave.');lock();};
-ui();
-setTimeout(()=>{if(!get()&&window.sorteoToast)window.sorteoToast('🔒 Configurá tu clave en Ajustes → Seguridad');},3500);
 })();
 </script>
 </body>
