@@ -131,6 +131,53 @@ body[data-density=espaciosa]{--density-pad:24px;--density-font:15px;--density-ro
 :root[data-skin=whiteboard] .card{box-shadow:0 2px 7px rgba(30,50,60,.08)}
 :root[data-skin=whiteboard] button.primary{background:#1677c8;color:#fff}
 
+
+/* ============ SKINS TRIBUTO / CONCEPTO ============ */
+:root[data-skin=btt88]{--bg:#0b0e14;--panel:#171b25;--panel2:#202738;--ink:#eef7ff;--sub:#91a4b5;--line:#354154;--accent:#ff5a36;--accent-ink:#fff;--accent2:#6de7ff;--radius:7px;--font-ui:Arial,sans-serif}
+:root[data-skin=btt88] body{background:radial-gradient(circle at 80% 10%,#273344 0,transparent 28%),linear-gradient(145deg,#080b10,#171b25)}
+:root[data-skin=btt88] .card{box-shadow:0 0 0 1px #ff5a3633,0 12px 28px #0008}
+:root[data-skin=btt88] .topbar h1{text-shadow:3px 0 #6de7ff55,-3px 0 #ff5a3655}
+:root[data-skin=btt88] button.primary{background:linear-gradient(90deg,#ff5a36,#ff9b36);box-shadow:0 0 16px #ff5a3644}
+:root[data-skin=stranger_vhs]{--bg:#08070d;--panel:#14111d;--panel2:#1d1828;--ink:#f3edf7;--sub:#a69bb0;--line:#382d45;--accent:#ff304f;--accent-ink:#fff;--accent2:#4aa8ff;--radius:5px;--font-ui:Arial,sans-serif}
+:root[data-skin=stranger_vhs] body{background:linear-gradient(180deg,#09070d,#170d1a 55%,#08070d);background-attachment:fixed}
+:root[data-skin=stranger_vhs] body::after{content:'';position:fixed;inset:0;pointer-events:none;opacity:.08;background:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 4px);mix-blend-mode:screen}
+:root[data-skin=stranger_vhs] .card{box-shadow:0 0 18px #ff304f18,0 0 1px #4aa8ff88}
+:root[data-skin=stranger_vhs] .topbar h1{text-shadow:2px 0 #4aa8ff,-2px 0 #ff304f}
+:root[data-skin=blade_noir]{--bg:#05080d;--panel:#0b1119;--panel2:#111b25;--ink:#dceaf0;--sub:#718895;--line:#20313d;--accent:#00d9ff;--accent-ink:#031017;--accent2:#ff3158;--radius:3px;--font-ui:Arial,sans-serif}
+:root[data-skin=blade_noir] body{background:linear-gradient(125deg,#05080d,#10232b 45%,#090b12);background-attachment:fixed}
+:root[data-skin=blade_noir] .card{border-color:#00d9ff33;box-shadow:0 10px 30px #0009}
+:root[data-skin=blade_noir] .topbar h1{letter-spacing:.04em;text-shadow:0 0 10px #00d9ff66}
+:root[data-skin=space_command]{--bg:#06101a;--panel:#0c1a27;--panel2:#102535;--ink:#eaf6ff;--sub:#8aa8b9;--line:#244052;--accent:#f5b642;--accent-ink:#101010;--accent2:#54d6ff;--radius:2px;--font-ui:Consolas,monospace}
+:root[data-skin=space_command] .card{border:1px solid #54d6ff55;box-shadow:inset 0 0 20px #54d6ff08}
+:root[data-skin=space_command] .card h2::before{content:'◆';color:var(--accent2);font-size:8px}
+:root[data-skin=space_command] button.primary{background:#f5b642;color:#101010}
+:root[data-skin=terminator_hud]{--bg:#07090a;--panel:#101416;--panel2:#171d20;--ink:#d7dde0;--sub:#7d898e;--line:#2b363b;--accent:#ff3b30;--accent-ink:#fff;--accent2:#b7c0c7;--radius:0px;--font-ui:Consolas,monospace}
+:root[data-skin=terminator_hud] .card{border-left:3px solid #ff3b30;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+:root[data-skin=terminator_hud] .topbar h1::before{content:'[HUD] ';color:#ff3b30}
+:root[data-skin=terminator_hud] button.primary{background:#ff3b30;color:#fff}
+:root[data-skin=ring_vhs]{--bg:#0b0d0d;--panel:#151817;--panel2:#1d211f;--ink:#d8d8d0;--sub:#8c958f;--line:#333b36;--accent:#d8d8d0;--accent-ink:#101212;--accent2:#72e0c2;--radius:1px;--font-ui:'Courier New',monospace}
+:root[data-skin=ring_vhs] body{background:#0b0d0d}
+:root[data-skin=ring_vhs] .card{border:1px solid #72e0c244;box-shadow:0 0 12px #72e0c214}
+:root[data-skin=nes_lab]{--bg:#17141c;--panel:#292532;--panel2:#34303e;--ink:#fff6ed;--sub:#b4aab8;--line:#514a5b;--accent:#d94a55;--accent-ink:#fff;--accent2:#4f7cff;--radius:2px;--font-ui:'Courier New',monospace}
+:root[data-skin=nes_lab] .card{border:3px solid #d94a55;box-shadow:4px 4px 0 #4f7cff}
+:root[data-skin=nes_lab] button.primary{box-shadow:3px 3px 0 #4f7cff}
+:root[data-skin=snes_lab]{--bg:#3f3b52;--panel:#514c68;--panel2:#625c7d;--ink:#f7f3ff;--sub:#c9c0d9;--line:#766f93;--accent:#e6dff5;--accent-ink:#3f3b52;--accent2:#8b79c8;--radius:9px}
+:root[data-skin=snes_lab] .card{border:2px solid #e6dff566;box-shadow:0 5px 0 #29253a}
+:root[data-skin=ps1_lab]{--bg:#202124;--panel:#2c2d30;--panel2:#37383c;--ink:#f2f2f2;--sub:#a8a9ad;--line:#4b4d52;--accent:#5d6cff;--accent-ink:#fff;--accent2:#c7c7c7;--radius:4px;--font-ui:Arial,sans-serif}
+:root[data-skin=ps1_lab] .card{box-shadow:inset 0 0 0 2px #c7c7c711,0 4px 14px #0007}
+:root[data-skin=ps1_lab] button.primary{background:#5d6cff}
+:root[data-skin=dreamcast_lab]{--bg:#06131f;--panel:#0b1e2e;--panel2:#103049;--ink:#eaf7ff;--sub:#88a8bb;--line:#21445d;--accent:#18a8ff;--accent-ink:#03121c;--accent2:#eaf7ff;--radius:14px}
+:root[data-skin=dreamcast_lab] body{background:radial-gradient(circle at 50% 0,#17476a,transparent 42%),#06131f}
+:root[data-skin=dreamcast_lab] .card{box-shadow:0 0 24px #18a8ff1c}
+:root[data-skin=dreamcast_lab] button.primary{background:linear-gradient(135deg,#18a8ff,#eaf7ff)}
+:root[data-skin=dungeon_scroll]{--bg:#201711;--panel:#2e2118;--panel2:#3b2a1d;--ink:#f1dfc1;--sub:#b99b75;--line:#604831;--accent:#d39a52;--accent-ink:#24170e;--accent2:#6fa36b;--radius:2px;--font-ui:Georgia,serif}
+:root[data-skin=dungeon_scroll] body{background:radial-gradient(circle at 20% 10%,#5a3b2055,transparent 35%),#201711}
+:root[data-skin=dungeon_scroll] .card{border:1px solid #d39a5244;box-shadow:0 5px 18px #0008}
+:root[data-skin=film_projector]{--bg:#0b0a08;--panel:#17140f;--panel2:#211c15;--ink:#f0dca7;--sub:#a99870;--line:#463a27;--accent:#f0d28a;--accent-ink:#17120b;--accent2:#b75c36;--radius:1px;--font-ui:Georgia,serif}
+:root[data-skin=film_projector] body{background:linear-gradient(90deg,#080706,#18130d 50%,#080706)}
+:root[data-skin=film_projector] .card{border-color:#f0d28a33;box-shadow:0 8px 25px #0009}
+:root[data-skin=film_projector] .topbar h1::before{content:'▮ ';color:#b75c36}
+
 *{box-sizing:border-box}
 html{scroll-padding-top:var(--safe-top)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);min-height:100%;font-size:var(--density-font);-webkit-text-size-adjust:100%}
@@ -655,7 +702,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
     <button data-view="tasks" data-icon="check"><span class="nav-ic"></span>Tareas<span class="nbadge" id="taskBadge" style="display:none">0</span></button>
 
     <div class="navlbl">Sistemas</div>
-    <button data-view="settings" data-icon="settings"><span class="nav-ic"></span>Personalización</button>
+    <button data-view="settings" data-icon="settings"><span class="nav-ic"></span>Configuración</button>
   </div>
   <button class="ghost miniBtn" id="sbToggle" title="Reducir barra lateral" aria-label="Reducir barra lateral" data-icon="sidebar" style="margin-top:14px;width:100%"></button>
   <div class="status" id="sideStatus">Sin datos cargados.<br>Cargá un Excel para empezar.</div>
@@ -1013,14 +1060,17 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
       <button data-set="design"><span data-icon="sliders"></span><span>Diseño PDF</span></button>
       <button data-set="headerfooter"><span data-icon="type"></span><span>Cabecera</span></button>
       <button data-set="ident"><span data-icon="tag"></span><span>Identidad</span></button>
-      <button data-set="calles"><span data-icon="wrench"></span><span>Calles</span></button>
       <button data-set="ui"><span data-icon="grid"></span><span>Interfaz</span></button>
       <button data-set="data"><span data-icon="database"></span><span>Datos</span></button>
       <button data-set="profiles"><span data-icon="layers"></span><span>Perfiles</span></button>
     </div>
     <div>
       <div class="set-pane active" id="pane-skin">
-        <div class="card"><h2><span class="h-ic" data-icon="palette"></span>Skins <span class="tag" id="skinCount">0</span></h2><div class="skin-grid" id="skinGrid"></div></div>
+        <div class="card">
+          <h2><span class="h-ic" data-icon="palette"></span>Skins <span class="tag" id="skinCount">0</span></h2>
+          <p class="hint">No son simples cambios de color: cada skin puede tener identidad visual, texturas, efectos y animaciones propias. Incluye tributos, emuladores y conceptos originales.</p>
+          <div class="skin-grid" id="skinGrid"></div>
+        </div>
         <div class="card"><h2><span class="h-ic" data-icon="layers"></span>Paletas</h2><div class="palette-grid" id="paletteGrid"></div></div>
         <div class="card"><h2><span class="h-ic" data-icon="sliders"></span>Ajustes finos</h2>
           <div class="row">
@@ -1162,27 +1212,6 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
         </div>
       </div>
 
-      <div class="set-pane" id="pane-calles">
-        <div class="card">
-          <h2><span class="h-ic" data-icon="wrench"></span>Análisis de calles</h2>
-          <p class="hint">El sistema agrupa por firma fonética y similitud. Confirmá las fusiones que quieras aplicar.</p>
-          <div class="row" style="margin-bottom:10px">
-            <div class="field" style="max-width:200px"><label>Umbral</label>
-              <select id="calleUmbral">
-                <option value="0.60">0.60 (más sugerencias)</option>
-                <option value="0.72" selected>0.72 (equilibrado)</option>
-                <option value="0.82">0.82 (solo casi idénticas)</option>
-              </select></div>
-            <div class="field" style="max-width:200px"><button class="secondary" id="calleAnalizar"><span class="b-ic" data-icon="refresh"></span>Analizar</button></div>
-            <div class="field" style="max-width:230px"><button class="ghost" id="calleExportAlias"><span class="b-ic" data-icon="download"></span>Exportar diccionario</button></div>
-            <div class="field" style="max-width:230px"><button class="ghost" id="calleImportAlias"><span class="b-ic" data-icon="upload"></span>Importar diccionario</button></div>
-          </div>
-          <div id="calleResumen" class="hint"></div>
-          <div id="calleSugerencias" style="margin-top:10px"></div>
-          <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Calles detectadas (todas)</summary><div id="calleListado" style="margin-top:8px"></div></details>
-        </div>
-      </div>
-
       <div class="set-pane" id="pane-ui">
         <div class="card"><h2><span class="h-ic" data-icon="grid"></span>Menú</h2>
           <div class="checkbox-grid" style="margin-top:6px">
@@ -1222,6 +1251,28 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
         <div class="card"><h2><span class="h-ic" data-icon="save"></span>Preferencias</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap"><button class="secondary" id="btnSaveCfg"><span class="b-ic" data-icon="save"></span>Guardar</button><span class="status-line" id="cfgStatus"></span></div>
         </div>
+        <div class="card">
+          <h2><span class="h-ic" data-icon="wrench"></span>Normalización de calles</h2>
+          <p class="hint">Herramienta de datos: detecta variantes de nombres de calles, sugiere coincidencias y permite unificar alias.</p>
+          <div class="card">
+                    <h2><span class="h-ic" data-icon="wrench"></span>Análisis de calles</h2>
+                    <p class="hint">El sistema agrupa por firma fonética y similitud. Confirmá las fusiones que quieras aplicar.</p>
+                    <div class="row" style="margin-bottom:10px">
+                      <div class="field" style="max-width:200px"><label>Umbral</label>
+                        <select id="calleUmbral">
+                          <option value="0.60">0.60 (más sugerencias)</option>
+                          <option value="0.72" selected>0.72 (equilibrado)</option>
+                          <option value="0.82">0.82 (solo casi idénticas)</option>
+                        </select></div>
+                      <div class="field" style="max-width:200px"><button class="secondary" id="calleAnalizar"><span class="b-ic" data-icon="refresh"></span>Analizar</button></div>
+                      <div class="field" style="max-width:230px"><button class="ghost" id="calleExportAlias"><span class="b-ic" data-icon="download"></span>Exportar diccionario</button></div>
+                      <div class="field" style="max-width:230px"><button class="ghost" id="calleImportAlias"><span class="b-ic" data-icon="upload"></span>Importar diccionario</button></div>
+                    </div>
+                    <div id="calleResumen" class="hint"></div>
+                    <div id="calleSugerencias" style="margin-top:10px"></div>
+                    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Calles detectadas (todas)</summary><div id="calleListado" style="margin-top:8px"></div></details>
+                  </div>
+        </div>
       </div>
 
       <div class="set-pane" id="pane-profiles">
@@ -1260,7 +1311,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
   <button data-view="tasks" data-icon="check">Tareas</button>
   <button data-view="print" data-icon="printer">Impr</button>
   <button data-view="sorteos" data-icon="target">Sorteos</button>
-  <button data-view="settings" data-icon="settings">Ajustes</button>
+  <button data-view="settings" data-icon="settings">Configuración</button>
 </nav>
 <footer class="app-footer">Procesamiento 100% local · Nora Suite · v6.0</footer>
 
@@ -1490,7 +1541,19 @@ const SKINS={
   plum:{name:'Plum',desc:'Ciruela elegante',colors:['#211624','#c18bd1','#e2a8b8']},
   olive:{name:'Olive',desc:'Verde oliva',colors:['#1a1b12','#b6bd65','#d4b96a']},
   midnight_red:{name:'Midnight Red',desc:'Bordó nocturno',colors:['#120b0e','#e15b68','#e9a16b']},
-  whiteboard:{name:'Whiteboard',desc:'Blanco limpio',colors:['#f4f6f7','#1677c8','#2b9c72']}
+  whiteboard:{name:'Whiteboard',desc:'Blanco limpio',colors:['#f4f6f7','#1677c8','#2b9c72']},
+  btt88:{name:'Tributo · Time Machine',desc:'VHS 1985 · neón y condensador',colors:['#11131a','#ff5a36','#6de7ff']},
+  stranger_vhs:{name:'Tributo · VHS Mystery',desc:'Serie 80s · CRT, rojo y azul',colors:['#100b18','#ff304f','#4aa8ff']},
+  blade_noir:{name:'Tributo · Neo Noir',desc:'Ciencia ficción · lluvia y neón',colors:['#070b12','#00d9ff','#ff3158']},
+  space_command:{name:'Tributo · Space Command',desc:'Consola sci-fi · radar y ámbar',colors:['#08121c','#f5b642','#54d6ff']},
+  terminator_hud:{name:'Tributo · Future War',desc:'HUD militar · rojo térmico',colors:['#090b0c','#ff3b30','#b7c0c7']},
+  ring_vhs:{name:'Tributo · Analog Horror',desc:'Televisor viejo · interferencia',colors:['#111313','#d8d8d0','#72e0c2']},
+  nes_lab:{name:'Emulador · 8-bit',desc:'Pixel art · consola clásica',colors:['#24212a','#d94a55','#4f7cff']},
+  snes_lab:{name:'Emulador · 16-bit',desc:'Plástico gris · arcade doméstico',colors:['#514c68','#e6dff5','#8b79c8']},
+  ps1_lab:{name:'Emulador · 32-bit',desc:'CRT gris · interfaz noventera',colors:['#26272b','#c7c7c7','#5d6cff']},
+  dreamcast_lab:{name:'Emulador · Dreamwave',desc:'Azul eléctrico · formas orbitales',colors:['#07131f','#18a8ff','#eaf7ff']},
+  dungeon_scroll:{name:'Concepto · Dungeon',desc:'RPG clásico · pergamino interactivo',colors:['#17110d','#d39a52','#6fa36b']},
+  film_projector:{name:'Concepto · Cine',desc:'Proyector · fotogramas y polvo',colors:['#11100e','#f0d28a','#b75c36']}
 };
 
 /* SKIN ANIM DEFAULT */
@@ -1512,6 +1575,18 @@ const SKIN_ANIM_DEFAULT = {
   dracula:'pulse glow',
   sunset:'gradient',
   iceberg:'pulse',
+  btt88:'flicker shimmer glow',
+  stranger_vhs:'flicker scanlines hue',
+  blade_noir:'rain shimmer glow',
+  space_command:'pulse scanlines',
+  terminator_hud:'flicker border-dance',
+  ring_vhs:'flicker scanlines',
+  nes_lab:'blink',
+  snes_lab:'pulse',
+  ps1_lab:'scanlines shimmer',
+  dreamcast_lab:'glow float',
+  dungeon_scroll:'float',
+  film_projector:'flicker shimmer',
   '':'pulse'
 };
 
@@ -1898,7 +1973,7 @@ document.getElementById('calleImportAlias').onclick = ()=>{
   inp.click();
 };
 
-document.getElementById('setMenu').addEventListener('click',e=>{const b=e.target.closest('button[data-set]');if(!b)return;const pane=b.dataset.set;document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+pane));if(pane==='skin'){renderSkinGrid();renderPaletteGrid();renderAnimGrid();}if(pane==='design'||pane==='headerfooter'){previewPdfStyle();previewLstStyle();previewGapsStyle();}if(pane==='design'){try{renderStyle();}catch(e){}}if(pane==='data'){const s=document.getElementById('backupStatus');updateBackupStatus2(s?s.textContent:'');}if(pane==='calles'){setTimeout(renderCallesPanel,30);}if(pane==='profiles')renderProfiles();});
+document.getElementById('setMenu').addEventListener('click',e=>{const b=e.target.closest('button[data-set]');if(!b)return;const pane=b.dataset.set;document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+pane));if(pane==='skin'){renderSkinGrid();renderPaletteGrid();renderAnimGrid();}if(pane==='design'||pane==='headerfooter'){previewPdfStyle();previewLstStyle();previewGapsStyle();}if(pane==='design'){try{renderStyle();}catch(e){}}if(pane==='data'){const s=document.getElementById('backupStatus');updateBackupStatus2(s?s.textContent:'');setTimeout(renderCallesPanel,30);}if(pane==='profiles')renderProfiles();});
 
 /* PROFILES */
 const PROFILES_KEY='nora_profiles_v2';
@@ -1914,7 +1989,7 @@ function renderProfiles(){
 document.getElementById('btnSaveProfile').onclick=()=>{const name=document.getElementById('profileName').value.trim();if(!name){notify('Poné un nombre','err');return;}const list=getProfiles();list.push({name,cfg:JSON.parse(JSON.stringify(CFG)),ts:Date.now()});saveProfiles(list);renderProfiles();document.getElementById('profileName').value='';notify('Perfil guardado','ok');};
 
 /* NAV */
-const TITLES={home:['Inicio','Centro de datos y resumen general.'],sorteos:['Sorteos','Quinielas, ganadores, PDF/JPG.'],pdf:['Generador de Informes PDF','Generá informes usando los datos ya cargados.'],dash:['Dashboard','Indicadores, tendencias y hallazgos.'],print:['Impresión por lotes','Seleccioná el reporte y controlá el progreso.'],datos:['Explorador','Más que una planilla.'],tasks:['Tareas','Gestor avanzado con Kanban, calendario y plantillas.'],listados:['Listados','Perfiles reutilizables.'],settings:['Personalización','Estilo, diseño, perfiles y respaldos.']};
+const TITLES={home:['Inicio','Centro de datos y resumen general.'],sorteos:['Sorteos','Quinielas, ganadores, PDF/JPG.'],pdf:['Generador de Informes PDF','Generá informes usando los datos ya cargados.'],dash:['Dashboard','Indicadores, tendencias y hallazgos.'],print:['Impresión por lotes','Seleccioná el reporte y controlá el progreso.'],datos:['Explorador','Más que una planilla.'],tasks:['Tareas','Gestor avanzado con Kanban, calendario y plantillas.'],listados:['Listados','Perfiles reutilizables.'],settings:['Configuración','Estilo, diseño, datos, perfiles y respaldos.']};
 const VIEW_ORDER=['home','dash','datos','pdf','print','sorteos','listados','tasks','settings'];
 let navHistory=[],navIndex=-1;
 function setView(v,skipHistory){
