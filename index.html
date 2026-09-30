@@ -1296,7 +1296,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
   <button data-view="sorteos" data-icon="target">Sorteos</button>
   <button data-view="settings" data-icon="settings">Configuración</button>
 </nav>
-<footer class="app-footer">Procesamiento 100% local · Nora Suite · v6.0</footer>
+<footer class="app-footer">Procesamiento 100% local · Nora Suite · v6.1</footer>
 
 <button class="fab" id="fab" aria-label="Acciones"><span data-icon="plus"></span></button>
 <div class="fab-menu" id="fabMenu">
@@ -3047,6 +3047,489 @@ renderTaskBadge();
 renderProfiles();
 renderReports();
 if(window._boot)window._boot.then(()=>setTimeout(()=>{renderHome();},200));
+</script>
+<script id="nora-patch-v15">
+/* ===== NORA PATCH v15: consola de log + relectura robusta + emblemas de homenaje ===== */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stripTags=s=>String(s==null?'':s).replace(/<[^>]*>/g,'');
+const fmtErr=e=>e?((e.name||'Error')+': '+(e.message||e)):'Error desconocido';
+
+/* =========================================================
+   1) LOG
+   ========================================================= */
+const LOG_MAX=5000;
+const NL={entries:[],paused:false,listeners:[],seq:0};
+let logDB=null,saveTimer=null;
+function openLogDB(){return new Promise(res=>{try{const rq=indexedDB.open('nora_log_db',1);rq.onupgradeneeded=()=>{rq.result.createObjectStore('log');};rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(null);}catch(e){res(null);}});}
+async function loadLog(){logDB=await openLogDB();if(!logDB)return;try{const rq=logDB.transaction('log','readonly').objectStore('log').get('entries');const old=await new Promise(r=>{rq.onsuccess=()=>r(rq.result||[]);rq.onerror=()=>r([]);});if(old.length){NL.entries=old.concat(NL.entries);NL.seq=NL.entries.length;}}catch(e){}}
+function scheduleSave(){if(!logDB||saveTimer)return;saveTimer=setTimeout(()=>{saveTimer=null;try{const tx=logDB.transaction('log','readwrite');tx.objectStore('log').put(NL.entries.slice(-LOG_MAX),'entries');}catch(e){}},1500);}
+function log(lvl,cat,msg,data){
+  if(NL.paused)return;
+  const en={id:++NL.seq,t:Date.now(),lvl:lvl||'info',cat:cat||'app',msg:String(msg==null?'':msg)};
+  if(data!==undefined){try{en.data=typeof data==='string'?data:JSON.stringify(data);}catch(e){en.data=String(data);}}
+  NL.entries.push(en);
+  if(NL.entries.length>LOG_MAX+200)NL.entries.splice(0,NL.entries.length-LOG_MAX);
+  scheduleSave();
+  NL.listeners.forEach(f=>{try{f(en);}catch(e){}});
+}
+NL.log=log;window.NoraLog=NL;
+
+/* hooks globales */
+const _c={log:console.log,info:console.info,warn:console.warn,error:console.error};
+['log','info','warn','error'].forEach(k=>{console[k]=function(){try{log(k==='log'||k==='info'?'info':k==='warn'?'warn':'err','console',Array.prototype.map.call(arguments,a=>a instanceof Error?(a.name+': '+a.message+(a.stack?'\n'+a.stack.split('\n').slice(0,4).join('\n'):'')):(typeof a==='object'?(function(){try{return JSON.stringify(a);}catch(e){return String(a);}})():String(a))).join(' '));}catch(e){}return _c[k].apply(console,arguments);};});
+window.addEventListener('error',e=>log('err','js',(e.message||'Error')+(e.filename?' @'+String(e.filename).split('/').pop()+':'+e.lineno:'')));
+window.addEventListener('unhandledrejection',e=>log('err','promesa',fmtErr(e.reason)));
+document.addEventListener('click',e=>{const t=e.target&&e.target.closest?e.target.closest('button,.chip,.skin-btn,.palette-btn,[data-view],a'):null;if(!t||t.closest('#nlPanel')||t.id==='nlFab')return;const lbl=(t.id?'#'+t.id+' ':'')+(t.textContent||t.title||'').trim().replace(/\s+/g,' ').slice(0,50);log('info','ui','Clic: '+lbl);},true);
+
+/* envoltorios de funciones globales */
+function wrap(name,fn){try{const orig=window[name];if(typeof orig!=='function')return;window[name]=fn(orig);}catch(e){}}
+wrap('notify',orig=>function(msg,type,opts){log(type==='err'?'err':type==='warn'?'warn':'info','aviso',stripTags(msg));return orig.apply(this,arguments);});
+wrap('applyCfg',orig=>function(){const r=orig.apply(this,arguments);try{updateEmblem();}catch(e){}return r;});
+wrap('saveState',orig=>async function(){const t=performance.now();try{const r=await orig.apply(this,arguments);log('info','datos','Estado guardado ('+Math.round(performance.now()-t)+' ms)');return r;}catch(e){log('err','datos','Fallo al guardar estado: '+fmtErr(e));throw e;}});
+let parseNotes=[];
+wrap('parseRecords',orig=>function(rows,name){const r=orig.apply(this,arguments);try{log(r.errors.length&&!r.records.length?'err':'info','parseo',name+': '+r.records.length+' registros, '+r.errors.length+' observaciones'+(r.errors.length?' · '+r.errors.slice(0,2).map(x=>'['+x.col+'] '+x.msg).join(' | '):''));if(!r.records.length)parseNotes.push({file:name,msg:(r.errors[0]&&r.errors[0].msg)||'Sin filas válidas'});}catch(e){}return r;});
+wrap('handleFiles',orig=>async function(files,silent){const t=performance.now();const names=Array.prototype.map.call(files||[],f=>f.name).join(', ');log('info','archivo','Procesando ('+(files?files.length:0)+'): '+names);try{const r=await orig.apply(this,arguments);log('ok','archivo','Procesado OK en '+Math.round(performance.now()-t)+' ms');return r;}catch(e){log('err','archivo','handleFiles falló: '+fmtErr(e),(e.stack||'').split('\n').slice(0,5).join('\n'));throw e;}});
+
+/* =========================================================
+   2) RELECTURA ROBUSTA DE ARCHIVOS
+   ========================================================= */
+const EXT=['.xlsx','.xlsm','.xls'];
+const PICK_TYPES=[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm'],'application/vnd.ms-excel':['.xls']}}];
+const KIND={
+  cob:{label:'Cobranza',get:()=>cobFileHandles,set:v=>{cobFileHandles=v;},store:l=>storeCobHandles(l),load:()=>getCobHandles(),status:(m,b)=>updateCobLinkStatus(m,b),ingest:f=>handleFiles(f,true),dirKey:'cobDir'},
+  sorteo:{label:'Sorteos',get:()=>sorteoFileHandles,set:v=>{sorteoFileHandles=v;},store:l=>storeSorteoHandles(l),load:()=>getSorteoHandles(),status:(m,b)=>updateSorteoLinkStatus(m,b),ingest:f=>window.__sorteoLoadFiles(f,true),dirKey:'sorteoDir'}
+};
+const busy={cob:false,sorteo:false};
+const lastSeen={};
+
+async function idbGet(key){try{const db=await openDB();const rq=db.transaction(STORE,'readonly').objectStore(STORE).get(key);return await new Promise(r=>{rq.onsuccess=()=>r(rq.result||null);rq.onerror=()=>r(null);});}catch(e){return null;}}
+async function idbSet(key,val){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');if(val===null)tx.objectStore(STORE).delete(key);else tx.objectStore(STORE).put(val,key);await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});return true;}catch(e){log('warn','idb','No se pudo guardar '+key+': '+fmtErr(e));return false;}}
+
+function explain(e){
+  const n=(e&&e.name)||'',m=(e&&e.message)||'';
+  if(n==='NotFoundError')return {why:'El archivo ya no está en esa ruta (se movió, renombró o Excel lo reemplazó al guardar).',fix:'Volvé a elegirlo o vinculá la carpeta.'};
+  if(n==='NotReadableError')return {why:'El sistema no dejó leerlo: está bloqueado por Excel/antivirus, se está sincronizando (OneDrive/Drive «solo en la nube») o cambió mientras se leía.',fix:'Guardá y cerrá el Excel, esperá que termine de sincronizar (o «Mantener siempre en este dispositivo») y reintentá.'};
+  if(n==='NotAllowedError'||n==='SecurityError'||/permiso|permission/i.test(m))return {why:'Falta el permiso del navegador. Chrome solo concede UN permiso por clic.',fix:'Tocá Reintentar (uno por vez) o vinculá una carpeta: se autoriza una sola vez para todos los archivos.'};
+  if(n==='InvalidStateError'||n==='TypeMismatchError')return {why:'La referencia guardada del archivo quedó inválida.',fix:'Volvé a elegir el archivo.'};
+  if(/vac[ií]o|0 bytes/i.test(m))return {why:'El archivo está vacío (probablemente Excel lo estaba escribiendo).',fix:'Esperá unos segundos y reintentá.'};
+  return {why:fmtErr(e),fix:'Probá volver a elegir el archivo o cargarlo con el selector clásico.'};
+}
+
+async function perm(h,ask){
+  try{
+    if(!h||!h.queryPermission)return 'granted';
+    let p=await h.queryPermission({mode:'read'});
+    if(p==='granted'||!ask)return p;
+    if(h.requestPermission){p=await h.requestPermission({mode:'read'});}
+    return p;
+  }catch(e){log('warn','permiso',(h&&h.name||'?')+': '+fmtErr(e));return 'error:'+(e.name||'');}
+}
+
+/* lee el archivo AHORA (bytes en memoria) y devuelve un File estable.
+   Esto evita el error "no se pudo leer" cuando el archivo cambia entre getFile() y arrayBuffer(). */
+async function readFresh(h,label){
+  const waits=[0,400,1000,2200];let last;
+  for(let i=0;i<waits.length;i++){
+    if(waits[i])await sleep(waits[i]);
+    try{
+      const f=await h.getFile();
+      const buf=await f.arrayBuffer();
+      if(!buf.byteLength)throw new Error('archivo vacío (0 bytes)');
+      log('info','archivo',(label||f.name)+': leído '+(buf.byteLength/1024).toFixed(1)+' KB · modificado '+new Date(f.lastModified).toLocaleString('es-AR')+(i?' (intento '+(i+1)+')':''));
+      return new File([buf],f.name,{type:f.type,lastModified:f.lastModified});
+    }catch(e){
+      last=e;log('warn','archivo',(label||h.name)+': intento '+(i+1)+'/'+waits.length+' falló → '+fmtErr(e));
+      if(e&&(e.name==='NotFoundError'||e.name==='NotAllowedError'||e.name==='SecurityError'))break;
+    }
+  }
+  throw last;
+}
+
+async function resolveSources(kind){
+  const K=KIND[kind];const out=[];
+  const dirInfo=await idbGet(K.dirKey);
+  if(dirInfo&&dirInfo.handle&&dirInfo.names&&dirInfo.names.length){
+    dirInfo.names.forEach(n=>out.push({name:n,permHandle:dirInfo.handle,getHandle:()=>dirInfo.handle.getFileHandle(n),via:'carpeta «'+dirInfo.handle.name+'»'}));
+    return out;
+  }
+  let list=K.get();
+  if(!list||!list.length){list=await K.load();K.set(list||[]);}
+  (list||[]).forEach(it=>{if(it&&it.handle&&typeof it.handle.getFile==='function')out.push({name:it.name||it.handle.name,permHandle:it.handle,getHandle:async()=>it.handle,via:'archivo'});});
+  return out;
+}
+
+async function reloadKind(kind,opt){
+  opt=opt||{};const K=KIND[kind];
+  if(busy[kind]){log('warn','archivo','Ya hay una lectura de '+K.label+' en curso');return;}
+  busy[kind]=true;const t0=performance.now();
+  log('info','archivo','▶ Releer '+K.label+(opt.auto?' (automático)':' (manual)'));
+  try{
+    const src=await resolveSources(kind);
+    if(!src.length){if(!opt.auto){K.status('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una vez.','warn');showRecovery(kind,[]);}return;}
+    // 1) permisos (primero, para conservar el gesto del usuario)
+    const pm=new Map();
+    for(const s of src){if(!pm.has(s.permHandle))pm.set(s.permHandle,await perm(s.permHandle,!opt.auto));}
+    // 2) lectura
+    const ok=[],bad=[];
+    for(const s of src){
+      const p=pm.get(s.permHandle);
+      if(p!=='granted'){bad.push({name:s.name,err:{name:'NotAllowedError',message:'permiso '+p}});continue;}
+      try{const h=await s.getHandle();ok.push(await readFresh(h,s.name));}
+      catch(e){bad.push({name:s.name,err:e});log('err','archivo',s.name+': '+fmtErr(e));}
+    }
+    // 3) aviso si el archivo en disco no cambió
+    ok.forEach(f=>{const sig=f.lastModified+':'+f.size,k=kind+':'+f.name;if(lastSeen[k]===sig)log('warn','archivo',f.name+': sin cambios en disco desde la última lectura ('+new Date(f.lastModified).toLocaleString('es-AR')+'). Si lo editaste, guardalo (Ctrl+S) o revisá que sea el mismo archivo.');lastSeen[k]=sig;});
+    // 4) procesar
+    if(ok.length){
+      parseNotes=[];K.status('Actualizando '+ok.length+' archivo(s)…',bad.length>0);
+      try{
+        await K.ingest(ok);
+        const unread=parseNotes.filter(n=>true);
+        unread.forEach(n=>notify(n.file+': no se pudo interpretar → '+n.msg,'err',{duration:8000}));
+        const msg=(ok.length-unread.length)+' actualizado(s)'+(bad.length?' · '+bad.length+' con problema':'')+(unread.length?' · '+unread.length+' sin interpretar':'');
+        K.status(msg,bad.length>0||unread.length>0);
+        if(!bad.length&&!unread.length)notify('Datos actualizados ('+ok.length+')','ok');
+        else notify(msg,'warn');
+        await K.store(K.get());
+        unread.forEach(n=>bad.push({name:n.file,err:{name:'ParseError',message:n.msg}}));
+      }catch(e){
+        log('err','archivo','Falló el procesamiento: '+fmtErr(e),(e.stack||'').split('\n').slice(0,6).join('\n'));
+        K.status('No se pudo procesar: '+fmtErr(e),true);notify('Error al procesar: '+fmtErr(e),'err',{duration:9000});
+        bad.push({name:'(procesamiento)',err:e});
+      }
+    }else{
+      K.status('No se pudo leer ningún archivo. Los datos anteriores se conservan.',true);
+      notify('No se pudo leer. Los datos actuales se conservaron.','warn');
+    }
+    log(bad.length?'warn':'ok','archivo','■ Releer '+K.label+': '+ok.length+' leídos, '+bad.length+' con problema · '+Math.round(performance.now()-t0)+' ms');
+    if(bad.length&&!opt.auto)showRecovery(kind,bad);
+  }catch(e){
+    log('err','archivo','Error inesperado en releer: '+fmtErr(e),(e.stack||'').split('\n').slice(0,5).join('\n'));
+    notify('Error inesperado: '+fmtErr(e),'err');
+  }finally{busy[kind]=false;}
+}
+
+async function pickFiles(kind,merge){
+  const K=KIND[kind];
+  if(!window.showOpenFilePicker){return classicPick(kind);}
+  const cur=K.get()||[];
+  let opts={multiple:true,id:'nora-'+kind,types:PICK_TYPES};
+  if(merge&&cur[0]&&cur[0].handle)opts.startIn=cur[0].handle;
+  let hs;
+  try{hs=await window.showOpenFilePicker(opts);}
+  catch(e){
+    if(e.name==='AbortError')return;
+    if(opts.startIn){try{delete opts.startIn;hs=await window.showOpenFilePicker(opts);}catch(e2){if(e2.name==='AbortError')return;log('err','archivo','Selector falló: '+fmtErr(e2));return classicPick(kind);}}
+    else{log('err','archivo','Selector falló: '+fmtErr(e));return classicPick(kind);}
+  }
+  const news=hs.map(h=>({name:h.name,handle:h}));
+  let list;
+  if(merge){const m=new Map(cur.map(x=>[x.name,x]));news.forEach(x=>m.set(x.name,x));list=Array.from(m.values());}else list=news;
+  K.set(list);await K.store(list);await idbSet(K.dirKey,null);
+  K.status(list.length+' archivo(s) vinculados',false);
+  log('ok','archivo','Vinculados ('+K.label+'): '+list.map(x=>x.name).join(', '));
+  notify(list.length+' archivo(s) vinculados','ok');
+  closeRecovery();
+  await reloadKind(kind,{});
+}
+
+async function linkDir(kind){
+  const K=KIND[kind];
+  if(!window.showDirectoryPicker){notify('Este navegador no permite vincular carpetas. Usá el selector clásico.','warn');return;}
+  let dir;
+  try{dir=await window.showDirectoryPicker({id:'nora-dir-'+kind,mode:'read'});}
+  catch(e){if(e.name==='AbortError')return;log('err','carpeta','Selector de carpeta falló: '+fmtErr(e));notify('No se pudo abrir esa carpeta ('+(e.name||'error')+'). Chrome bloquea Escritorio/Documentos/Descargas directos: elegí una subcarpeta.','err',{duration:9000});return;}
+  const found=[];
+  try{for await(const [n,h] of dir.entries()){if(h.kind==='file'&&!n.startsWith('~$')&&EXT.some(x=>n.toLowerCase().endsWith(x)))found.push(n);}}catch(e){log('err','carpeta','No se pudo listar: '+fmtErr(e));}
+  found.sort((a,b)=>a.localeCompare(b,'es'));
+  if(!found.length){notify('Esa carpeta no tiene archivos Excel.','warn');return;}
+  const known=new Set((K.get()||[]).map(x=>x.name).concat((window.FILES||[]).map(f=>f.name)));
+  let pre=found.filter(n=>known.has(n));if(!pre.length)pre=found.slice();
+  openModal('<h3>Carpeta «'+escH(dir.name)+'»</h3><p class="nl-sub">Elegí los Excel de <b>'+K.label+'</b> que querés mantener actualizados. Se autoriza una sola vez para toda la carpeta y sigue funcionando aunque Excel reemplace el archivo al guardar.</p><div class="nl-checks">'+found.map((n,i)=>'<label><input type="checkbox" data-n="'+escH(n)+'" '+(pre.includes(n)?'checked':'')+'> '+escH(n)+'</label>').join('')+'</div><div class="nl-btns"><button class="primary" id="nlDirOk">Usar estos archivos</button><button class="secondary" id="nlDirNo">Cancelar</button></div>');
+  $('nlDirNo').onclick=closeRecovery;
+  $('nlDirOk').onclick=async()=>{
+    const names=Array.from(document.querySelectorAll('#nlModal .nl-checks input:checked')).map(i=>i.dataset.n);
+    if(!names.length){notify('Elegí al menos un archivo','warn');return;}
+    await idbSet(K.dirKey,{handle:dir,names});
+    log('ok','carpeta','Carpeta vinculada ('+K.label+'): '+dir.name+' → '+names.join(', '));
+    K.status('Carpeta «'+dir.name+'» · '+names.length+' archivo(s)',false);
+    closeRecovery();await reloadKind(kind,{});
+  };
+}
+
+function classicPick(kind){
+  const K=KIND[kind];
+  return new Promise(res=>{
+    const inp=document.createElement('input');inp.type='file';inp.multiple=true;inp.accept='.xlsx,.xlsm,.xls';inp.style.display='none';document.body.appendChild(inp);
+    inp.onchange=async()=>{
+      const out=[];
+      for(const f of Array.from(inp.files||[])){try{const b=await f.arrayBuffer();out.push(new File([b],f.name,{type:f.type,lastModified:f.lastModified}));log('info','archivo','Selector clásico: '+f.name+' ('+(b.byteLength/1024).toFixed(1)+' KB)');}catch(e){log('err','archivo',f.name+': '+fmtErr(e));notify(f.name+': '+explain(e).why,'err',{duration:8000});}}
+      inp.remove();
+      if(out.length){try{parseNotes=[];await K.ingest(out);parseNotes.forEach(n=>notify(n.file+': no se pudo interpretar → '+n.msg,'err',{duration:8000}));notify('Cargado sin vincular ('+out.length+'). Para actualizar de nuevo volvé a elegirlo.','ok');K.status(out.length+' cargado(s) manualmente (sin vínculo)',false);closeRecovery();}catch(e){log('err','archivo','Falló el procesamiento: '+fmtErr(e));notify('Error al procesar: '+fmtErr(e),'err');}}
+      res();
+    };
+    inp.oncancel=()=>{inp.remove();res();};
+    inp.click();
+  });
+}
+
+/* ---------- panel de recuperación ---------- */
+function openModal(html){closeRecovery();const m=document.createElement('div');m.id='nlModal';m.innerHTML='<div class="nl-mbox">'+html+'</div>';m.addEventListener('click',e=>{if(e.target===m)closeRecovery();});document.body.appendChild(m);}
+function closeRecovery(){const m=$('nlModal');if(m)m.remove();}
+function showRecovery(kind,problems){
+  const K=KIND[kind];
+  const rows=problems.map(p=>{const x=explain(p.err);return '<div class="nl-prob"><b>'+escH(p.name)+'</b><div>'+escH(x.why)+'</div><div class="nl-fix">→ '+escH(x.fix)+'</div></div>';}).join('')||'<div class="nl-prob">No hay archivos vinculados todavía.</div>';
+  openModal('<h3>'+K.label+': no se pudo actualizar</h3><p class="nl-sub">Tus datos anteriores siguen intactos. Probá en este orden:</p>'+rows+
+   '<div class="nl-btns">'+
+   '<button class="primary" id="nlR1">1 · Reintentar</button>'+
+   '<button class="secondary" id="nlR2">2 · Volver a elegir archivos</button>'+
+   (window.showDirectoryPicker?'<button class="secondary" id="nlR3">3 · Vincular carpeta (un solo permiso)</button>':'')+
+   '<button class="secondary" id="nlR4">4 · Cargar sin vincular</button>'+
+   '<button class="ghost" id="nlR5">Ver log</button><button class="ghost" id="nlR6">Cerrar</button></div>');
+  $('nlR1').onclick=()=>{closeRecovery();reloadKind(kind,{});};
+  $('nlR2').onclick=()=>pickFiles(kind,true);
+  if($('nlR3'))$('nlR3').onclick=()=>linkDir(kind);
+  $('nlR4').onclick=()=>classicPick(kind);
+  $('nlR5').onclick=()=>{closeRecovery();togglePanel(true);};
+  $('nlR6').onclick=closeRecovery;
+}
+
+/* reemplazo de funciones y botones */
+function installFileFns(){
+  window.reloadCobFiles=a=>reloadKind('cob',{auto:a===true});
+  window.reconnectCobFiles=()=>reloadKind('cob',{});
+  window.linkCobFiles=()=>pickFiles('cob',false);
+  window.reloadSorteoFiles=a=>reloadKind('sorteo',{auto:a===true});
+  window.reconnectSorteoFiles=()=>reloadKind('sorteo',{});
+  window.linkSorteoFiles=()=>pickFiles('sorteo',false);
+  const bind=(id,fn)=>{const el=$(id);if(el)el.onclick=fn;};
+  bind('btnLinkCobFiles',()=>pickFiles('cob',false));bind('btnLinkCobFiles2',()=>pickFiles('cob',false));
+  bind('btnReconnectCobFiles',()=>reloadKind('cob',{}));bind('btnReconnectCobFiles2',()=>reloadKind('cob',{}));
+  bind('btnReloadCobFiles',()=>reloadKind('cob',{}));
+  bind('btnLinkSorteoFiles',()=>pickFiles('sorteo',false));bind('btnLinkSorteoFiles2',()=>pickFiles('sorteo',false));
+  bind('btnReconnectSorteoFiles',()=>reloadKind('sorteo',{}));bind('btnReconnectSorteoFiles2',()=>reloadKind('sorteo',{}));
+  bind('btnReloadSorteoFiles',()=>reloadKind('sorteo',{}));
+  // botón extra: carpeta
+  [['btnReloadCobFiles','cob'],['btnReloadSorteoFiles','sorteo']].forEach(([id,k])=>{const b=$(id);if(b&&!$('nlDirBtn_'+k)){const n=document.createElement('button');n.id='nlDirBtn_'+k;n.className=b.className.replace('hidden','').trim();n.type='button';n.textContent='Carpeta';n.title='Vincular una carpeta (un solo permiso para todos los Excel)';n.onclick=()=>linkDir(k);b.insertAdjacentElement('afterend',n);}});
+  log('ok','sistema','Módulo de archivos robusto activo');
+}
+
+/* =========================================================
+   3) EMBLEMAS DE HOMENAJE (minimalistas, monolínea)
+   ========================================================= */
+const G={
+ retro90:['Windows 95/98','<rect x="3" y="4.5" width="18" height="15" rx="1"/><path d="M3 8.5h18M6.5 12h6M6.5 15h9"/>'],
+ retro80:['los 80 · Synthwave','<path d="M5 14a7 7 0 0 1 14 0"/><path d="M3 16.5h18M5 19h14M8 21.5h8"/>'],
+ matrix:['The Matrix','<path d="M6 3v4M6 10v2M6 15v6M12 5v3M12 11v6M12 20v1M18 3v7M18 13v3M18 19v2"/>'],
+ cmd:['el símbolo del sistema (MS-DOS / CMD)','<rect x="2.5" y="3.5" width="19" height="17" rx="1.5"/><path d="M6 9l4 3-4 3M12.5 16H18"/>'],
+ pipboy:['Fallout · Pip-Boy','<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>'],
+ cyberpunk2077:['Cyberpunk 2077','<rect x="7" y="7" width="10" height="10" rx="1"/><path d="M10 10h4v4h-4zM9.5 3.5V7M14.5 3.5V7M9.5 17v3.5M14.5 17v3.5M3.5 9.5H7M3.5 14.5H7M17 9.5h3.5M17 14.5h3.5"/>'],
+ ubuntu_yaru:['Ubuntu','<circle cx="12" cy="12" r="8"/><circle cx="12" cy="4" r="1.7"/><circle cx="5.1" cy="16" r="1.7"/><circle cx="18.9" cy="16" r="1.7"/>'],
+ space_command:['la exploración espacial','<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-25 12 12)"/><path d="M19 4l.7 1.6L21.3 6.3l-1.6.7L19 8.6l-.7-1.6L16.7 6.3l1.6-.7z"/>'],
+ ring_vhs:['The Ring · terror analógico','<rect x="3" y="5" width="18" height="12.5" rx="2"/><circle cx="12" cy="11.25" r="3.5"/><circle cx="12" cy="11.25" r="1"/><path d="M8 20.5h8"/>'],
+ nes_lab:['la NES (Nintendo)','<rect x="2.5" y="8" width="19" height="9" rx="1.5"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="13.5" r="1.1"/><circle cx="18.5" cy="12" r="1.1"/>'],
+ snes_lab:['Super Nintendo','<path d="M6 8.5h12a4 4 0 0 1 3.9 4.9l-.6 2.4a2.2 2.2 0 0 1-3.7.8L16 14.7H8l-1.6 1.9a2.2 2.2 0 0 1-3.7-.8l-.6-2.4A4 4 0 0 1 6 8.5z"/><path d="M7 10.8v3M5.5 12.3h3"/><circle cx="16.3" cy="11.4" r=".8"/><circle cx="18.2" cy="13.2" r=".8"/>'],
+ ps1_lab:['PlayStation (1994)','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 6a6 6 0 0 1 6 6"/>'],
+ dreamcast_lab:['Sega Dreamcast','<path d="M12 12a1.5 1.5 0 1 1 3 0 3.5 3.5 0 1 1-7 0 5.5 5.5 0 1 1 11 0 7.5 7.5 0 1 1-15 0"/>'],
+ dungeon_scroll:['los juegos de rol de mesa','<path d="M12 2.5l8.5 5v9l-8.5 5-8.5-5v-9z"/><path d="M12 2.5L8.5 10h7zM8.5 10l-5-2.5M15.5 10l5-2.5M8.5 10L12 21.5l3.5-11.5"/>'],
+ film_projector:['el cine analógico','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="6.6" r="1.5"/><circle cx="12" cy="17.4" r="1.5"/><circle cx="6.6" cy="12" r="1.5"/><circle cx="17.4" cy="12" r="1.5"/>'],
+ arcade16:['los arcades de 16 bits','<circle cx="12" cy="6.5" r="3"/><path d="M12 9.5V15"/><rect x="4" y="15" width="16" height="6" rx="1.5"/><circle cx="8.5" cy="18" r=".8"/><circle cx="15.5" cy="18" r=".8"/>'],
+ gameboy:['Game Boy (Nintendo)','<rect x="6" y="2.5" width="12" height="19" rx="1.8"/><rect x="8.5" y="5" width="7" height="6" rx=".6"/><path d="M9 15v3M7.5 16.5h3"/><circle cx="14.2" cy="16.2" r=".8"/><circle cx="16" cy="14.6" r=".8"/>'],
+ c64:['Commodore 64','<rect x="2.5" y="8" width="19" height="9" rx="1.2"/><path d="M5 11h14M5 13.5h14"/>'],
+ btt88:['Volver al Futuro','<path d="M13 2.5L5.5 13h5l-1 8.5L18 10.5h-5z"/>'],
+ stranger_vhs:['Stranger Things · VHS','<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><path d="M8 15.5h8"/>'],
+ blade_noir:['Blade Runner','<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>'],
+ terminator_hud:['Terminator','<circle cx="12" cy="12" r="6"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>'],
+ lost_dharma:['LOST · Iniciativa Dharma','<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2"/><path d="M12 5v5M12 14v5"/>'],
+ alien_mother:['Alien · Nostromo','<circle cx="12" cy="12" r="9"/><path d="M12 12l5-5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'],
+ playstation2:['PlayStation 2','<rect x="7" y="2.5" width="10" height="19" rx="1.5"/><path d="M10 6h4M10 9h4M10 17.5h4"/>'],
+ mac_system7:['Macintosh System 7','<rect x="5" y="3" width="14" height="18" rx="2"/><rect x="7.5" y="5.5" width="9" height="7" rx=".8"/><path d="M8 17h4"/>'],
+ iphone_glass:['iOS · Liquid Glass','<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M10.5 5h3"/><circle cx="12" cy="18.6" r=".7"/>']
+};
+const svgOf=(inner,color)=>'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
+const dataUri=(inner,color)=>'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svgOf(inner,color));
+
+function fillSkinMarks(){
+  try{Object.keys(G).forEach(k=>{if(SKINS[k]&&!SKINS[k].mark){SKINS[k].mark=dataUri(G[k][1],(SKINS[k].colors&&SKINS[k].colors[1])||'#888');}});
+    if(typeof renderSkinGrid==='function')renderSkinGrid();}catch(e){log('warn','skin','No se pudieron completar marcas: '+fmtErr(e));}
+}
+let emblemEl=null;
+function updateEmblem(){
+  const k=(typeof CFG!=='undefined'&&CFG.skin)||'';
+  if(!emblemEl){emblemEl=document.createElement('div');emblemEl.id='noraEmblem';emblemEl.setAttribute('role','img');document.body.appendChild(emblemEl);}
+  const g=G[k];
+  if(!g){emblemEl.style.display='none';return;}
+  const u='url("'+dataUri(g[1],'#000')+'")';
+  emblemEl.style.display='block';
+  emblemEl.style.webkitMaskImage=u;emblemEl.style.maskImage=u;
+  emblemEl.title='Skin de homenaje a '+g[0];
+  emblemEl.setAttribute('aria-label','Homenaje a '+g[0]);
+}
+
+/* =========================================================
+   4) UI DE LA CONSOLA
+   ========================================================= */
+const css=`
+#noraEmblem{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:26px;height:26px;background:var(--accent);opacity:.34;z-index:40;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;transition:opacity .25s;cursor:help}
+#noraEmblem:hover{opacity:.85}
+#nlFab{position:fixed;right:52px;bottom:calc(14px + env(safe-area-inset-bottom,0px));height:26px;min-width:34px;padding:0 8px;z-index:41;font:600 12px/1 Consolas,ui-monospace,monospace;background:var(--panel);color:var(--sub);border:1px solid var(--line);border-radius:7px;opacity:.75;cursor:pointer}
+#nlFab:hover{opacity:1;color:var(--accent);border-color:var(--accent)}
+#nlFab .n{display:inline-block;min-width:14px;margin-left:5px;padding:1px 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px}
+#nlFab .n:empty{display:none}
+@media(max-width:760px){#noraEmblem,#nlFab{bottom:calc(var(--bottomnav-h,64px) + 18px + env(safe-area-inset-bottom,0px))}}
+#nlPanel{position:fixed;left:0;right:0;bottom:0;height:46vh;min-height:220px;z-index:300;display:none;flex-direction:column;background:var(--panel);color:var(--ink);border-top:2px solid var(--accent);box-shadow:0 -12px 40px rgba(0,0,0,.35);font-family:Consolas,ui-monospace,'Courier New',monospace}
+#nlPanel.open{display:flex}
+#nlHead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);background:var(--panel2);cursor:ns-resize}
+#nlHead b{font-size:12.5px;margin-right:4px}
+#nlHead input,#nlHead select{font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:auto}
+#nlSearch{flex:1;min-width:120px}
+#nlHead button{font:600 11.5px Consolas,monospace;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+#nlHead button:hover{border-color:var(--accent);color:var(--accent)}
+#nlBody{flex:1;overflow:auto;padding:6px 10px;font-size:12px;line-height:1.5;-webkit-overflow-scrolling:touch}
+.nlr{display:flex;gap:8px;padding:1px 0;border-bottom:1px dashed color-mix(in srgb,var(--line) 55%,transparent);word-break:break-word}
+.nlr .t{color:var(--sub);flex:0 0 auto}
+.nlr .c{flex:0 0 62px;color:var(--accent2);overflow:hidden;text-overflow:ellipsis}
+.nlr .m{flex:1;white-space:pre-wrap}
+.nlr.warn .m{color:var(--warn)}.nlr.err .m{color:var(--danger);font-weight:600}.nlr.ok .m{color:var(--accent2)}.nlr.cmd .m{color:var(--accent)}.nlr.out .m{color:var(--ink)}
+.nlr mark{background:color-mix(in srgb,var(--accent) 35%,transparent);color:inherit;border-radius:2px}
+#nlFoot{display:flex;gap:6px;align-items:center;padding:6px 10px;border-top:1px solid var(--line);background:var(--panel2)}
+#nlFoot span{color:var(--accent);font-weight:700}
+#nlCmd{flex:1;font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+#nlModal{position:fixed;inset:0;z-index:400;background:rgba(10,14,20,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.nl-mbox{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:18px 20px;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.nl-mbox h3{margin:0 0 6px;font-size:16px}
+.nl-sub{color:var(--sub);font-size:12.5px;margin:0 0 12px}
+.nl-prob{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--danger);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;line-height:1.45}
+.nl-fix{color:var(--accent);margin-top:3px}
+.nl-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.nl-checks{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto;font-size:13px}
+.nl-checks label{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);font-weight:500}
+`;
+const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+
+const fab=document.createElement('button');fab.id='nlFab';fab.type='button';fab.title='Consola de registro (Ctrl+Alt+L)';fab.innerHTML='&gt;_<span class="n"></span>';document.body.appendChild(fab);
+const panel=document.createElement('div');panel.id='nlPanel';
+panel.innerHTML='<div id="nlHead"><b>Consola</b><input id="nlSearch" type="text" placeholder="Buscar en el log…" autocomplete="off"><select id="nlLvl"><option value="">Todo</option><option value="err">Errores</option><option value="warn">Avisos+</option><option value="ok">OK</option></select><select id="nlCat"><option value="">Categorías</option></select><button id="nlPause" title="Pausar registro">Pausa</button><button id="nlCopy">Copiar</button><button id="nlTxt">.txt</button><button id="nlJson">.json</button><button id="nlClear">Limpiar</button><button id="nlClose">✕</button></div><div id="nlBody"></div><div id="nlFoot"><span>&gt;</span><input id="nlCmd" type="text" placeholder="Comando (escribí help)" autocomplete="off" autocapitalize="off" spellcheck="false"></div>';
+document.body.appendChild(panel);
+
+const body=$('nlBody'),sInp=$('nlSearch'),lvlSel=$('nlLvl'),catSel=$('nlCat'),cmdInp=$('nlCmd');
+let pinned=true,errCount=0,rafId=0,cats=new Set();
+const pad=(n,l)=>String(n).padStart(l||2,'0');
+const tstr=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+'.'+pad(d.getMilliseconds(),3);};
+const lvlRank={info:0,ok:0,out:0,cmd:0,warn:1,err:2};
+function passes(en){
+  const l=lvlSel.value;
+  if(l==='err'&&en.lvl!=='err')return false;
+  if(l==='warn'&&lvlRank[en.lvl]<1)return false;
+  if(l==='ok'&&en.lvl!=='ok')return false;
+  if(catSel.value&&en.cat!==catSel.value)return false;
+  const q=sInp.value.trim().toLowerCase();
+  if(q&&(en.msg+' '+en.cat+' '+(en.data||'')).toLowerCase().indexOf(q)<0)return false;
+  return true;
+}
+function hl(text){const q=sInp.value.trim();const e=escH(text);if(!q)return e;const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/&/g,'&amp;')+')','ig');return e.replace(re,'<mark>$1</mark>');}
+function rowHtml(en){return '<div class="nlr '+en.lvl+'"><span class="t">'+tstr(en.t)+'</span><span class="c">'+escH(en.cat)+'</span><span class="m">'+hl(en.msg)+(en.data?'\n'+hl(en.data):'')+'</span></div>';}
+function render(){
+  rafId=0;if(!panel.classList.contains('open'))return;
+  const list=NL.entries.filter(passes);const shown=list.slice(-600);
+  body.innerHTML=(list.length>shown.length?'<div class="nlr"><span class="m" style="color:var(--sub)">… '+(list.length-shown.length)+' líneas anteriores (usá la búsqueda o exportá)</span></div>':'')+shown.map(rowHtml).join('')||'<div class="nlr"><span class="m" style="color:var(--sub)">Sin resultados.</span></div>';
+  if(pinned)body.scrollTop=body.scrollHeight;
+  $('nlHead').querySelector('b').textContent='Consola · '+list.length+'/'+NL.entries.length;
+}
+const sched=()=>{if(!rafId)rafId=requestAnimationFrame(render);};
+NL.listeners.push(en=>{
+  if(!cats.has(en.cat)){cats.add(en.cat);const o=document.createElement('option');o.value=en.cat;o.textContent=en.cat;catSel.appendChild(o);}
+  if(en.lvl==='err'&&!panel.classList.contains('open')){errCount++;fab.querySelector('.n').textContent=errCount;}
+  sched();
+});
+body.addEventListener('scroll',()=>{pinned=body.scrollTop+body.clientHeight>=body.scrollHeight-24;});
+[sInp,lvlSel,catSel].forEach(el=>el.addEventListener('input',()=>{pinned=false;sched();}));
+function togglePanel(force){const open=force===undefined?!panel.classList.contains('open'):force;panel.classList.toggle('open',open);if(open){errCount=0;fab.querySelector('.n').textContent='';pinned=true;sched();setTimeout(()=>cmdInp.focus(),50);}}
+fab.onclick=()=>togglePanel();$('nlClose').onclick=()=>togglePanel(false);
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='l'||e.key==='L')){e.preventDefault();togglePanel();}if(e.key==='Escape'&&panel.classList.contains('open')&&document.activeElement===cmdInp){togglePanel(false);}});
+$('nlPause').onclick=function(){NL.paused=!NL.paused;this.textContent=NL.paused?'Reanudar':'Pausa';};
+const asText=()=>NL.entries.filter(passes).map(en=>tstr(en.t)+' ['+en.lvl.toUpperCase()+'] ('+en.cat+') '+en.msg+(en.data?'\n    '+en.data.replace(/\n/g,'\n    '):'')).join('\n');
+function download(name,text,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime||'text/plain'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+const stamp=()=>{const d=new Date();return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes());};
+$('nlCopy').onclick=async()=>{try{await navigator.clipboard.writeText(asText());notify('Log copiado','ok');}catch(e){const ta=document.createElement('textarea');ta.value=asText();document.body.appendChild(ta);ta.select();try{document.execCommand('copy');notify('Log copiado','ok');}catch(e2){notify('No se pudo copiar','err');}ta.remove();}};
+$('nlTxt').onclick=()=>download('nora_log_'+stamp()+'.txt',asText());
+$('nlJson').onclick=()=>download('nora_log_'+stamp()+'.json',JSON.stringify(NL.entries.filter(passes),null,1),'application/json');
+$('nlClear').onclick=()=>{if(!confirm('¿Borrar todo el log guardado?'))return;NL.entries.length=0;scheduleSave();sched();};
+// redimensionar arrastrando la cabecera
+(function(){let y0=0,h0=0,drag=false;const hd=$('nlHead');hd.addEventListener('pointerdown',e=>{if(e.target!==hd&&e.target.tagName!=='B')return;drag=true;y0=e.clientY;h0=panel.offsetHeight;hd.setPointerCapture(e.pointerId);});hd.addEventListener('pointermove',e=>{if(!drag)return;panel.style.height=Math.max(180,Math.min(window.innerHeight-40,h0+(y0-e.clientY)))+'px';});hd.addEventListener('pointerup',()=>{drag=false;});})();
+
+/* ---------- comandos ---------- */
+const out=(m,l)=>log(l||'out','cmd',m);
+const hist=[];let hi=0;
+async function fileReport(){
+  for(const k of Object.keys(KIND)){
+    const K=KIND[k];const di=await idbGet(K.dirKey);
+    if(di&&di.handle){out(K.label+' → carpeta «'+di.handle.name+'» permiso: '+await perm(di.handle,false)+' · '+di.names.join(', '));continue;}
+    const l=K.get().length?K.get():(await K.load());
+    if(!l||!l.length){out(K.label+' → sin archivos vinculados');continue;}
+    for(const it of l){out(K.label+' → '+it.name+' · permiso: '+(await perm(it.handle,false)));}
+  }
+  out('En memoria: '+((window.FILES||[]).map(f=>f.name+' ('+f.records.length+')').join(', ')||'ninguno'));
+}
+async function diag(){
+  out('Navegador: '+navigator.userAgent);
+  out('Protocolo: '+location.protocol+' · contexto seguro: '+window.isSecureContext+(location.protocol==='file:'?'  ⚠ abierto como archivo local: Chrome puede pedir permisos en cada sesión. Mejor servirlo desde http://localhost o https.':''));
+  out('showOpenFilePicker: '+!!window.showOpenFilePicker+' · showDirectoryPicker: '+!!window.showDirectoryPicker+' · IndexedDB: '+!!window.indexedDB);
+  try{if(navigator.storage&&navigator.storage.persisted){out('Almacenamiento persistente: '+await navigator.storage.persisted());}}catch(e){}
+  try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();out('Uso de almacenamiento: '+(e.usage/1048576).toFixed(1)+' MB de '+(e.quota/1048576).toFixed(0)+' MB');}}catch(e){}
+  out('Skin: '+((typeof CFG!=='undefined'&&CFG.skin)||'estándar')+' · registros: '+(window.RECORDS?RECORDS.length:'?'));
+  await fileReport();
+}
+const CMDS={
+  help:()=>{out('Comandos:\n  help                 esta ayuda\n  find <texto>         buscar en el log (también podés usar el cuadro de arriba)\n  errors               solo errores      ·  all  ver todo\n  last <n>             mostrar las últimas n líneas\n  files                estado de archivos vinculados y permisos\n  diag                 diagnóstico del navegador/entorno\n  reload [cob|sorteo|all]   releer archivos\n  relink cob|sorteo    volver a elegir archivos\n  folder cob|sorteo    vincular una carpeta\n  load cob|sorteo      cargar sin vincular (selector clásico)\n  skin [id]            ver/cambiar skin  ·  skins  lista\n  export               descargar el log (.txt)\n  clear                borrar el log\n  Atajo: Ctrl+Alt+L · ↑/↓ historial');},
+  find:a=>{sInp.value=a.join(' ');pinned=false;sched();out('Filtro: «'+sInp.value+'»');},
+  errors:()=>{lvlSel.value='err';sched();},all:()=>{lvlSel.value='';catSel.value='';sInp.value='';sched();},
+  last:a=>{const n=parseInt(a[0])||20;NL.entries.slice(-n).forEach(()=>{});sInp.value='';pinned=true;sched();out('Mostrando todo (las últimas '+n+' al final).');},
+  files:fileReport,diag:diag,
+  reload:async a=>{const w=(a[0]||'all').toLowerCase();if(w==='all'||w==='cob')await reloadKind('cob',{});if(w==='all'||w==='sorteo')await reloadKind('sorteo',{});},
+  relink:a=>KIND[a[0]]?pickFiles(a[0],true):out('Usá: relink cob|sorteo','warn'),
+  folder:a=>KIND[a[0]]?linkDir(a[0]):out('Usá: folder cob|sorteo','warn'),
+  load:a=>KIND[a[0]]?classicPick(a[0]):out('Usá: load cob|sorteo','warn'),
+  skins:()=>out(Object.keys(SKINS).map(k=>k||'(estandar)').join(', ')),
+  skin:a=>{if(!a[0]){out('Skin actual: '+(CFG.skin||'estándar'));return;}const id=a[0]==='estandar'?'':a[0];if(!(id in SKINS)){out('No existe ese skin. Usá: skins','warn');return;}CFG.skin=id;CFG.anim=null;try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}applyCfg();out('Skin aplicado: '+(id||'estándar'),'ok');},
+  export:()=>$('nlTxt').click(),
+  clear:()=>$('nlClear').click()
+};
+async function runCmd(line){
+  line=line.trim();if(!line)return;hist.push(line);hi=hist.length;
+  log('cmd','cmd','> '+line);
+  const parts=line.split(/\s+/),name=parts.shift().toLowerCase();
+  if(name.startsWith('/')){CMDS.find([line.slice(1)]);return;}
+  const fn=CMDS[name];
+  if(!fn){CMDS.find([line]);out('(no es un comando; se usó como búsqueda. Escribí help)');return;}
+  try{await fn(parts);}catch(e){out('Error: '+fmtErr(e),'err');}
+}
+cmdInp.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const v=cmdInp.value;cmdInp.value='';runCmd(v);}
+  else if(e.key==='ArrowUp'){if(hi>0){hi--;cmdInp.value=hist[hi]||'';}e.preventDefault();}
+  else if(e.key==='ArrowDown'){if(hi<hist.length){hi++;cmdInp.value=hist[hi]||'';}e.preventDefault();}
+});
+window.togglePanelNora=togglePanel;
+
+/* =========================================================
+   5) ARRANQUE
+   ========================================================= */
+(async function init(){
+  await loadLog();
+  log('info','sistema','Sesión iniciada · '+location.protocol+' · '+navigator.userAgent.split(') ').pop());
+  try{NL.entries.forEach(en=>{if(!cats.has(en.cat)){cats.add(en.cat);const o=document.createElement('option');o.value=en.cat;o.textContent=en.cat;catSel.appendChild(o);}});}catch(e){}
+  try{installFileFns();}catch(e){log('err','sistema','No se pudo instalar el módulo de archivos: '+fmtErr(e));}
+  try{fillSkinMarks();}catch(e){}
+  try{updateEmblem();}catch(e){log('err','skin','Emblema: '+fmtErr(e));}
+  try{if(navigator.storage&&navigator.storage.persist){const p=await navigator.storage.persist();log(p?'ok':'info','sistema','Almacenamiento persistente: '+(p?'concedido':'no concedido'));}}catch(e){}
+  if(location.protocol==='file:')log('warn','sistema','La app está abierta como archivo local (file://). Chrome puede volver a pedir permisos en cada sesión; servirla desde http://localhost lo evita.');
+})();
+})();
+
 </script>
 </body>
 </html>
