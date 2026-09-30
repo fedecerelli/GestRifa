@@ -791,7 +791,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
     <h2><span class="h-ic" data-icon="link"></span>Archivos vinculados</h2>
     <div class="row" style="gap:8px;flex-wrap:wrap">
       <button class="secondary miniBtn" id="btnLinkCobFiles"><span class="b-ic" data-icon="link"></span>Vincular Excel</button>
-      <button class="secondary miniBtn" id="btnReconnectCobFiles"><span class="b-ic" data-icon="refresh"></span>Reconectar</button>
+      <button class="secondary miniBtn" id="btnReconnectCobFiles" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar</button>
       <button class="secondary miniBtn" id="btnReloadCobFiles"><span class="b-ic" data-icon="refresh"></span>Releer</button>
     </div>
     <div id="cobLinkStatus" class="hint" style="margin-top:8px"></div>
@@ -1245,7 +1245,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
         <div class="card"><h2><span class="h-ic" data-icon="folder"></span>Archivos vinculados</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap">
             <button class="secondary" id="btnLinkCobFiles2"><span class="b-ic" data-icon="link"></span>Vincular cobranza</button>
-            <button class="secondary" id="btnReconnectCobFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
+            <button class="secondary" id="btnReconnectCobFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
             <button class="secondary" id="btnLinkSorteoFiles2"><span class="b-ic" data-icon="link"></span>Vincular sorteos</button>
             <button class="secondary" id="btnReconnectSorteoFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
           </div>
@@ -1467,34 +1467,43 @@ async function reconnectCobFiles(){
 }
 async function reloadCobFiles(silentIfNone){
   if(!cobFileHandles.length)cobFileHandles=await getCobHandles();
-  if(!cobFileHandles.length){if(!silentIfNone){updateCobLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos','warn');}return;}
-  const files=[];let failed=0;let needsReconnect=[];
+  if(!cobFileHandles.length){if(!silentIfNone){updateCobLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una sola vez.','warn');}return;}
+  const files=[];let failed=0;let permissionAsked=0;
   for(const it of cobFileHandles){
     try{
       if(!it||!it.handle||typeof it.handle.getFile!=='function'){failed++;continue;}
-      // No descartamos el handle solo porque queryPermission devuelva "prompt".
-      // Un handle válido puede seguir siendo legible; getFile() es la comprobación real.
-      const f=await it.handle.getFile();
+      let f;
+      try{
+        f=await it.handle.getFile();
+      }catch(firstErr){
+        // Releer se ejecuta desde un botón: acá sí tenemos interacción del usuario,
+        // por lo que podemos pedir permiso una sola vez al navegador si hace falta.
+        if(it.handle.requestPermission && /SecurityError|NotAllowedError|permission/i.test(String(firstErr.name)+' '+String(firstErr.message))){
+          const perm=await it.handle.requestPermission({mode:'read'});
+          permissionAsked++;
+          if(perm!=='granted')throw firstErr;
+          f=await it.handle.getFile();
+        }else throw firstErr;
+      }
       files.push(f);
-    }catch(e){
-      // Si el navegador exige una nueva autorización, lo marcamos para Reconectar.
-      if(e&&(/SecurityError|NotAllowedError|permission/i.test(e.name+' '+e.message))) needsReconnect.push(it); else failed++;
-    }
+    }catch(e){failed++;}
   }
   if(!files.length){
-    const msg=needsReconnect.length?'Permiso requerido. Tocá “Reconectar” y autorizá los archivos.':'No se pudo acceder a los archivos vinculados.';
-    updateCobLinkStatus(msg,true);
-    notify(needsReconnect.length?'Hay que reconectar los archivos':'No se pudieron releer','err');
+    // MUY IMPORTANTE: no borramos ni invalidamos los datos cacheados.
+    updateCobLinkStatus('No se pudo actualizar el archivo. Los últimos datos siguen disponibles.',true);
+    notify('No se pudo actualizar. Los datos actuales se conservaron.','warn');
     return;
   }
-  updateCobLinkStatus('Releyendo…',failed>0||needsReconnect.length>0);
+  updateCobLinkStatus('Actualizando archivos…',failed>0);
   try{
     await handleFiles(files,true);
-    const pendientes=failed+needsReconnect.length;
-    const msg=files.length+' archivo(s) actualizado(s)'+(pendientes?' · '+pendientes+' pendiente(s)':'');
+    const pendientes=failed;
+    const msg=files.length+' archivo(s) actualizado(s)'+(pendientes?' · '+pendientes+' sin acceso':'');
     updateCobLinkStatus(msg,pendientes>0);
-    notify(pendientes?'Archivos actualizados · reconectá los pendientes':'Archivos actualizados','ok');
-  }catch(e){updateCobLinkStatus('Error al procesar: '+e.message,true);notify('Error al actualizar','err');}
+    notify(pendientes?'Datos actualizados · algunos archivos no pudieron leerse':'Datos actualizados','ok');
+    // La autorización obtenida durante esta acción queda guardada junto al handle.
+    await storeCobHandles(cobFileHandles);
+  }catch(e){updateCobLinkStatus('No se pudo procesar: '+e.message,true);notify('Error al actualizar','err');}
 }
 window.linkCobFiles=linkCobFiles;window.reconnectCobFiles=reconnectCobFiles;window.reloadCobFiles=reloadCobFiles;
 let sorteoFileHandles=[];
@@ -2880,7 +2889,7 @@ function initSheet(toggleId,cardId){const t=document.getElementById(toggleId);co
 initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersCard');
 
 /* RESTORE */
-(async function restoreState(){await _boot;const st=await loadState();if(!st||!st.files||!st.files.length){try{await tryReconnectBackup();}catch(e){}return;}try{if(st.headers)window.__HEADERS=st.headers;FILES=st.files.map(f=>({name:f.name,records:f.records.map(r=>{let fc=r.fcarga;if(fc&&typeof fc==='string'){const d=new Date(fc);fc=isNaN(d.getTime())?null:d;}return {...r,fcarga:fc,calleKey:r.calleKey||claveCalle(r.calle)};})}));rebuildRecords();if(!RECORDS.length)return;renderFilesList();dz.classList.add('ready');['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.remove('hidden'));document.getElementById('filesActions').classList.remove('hidden');document.getElementById('dashEmpty').classList.add('hidden');document.getElementById('dashBody').classList.remove('hidden');refreshSelects();refreshPreview();updateDashboard();updateFilenamePreview();syncDataCenterUI();updateStatusLine([],[],[]);document.getElementById('status').className='status-line ok';document.getElementById('status').textContent='Datos restaurados: '+RECORDS.length+' registros.';syncDataCenterUI();renderHome();}catch(e){console.warn(e);}try{await tryReconnectBackup();}catch(e){}try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · listo para releer',false);}catch(e){}})();
+(async function restoreState(){await _boot;const st=await loadState();if(!st||!st.files||!st.files.length){try{await tryReconnectBackup();}catch(e){}return;}try{if(st.headers)window.__HEADERS=st.headers;FILES=st.files.map(f=>({name:f.name,records:f.records.map(r=>{let fc=r.fcarga;if(fc&&typeof fc==='string'){const d=new Date(fc);fc=isNaN(d.getTime())?null:d;}return {...r,fcarga:fc,calleKey:r.calleKey||claveCalle(r.calle)};})}));rebuildRecords();if(!RECORDS.length)return;renderFilesList();dz.classList.add('ready');['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.remove('hidden'));document.getElementById('filesActions').classList.remove('hidden');document.getElementById('dashEmpty').classList.add('hidden');document.getElementById('dashBody').classList.remove('hidden');refreshSelects();refreshPreview();updateDashboard();updateFilenamePreview();syncDataCenterUI();updateStatusLine([],[],[]);document.getElementById('status').className='status-line ok';document.getElementById('status').textContent='Datos restaurados: '+RECORDS.length+' registros.';syncDataCenterUI();renderHome();}catch(e){console.warn(e);}try{await tryReconnectBackup();}catch(e){}try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}})();
 window.addEventListener('beforeunload',()=>{try{if(backupFileHandle)writeAutoBackup('cierre');}catch(e){}});
 
 /* HOME */
