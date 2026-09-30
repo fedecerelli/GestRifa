@@ -307,7 +307,21 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .bottom-nav button{all:unset;cursor:pointer;flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;border-radius:11px;color:var(--sub);font-size:10px;font-weight:600;transition:.15s;position:relative}
 .bottom-nav button .icon{margin:0;width:21px;height:21px}
 .bottom-nav button.active{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
-.set-grid{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+ .set-grid{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr);gap:20px;align-items:start}
+.set-grid>div{min-width:0}.set-pane{min-width:0;overflow:hidden}.set-pane .card{min-width:0;overflow:hidden}
+.profile-pill{max-width:100%;flex-wrap:wrap;word-break:break-word}
+.profile-pill .pname{min-width:0;overflow-wrap:anywhere}.profile-pill small{min-width:0;overflow-wrap:anywhere}.profile-pill button{flex:0 0 auto}
+.skin-tools{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;align-items:center;margin:10px 0}
+.skin-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.skin-filter{border:1px solid var(--line);background:var(--panel2);color:var(--sub);padding:6px 10px;border-radius:999px;font-size:11.5px;cursor:pointer}
+.skin-filter.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.skin-results{font-size:11px;color:var(--sub);margin:0 0 8px}
+.skin-group-grid{grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.skin-btn{padding:9px;min-width:0}.skin-btn .preview{height:40px}
+.skin-btn b,.skin-btn small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skin-btn .fav{position:absolute;right:7px;top:7px;width:26px;height:26px;border-radius:50%;padding:0;background:color-mix(in srgb,var(--panel) 75%,transparent);border:1px solid var(--line);color:var(--sub);font-size:14px;line-height:1}
+.skin-btn .fav.on{color:var(--warn);border-color:var(--warn)}
+.skin-btn .skin-check{position:absolute;left:7px;top:7px;font-size:10px;padding:2px 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700}
 .set-menu{position:sticky;top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:2px}
 .set-menu button{all:unset;cursor:pointer;padding:10px 12px;border-radius:8px;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:9px;font-weight:500}
 .set-menu button:hover{background:var(--panel2)}
@@ -541,7 +555,7 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .ctx-menu button .icon{margin:0;width:15px;height:15px;color:var(--sub)}
 .ctx-menu .sep{height:1px;background:var(--line);margin:4px 0}
 
-@media(max-width:900px){.set-grid{grid-template-columns:1fr}.set-menu{position:static;flex-direction:row;overflow-x:auto;padding:6px}.set-menu button{white-space:nowrap;font-size:12px;padding:8px 12px}.set-menu button span{display:none}}
+@media(max-width:980px){.set-grid{grid-template-columns:1fr}.set-menu{position:static;flex-direction:row;overflow-x:auto;padding:6px}.set-menu button{white-space:nowrap;font-size:12px;padding:8px 12px}.set-menu button span{display:none}}
 @media(max-width:820px){
   .grid2{grid-template-columns:1fr}
   .app{flex-direction:column}
@@ -755,6 +769,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
     <button class="iconbtn" id="btnBack" title="Atrás (Alt+←)" data-icon="chevright" disabled></button>
     <button class="iconbtn" id="btnForward" title="Adelante (Alt+→)" data-icon="chevright" disabled></button>
     <button class="iconbtn" id="btnForceUpdate" title="Actualizar datos (forzar lectura)" data-icon="refresh"></button>
+    <button class="iconbtn" id="btnConsole" title="Consola de logs (Ctrl+Ñ)" data-icon="list"></button>
     <button class="iconbtn" id="btnOmni" title="Buscar (Ctrl+K)" data-icon="search"></button>
     <button class="iconbtn" id="btnDensity" title="Densidad" data-icon="density"></button>
     <button class="iconbtn" id="btnTheme" title="Tema" data-icon="moon"></button>
@@ -1080,7 +1095,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
       <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
         <button class="ghost miniBtn" id="btnLinkSorteoFiles"><span class="b-ic" data-icon="link"></span>Vincular</button>
         <button class="ghost miniBtn hidden" id="btnReconnectSorteoFiles"><span class="b-ic" data-icon="refresh"></span>Reconectar</button>
-        <button class="ghost miniBtn" id="btnReloadSorteoFiles"><span class="b-ic" data-icon="refresh"></span>Releer</button>
+        <button class="ghost miniBtn" id="btnReloadSorteoFiles"><span class="b-ic" data-icon="refresh"></span>Actualizar / releer</button>
       </div>
       <div id="sorteoLinkStatus" class="hint" style="margin-top:6px"></div>
       <div id="sFilesList" class="sfiles"></div>
@@ -1553,42 +1568,30 @@ async function procesarArchivoActualizado(file) {
 
 async function forzarActualizacionInfalible() {
     AppLog.write('=== Iniciando actualización de datos ===', 'info');
-    // Intento 1: usar archivos vinculados (sin pedir al usuario)
-    try {
-        let handles = (typeof cobFileHandles !== 'undefined' && cobFileHandles.length) ? cobFileHandles : [];
-        if ((!handles || !handles.length) && typeof getCobHandles === 'function') {
-            handles = await getCobHandles();
-        }
-        if (handles && handles.length && typeof reloadCobFiles === 'function') {
-            AppLog.write('Detectados ' + handles.length + ' archivo(s) vinculado(s). Releyendo…', 'info');
-            await reloadCobFiles();
-            AppLog.success('ÉXITO: Archivos vinculados releídos sin intervención.');
-            if (typeof notify === 'function') notify('Datos actualizados','ok');
-            return;
-        }
-        AppLog.write('No hay archivos vinculados. Se pedirá seleccionar uno.', 'info');
-    } catch(e) {
-        AppLog.error('Fallo la actualización silenciosa: ' + (e.message || e));
+    let cob={updated:0,failed:0}, sor={updated:0,failed:0};
+    try{
+      let h=(typeof cobFileHandles!=='undefined'&&cobFileHandles.length)?cobFileHandles:[];
+      if(!h.length&&typeof getCobHandles==='function')h=await getCobHandles();
+      if(h.length&&typeof reloadCobFiles==='function')cob=await reloadCobFiles(true)||cob;
+    }catch(e){AppLog.error('Actualización de cobranza: '+(e.message||e));cob.failed++;}
+    try{
+      let h=(typeof sorteoFileHandles!=='undefined'&&sorteoFileHandles.length)?sorteoFileHandles:[];
+      if(!h.length&&typeof getSorteoHandles==='function')h=await getSorteoHandles();
+      if(h.length&&typeof reloadSorteoFiles==='function')sor=await reloadSorteoFiles(true)||sor;
+    }catch(e){AppLog.error('Actualización de sorteos: '+(e.message||e));sor.failed++;}
+    const total=(cob.updated||0)+(sor.updated||0),failed=(cob.failed||0)+(sor.failed||0);
+    if(total){
+      AppLog.success('Actualización completada: '+total+' archivo(s) releído(s)'+(failed?' · '+failed+' con acceso pendiente':''));
+      notify(failed?'Datos actualizados · algunos archivos no pudieron leerse':'Datos actualizados','ok');
+      return;
     }
-    // Intento 2 (fallback): selector nativo de archivos
-    AppLog.write('Lanzando selector manual de archivos…', 'info');
-    const inputForzado = document.createElement('input');
-    inputForzado.type = 'file';
-    inputForzado.accept = '.xlsx,.xls';
-    inputForzado.multiple = true;
-    inputForzado.onchange = async function(e) {
-        const files = Array.prototype.slice.call(e.target.files || []);
-        if (!files.length) {
-            AppLog.write('Selección cancelada.', 'info');
-            return;
-        }
-        AppLog.success('Seleccionados ' + files.length + ' archivo(s).');
-        try {
-            await handleFiles(files);
-            AppLog.success('ÉXITO: Datos actualizados mediante selección manual.');
-        } catch(err) {
-            AppLog.error('Error al procesar selección: ' + (err.message || err));
-        }
+    AppLog.write('No hay archivos vinculados para actualizar. Se abrirá el selector manual.', 'info');
+    const inputForzado=document.createElement('input');inputForzado.type='file';inputForzado.accept='.xlsx,.xls,.xlsm';inputForzado.multiple=true;
+    inputForzado.onchange=async function(e){
+      const files=Array.prototype.slice.call(e.target.files||[]);
+      if(!files.length){AppLog.write('Selección cancelada.','info');return;}
+      try{await handleFiles(files);AppLog.success('Archivos manuales procesados correctamente.');notify('Actualización completada','ok');}
+      catch(err){AppLog.error('Error al procesar selección: '+(err.message||err));notify('Error al actualizar','err');}
     };
     inputForzado.click();
 }
@@ -1717,8 +1720,65 @@ async function getSorteoHandles(){try{const db=await openDB();const rq=db.transa
 async function storeSorteoHandles(list){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(list,'sorteoHandles');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}}
 function updateSorteoLinkStatus(msg,showBtn){const el=document.getElementById('sorteoLinkStatus');const el2=document.getElementById('sorteoLinkStatus2');const btn=document.getElementById('btnReconnectSorteoFiles');const btn2=document.getElementById('btnReconnectSorteoFiles2');if(el)el.textContent=msg||'';if(el2)el2.textContent=msg||'';if(btn)btn.classList.toggle('hidden',!showBtn);if(btn2)btn2.classList.toggle('hidden',!showBtn);}
 async function linkSorteoFiles(){if(!window.showOpenFilePicker){notify('Navegador sin soporte','warn');return;}try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]});sorteoFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeSorteoHandles(sorteoFileHandles);updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);notify('Vinculados','ok');await reloadSorteoFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}}
-async function reconnectSorteoFiles(){if(!sorteoFileHandles.length){sorteoFileHandles=await getSorteoHandles();}if(!sorteoFileHandles.length){notify('Sin archivos','warn');return;}try{for(const it of sorteoFileHandles){if(it.handle.requestPermission){try{await it.handle.requestPermission({mode:'read'});}catch(e){}}}await reloadSorteoFiles();}catch(e){console.warn(e);}}
-async function reloadSorteoFiles(silentIfNone){if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();if(!sorteoFileHandles.length){if(!silentIfNone){updateSorteoLinkStatus('Sin archivos.',false);notify('Sin archivos','warn');}return;}const files=[];let failed=0;for(const it of sorteoFileHandles){try{let perm='granted';if(it.handle.queryPermission)perm=await it.handle.queryPermission({mode:'read'});if(perm!=='granted'){failed++;continue;}const f=await it.handle.getFile();files.push(f);}catch(e){failed++;}}if(!files.length){updateSorteoLinkStatus('No se pudo leer. Reconectá.',true);notify('No se pudieron releer','err');return;}updateSorteoLinkStatus('Releyendo…',failed>0);try{await window.__sorteoLoadFiles(files,true);const msg=files.length+' releído(s)'+(failed?' · '+failed+' sin permiso':'');updateSorteoLinkStatus(msg,failed>0);notify('Actualizados','ok');}catch(e){updateSorteoLinkStatus('Error: '+e.message,true);}}
+async function reconnectSorteoFiles(){
+  if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
+  if(!sorteoFileHandles.length){notify('No hay archivos de sorteo vinculados','warn');return {updated:0,failed:0};}
+  try{
+    let granted=0,failed=0;
+    for(const it of sorteoFileHandles){
+      try{
+        if(!it||!it.handle)throw new Error('Handle inválido');
+        let perm=it.handle.queryPermission?await it.handle.queryPermission({mode:'read'}):'granted';
+        if(perm!=='granted'&&it.handle.requestPermission)perm=await it.handle.requestPermission({mode:'read'});
+        if(perm==='granted')granted++;else failed++;
+      }catch(e){failed++;}
+    }
+    const r=await reloadSorteoFiles(true);
+    if(granted)notify(granted+' archivo(s) de sorteo reconectado(s)'+(failed?' · '+failed+' pendiente(s)':''),'ok');
+    return r;
+  }catch(e){AppLog.error('Reconexión de sorteos: '+(e.message||e));updateSorteoLinkStatus('No se pudo reconectar. Volvé a vincular el Excel.',true);notify('No se pudo reconectar','err');return {updated:0,failed:1,error:e};}
+}
+async function reloadSorteoFiles(silentIfNone){
+  if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
+  if(!sorteoFileHandles.length){
+    if(!silentIfNone){updateSorteoLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una sola vez.','warn');}
+    return {updated:0,failed:0};
+  }
+  const files=[];let failed=0;
+  for(const it of sorteoFileHandles){
+    try{
+      if(!it||!it.handle||typeof it.handle.getFile!=='function')throw new Error('Handle inválido');
+      let f;
+      try{f=await it.handle.getFile();}
+      catch(firstErr){
+        if(it.handle.requestPermission && /SecurityError|NotAllowedError|permission/i.test(String(firstErr.name)+' '+String(firstErr.message))){
+          const perm=await it.handle.requestPermission({mode:'read'});
+          if(perm!=='granted')throw firstErr;
+          f=await it.handle.getFile();
+        }else throw firstErr;
+      }
+      files.push(f);
+    }catch(e){failed++;AppLog.error('No se pudo leer sorteo: '+((it&&it.name)||'archivo')+' · '+(e.message||e));}
+  }
+  if(!files.length){
+    updateSorteoLinkStatus('No se pudo actualizar. Los últimos datos siguen disponibles.',true);
+    if(!silentIfNone)notify('No se pudo actualizar. Los datos actuales se conservaron.','warn');
+    return {updated:0,failed};
+  }
+  updateSorteoLinkStatus('Actualizando archivos de sorteo…',failed>0);
+  try{
+    await window.__sorteoLoadFiles(files,true);
+    const msg=files.length+' archivo(s) de sorteo actualizado(s)'+(failed?' · '+failed+' sin acceso':'');
+    updateSorteoLinkStatus(msg,failed>0);
+    if(!silentIfNone)notify(failed?'Sorteos actualizados · algunos archivos no pudieron leerse':'Sorteos actualizados','ok');
+    return {updated:files.length,failed};
+  }catch(e){
+    AppLog.error('Error al procesar actualización de sorteos: '+(e.message||e));
+    updateSorteoLinkStatus('No se pudo procesar: '+(e.message||e),true);
+    if(!silentIfNone)notify('Error al actualizar sorteos','err');
+    return {updated:0,failed:failed+1,error:e};
+  }
+}
 window.linkSorteoFiles=linkSorteoFiles;window.reconnectSorteoFiles=reconnectSorteoFiles;window.reloadSorteoFiles=reloadSorteoFiles;
 
 /* BOOT */
@@ -1997,7 +2057,50 @@ function applyCfg(){
 }
 window.applyCfg = applyCfg;
 function skinCategory(k){if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_/.test(k))return 'Conceptuales';return 'Generales';}
-function renderSkinGrid(){const grid=document.getElementById('skinGrid');if(!grid)return;const sc=document.getElementById('skinCount');if(sc)sc.textContent=Object.keys(SKINS).length;const groups=['Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];grid.innerHTML=groups.map(cat=>{const items=Object.entries(SKINS).filter(([k])=>skinCategory(k)===cat);if(!items.length)return '';return `<div class="skin-group"><div class="skin-group-title">${cat}<span>${items.length}</span></div><div class="skin-group-grid">${items.map(([k,s])=>`<div class="skin-btn ${CFG.skin===k?'active':''}" data-skin="${k}"><div class="preview"><div style="background:${s.colors[0]}"></div><div style="background:${s.colors[1]}"></div><div style="background:${s.colors[2]}"></div>${s.mark?`<img class="skin-mark" src="${s.mark}" alt="" aria-hidden="true">`:''}</div><b>${s.name}</b><small>${s.desc}</small></div>`).join('')}</div></div>`;}).join('');grid.querySelectorAll('.skin-btn').forEach(b=>{b.onclick=()=>{CFG.skin=b.dataset.skin;CFG.anim=null;try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}applyCfg();notify('Skin: '+(SKINS[CFG.skin]?SKINS[CFG.skin].name:'Estándar'),'ok');AppLog.write('Skin aplicado: '+CFG.skin,'ok');};});}
+const SKIN_FAV_KEY='nora_skin_favs_v1',SKIN_RECENT_KEY='nora_skin_recent_v1';
+function getSkinFavs(){try{return JSON.parse(localStorage.getItem(SKIN_FAV_KEY)||'[]');}catch(e){return[];}}
+function getSkinRecent(){try{return JSON.parse(localStorage.getItem(SKIN_RECENT_KEY)||'[]');}catch(e){return[];}}
+function renderSkinGrid(){
+  const grid=document.getElementById('skinGrid');if(!grid)return;
+  const sc=document.getElementById('skinCount'),search=document.getElementById('skinSearch'),filters=document.getElementById('skinFilters'),results=document.getElementById('skinResults');
+  const groups=['Todos','Favoritos','Recientes','Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
+  const active=filters?.dataset.active||'Todos';
+  if(filters&&!filters.dataset.ready){
+    filters.dataset.ready='1';
+    filters.innerHTML=groups.map(g=>`<button type="button" class="skin-filter ${g===active?'active':''}" data-skin-filter="${g}">${g}</button>`).join('');
+    filters.addEventListener('click',e=>{const b=e.target.closest('[data-skin-filter]');if(!b)return;filters.dataset.active=b.dataset.skinFilter;renderSkinGrid();});
+    document.getElementById('skinSearch')?.addEventListener('input',renderSkinGrid);
+    document.getElementById('skinClearSearch')?.addEventListener('click',()=>{if(search)search.value='';filters.dataset.active='Todos';renderSkinGrid();});
+  }
+  const q=(search?.value||'').trim().toLowerCase(),favs=new Set(getSkinFavs()),recent=getSkinRecent();
+  const items=Object.entries(SKINS).filter(([k,s])=>{
+    const hay=(k+' '+s.name+' '+s.desc).toLowerCase();
+    if(q&&!hay.includes(q))return false;
+    if(active==='Favoritos'&&!favs.has(k))return false;
+    if(active==='Recientes'&&!recent.includes(k))return false;
+    if(!['Todos','Favoritos','Recientes'].includes(active)&&skinCategory(k)!==active)return false;
+    return true;
+  });
+  if(sc)sc.textContent=Object.keys(SKINS).length;
+  if(results)results.textContent=`${items.length} skin${items.length===1?'':'s'} visibles · ${favs.size} favoritos`;
+  if(filters)filters.querySelectorAll('[data-skin-filter]').forEach(b=>b.classList.toggle('active',b.dataset.skinFilter===active));
+  const byCat=['Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
+  grid.innerHTML=byCat.map(cat=>{
+    const catItems=items.filter(([k])=>skinCategory(k)===cat);if(!catItems.length)return '';
+    return `<div class="skin-group"><div class="skin-group-title">${cat}<span>${catItems.length}</span></div><div class="skin-group-grid">${catItems.map(([k,s])=>`<div class="skin-btn ${CFG.skin===k?'active':''}" data-skin="${k}">${CFG.skin===k?'<span class="skin-check">ACTUAL</span>':''}<button type="button" class="fav ${favs.has(k)?'on':''}" data-fav="${k}" title="${favs.has(k)?'Quitar de favoritos':'Agregar a favoritos'}">${favs.has(k)?'★':'☆'}</button><div class="preview"><div style="background:${s.colors[0]}"></div><div style="background:${s.colors[1]}"></div><div style="background:${s.colors[2]}"></div>${s.mark?`<img class="skin-mark" src="${s.mark}" alt="" aria-hidden="true">`:''}</div><b title="${esc(s.name)}">${s.name}</b><small title="${esc(s.desc)}">${s.desc}</small></div>`).join('')}</div></div>`;
+  }).join('')||'<div class="hint">No hay skins que coincidan con la búsqueda.</div>';
+  grid.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();const k=b.dataset.fav,arr=getSkinFavs(),i=arr.indexOf(k);if(i>=0)arr.splice(i,1);else arr.unshift(k);
+    try{localStorage.setItem(SKIN_FAV_KEY,JSON.stringify(arr));}catch(e){}renderSkinGrid();
+  });
+  grid.querySelectorAll('.skin-btn').forEach(b=>b.onclick=e=>{
+    if(e.target.closest('[data-fav]'))return;
+    const k=b.dataset.skin;CFG.skin=k;CFG.anim=null;
+    const arr=getSkinRecent().filter(x=>x!==k);arr.unshift(k);
+    try{localStorage.setItem(SKIN_RECENT_KEY,JSON.stringify(arr.slice(0,8)));localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
+    applyCfg();notify('Skin: '+(SKINS[k]?SKINS[k].name:'Estándar'),'ok');AppLog.write('Skin aplicado: '+k,'ok');renderSkinGrid();
+  });
+}
 function renderAnimGrid(){
   const grid = document.getElementById('animGrid'); if(!grid) return;
   const cur = new Set((document.documentElement.getAttribute('data-anim')||'').split(/\s+/).filter(Boolean));
@@ -2231,7 +2334,7 @@ function saveProfiles(list){try{localStorage.setItem(PROFILES_KEY,JSON.stringify
 function renderProfiles(){
   const box=document.getElementById('profilesList');if(!box)return;const list=getProfiles();
   if(!list.length){box.innerHTML='<div class="hint">No hay perfiles guardados.</div>';return;}
-  box.innerHTML=list.map((p,i)=>`<div class="profile-pill"><span class="pname">${esc(p.name)}</span><small style="color:var(--sub)">${p.skin||'estándar'} · ${p.density||'comoda'}</small><button data-load="${i}" title="Cargar" style="color:var(--accent)">↻</button><button data-del="${i}" title="Eliminar">✕</button></div>`).join('');
+  box.innerHTML=list.map((p,i)=>`<div class="profile-pill"><span class="pname">${esc(p.name)}</span><small style="color:var(--sub)">${(p.cfg&&p.cfg.skin)?(SKINS[p.cfg.skin]?.name||p.cfg.skin):'estándar'} · ${(p.cfg&&p.cfg.density)||'comoda'}</small><button data-load="${i}" title="Cargar" style="color:var(--accent)">↻</button><button data-del="${i}" title="Eliminar">✕</button></div>`).join('');
   box.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const p=getProfiles()[+b.dataset.load];if(!p)return;Object.assign(CFG,p.cfg||{});try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}applyCfg();notify('Perfil: '+p.name,'ok');});
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const l=getProfiles();if(!confirm('¿Eliminar "'+l[+b.dataset.del].name+'"?'))return;l.splice(+b.dataset.del,1);saveProfiles(l);renderProfiles();notify('Eliminado','ok');});
 }
@@ -3158,10 +3261,10 @@ window.tab=tab;
 $('sTabs').onclick=e=>{const c=e.target.closest('.chip');if(c)tab(c.dataset.sp);};
 const dz=$('sDz'),fi=$('sFile');dz.onclick=()=>fi.click();dz.ondragover=e=>{e.preventDefault();dz.classList.add('ready')};dz.ondragleave=()=>dz.classList.remove('ready');dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ready');loadFiles([...e.dataTransfer.files]);};fi.onchange=()=>{loadFiles([...fi.files]);fi.value='';};
 window.__sorteoLoadFiles=async(files,silent)=>{await loadFiles(files,silent);};
-async function loadFiles(files,silent){const ok=[],err=[];$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now()};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
+async function loadFiles(files,silent){const ok=[],err=[];$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
-function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} repetidos</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar?')){S.files.splice(x.dataset.del,1);save();render();}});}
+function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} repetidos</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="date" data-start="${i}" value="${esc(f.inicioSorteo||'')}"></div><div class="field"><label>Finaliza sorteo</label><input type="date" data-end="${i}" value="${esc(f.finSorteo||'')}"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar?')){S.files.splice(x.dataset.del,1);save();render();}});}
 let cards=[];
 const defDate=()=>{const t=new Date().toISOString().slice(0,10),m=month();return !m||t.slice(0,7)===m?t:m+'-01';};
 const blank=()=>({lot:'',turno:'',id:uid(),saved:false,dirty:true,name:'',date:defDate(),nums:Array(20).fill('')});
@@ -3256,6 +3359,8 @@ document.getElementById('btnReloadSorteoFiles').onclick=()=>reloadSorteoFiles();
 // Botón topbar: Actualización infalible
 const _btnForceUpdate = document.getElementById('btnForceUpdate');
 if (_btnForceUpdate) _btnForceUpdate.onclick = () => window.forzarActualizacionInfalible();
+const _btnConsole=document.getElementById('btnConsole');
+if(_btnConsole)_btnConsole.onclick=()=>{const el=document.getElementById('cmdConsole');if(!el)return;el.classList.toggle('hidden');if(!el.classList.contains('hidden'))document.getElementById('cmdInput')?.focus();};
 
 paintIcons();
 renderTaskBadge();
