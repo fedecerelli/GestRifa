@@ -676,6 +676,9 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
 :root[data-anim~=breathe] .hero-top{animation:noraBreathe 5s ease-in-out infinite}
 :root[data-anim~=rain] body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;opacity:.35;background-image:linear-gradient(180deg,transparent 0,var(--accent) 40%,transparent 100%),linear-gradient(180deg,transparent 0,var(--accent2,var(--accent)) 40%,transparent 100%);background-size:2px 100vh,3px 100vh;animation:noraRain 3.5s linear infinite}
 :root[data-anim~=progress] .batch-progress-bar{background-image:linear-gradient(90deg,var(--accent2) 0,color-mix(in srgb,var(--accent2) 40%,#fff) 50%,var(--accent2) 100%);background-size:220% 100%;animation:noraShimmer 1.6s linear infinite}
+
+.skin-group{margin-top:16px}.skin-group:first-child{margin-top:8px}.skin-group-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);margin:0 2px 8px}.skin-group-title span{font-size:10px;padding:2px 6px;border:1px solid var(--line);border-radius:999px}.skin-group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}.skin-btn .preview{position:relative}.skin-btn .preview::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.28) 50%,transparent 65%);transform:translateX(-130%);animation:skinSheen 5.5s ease-in-out infinite;pointer-events:none}@keyframes skinSheen{0%,65%{transform:translateX(-130%)}80%,100%{transform:translateX(130%)}}.data-tool-head{display:flex;justify-content:space-between;gap:14px;align-items:center}.data-tool-card{border-left:3px solid var(--accent)}
+:root[data-skin=lost_dharma] .card{border-left:3px solid #d8d2a2}:root[data-skin=lost_dharma] body{background:radial-gradient(circle at 80% 10%,#173b2a 0,#07110d 42%,#020604 100%)}:root[data-skin=lost_dharma] .topbar h1::before{content:'DHARMA · ';color:#d8d2a2}:root[data-skin=xfiles_signal] body::before{content:'';position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,#78c8d60a 4px);animation:crtScan 7s linear infinite;z-index:9999}@keyframes crtScan{to{background-position:0 80px}}:root[data-skin=mrrobot_terminal] .card{border-left:2px solid #e50914}:root[data-skin=mrrobot_terminal] .topbar h1::after{content:'_';color:#e50914;animation:cursorBlink 1s steps(1) infinite}@keyframes cursorBlink{50%{opacity:0}}:root[data-skin=alien_mother] body{background:radial-gradient(circle at 50% 20%,#263b32 0,#080b0a 52%,#020303 100%)}:root[data-skin=alien_mother] .topbar::after{content:'';position:absolute;right:20px;top:12px;width:8px;height:8px;border:1px solid #e2a53a;border-radius:50%;box-shadow:0 0 12px #e2a53a;animation:radarPulse 2.4s infinite}@keyframes radarPulse{50%{box-shadow:0 0 2px #e2a53a;opacity:.45}}:root[data-skin=bladerunner_rain] body::after{content:'';position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(108deg,transparent 0 18px,#00b7c70b 19px 20px,transparent 21px 42px);animation:rainMove .9s linear infinite;z-index:9999}@keyframes rainMove{to{background-position:90px 120px}}:root[data-skin=tron_grid] body{background-color:#02070b;background-image:linear-gradient(#00e5ff14 1px,transparent 1px),linear-gradient(90deg,#00e5ff14 1px,transparent 1px);background-size:32px 32px;animation:gridShift 10s linear infinite}@keyframes gridShift{to{background-position:32px 32px}}:root[data-skin=tron_grid] .topbar h1{text-shadow:0 0 12px #00e5ff}:root[data-skin=jurassic_park] .card{border-top:2px solid #e2b84f}:root[data-skin=jurassic_park] .topbar h1::before{content:'ACCESS SYSTEM · ';font:600 10px/1 Consolas;color:#4d8b55;letter-spacing:.12em}:root[data-skin=playstation2] body{background:radial-gradient(circle at 50% 0,#202636,#090a0d 55%)}:root[data-skin=playstation2] .card{border-radius:18px;border-color:#3f5bff44}:root[data-skin=gamecube] .card{border-radius:20px;box-shadow:0 8px 28px #0004}:root[data-skin=gamecube] body{background:radial-gradient(circle at 50% 0,#31276a,#1d1740 65%)}:root[data-skin=xbox_original] .card{border-left:3px solid #8bc34a}:root[data-skin=xbox_original] .topbar h1::before{content:'X ';color:#8bc34a;font-weight:900}:root[data-skin=sega_saturn] .card{border-radius:4px;box-shadow:0 2px 12px #0006}:root[data-skin=mac_system7] body{background:#bcbcbc}:root[data-skin=mac_system7] .card{border:2px outset #f4f4f4;border-radius:0;background:#d6d6d6;box-shadow:2px 2px 0 #777}:root[data-skin=mac_system7] button{border:2px outset #f4f4f4;border-radius:0}:root[data-skin=msdos] body{background:#050505}:root[data-skin=msdos] .card{border:1px solid #555;border-radius:0;background:#050505}:root[data-skin=msdos] .topbar h1{font-family:Consolas,monospace}:root[data-skin=msdos] .topbar h1::before{content:'C:\\>';color:#b9a45a}:root[data-skin=amiga_workbench] .card{border:2px solid #fff;border-right-color:#555;border-bottom-color:#555;border-radius:0;background:#c9c9c9;color:#111}:root[data-skin=amiga_workbench] body{background:#0055aa}:root[data-skin=windows_xp] body{background:linear-gradient(180deg,#2b76c9,#0d4380)}:root[data-skin=windows_xp] .card{box-shadow:0 8px 22px #003b7a55;border-color:#dcecff66}:root[data-skin=linux_ghost] .card{border-left:2px solid #7cc576}:root[data-skin=linux_ghost] .topbar h1{font-family:Consolas,monospace}:root[data-skin=linux_ghost] .topbar h1::before{content:'$ ';color:#7cc576}:root[data-skin=iphone_glass] body{background:radial-gradient(circle at 20% 0,#fff,#dce5ee 45%,#eef2f7);background-attachment:fixed}:root[data-skin=iphone_glass] .card{background:rgba(255,255,255,.58);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-color:#fff9;box-shadow:0 10px 30px #52677a18}:root[data-skin=android_material] .card{border-radius:24px;box-shadow:0 4px 18px #0003}:root[data-skin=android_material] button{border-radius:999px}:root[data-skin=oled_amoled] body{background:#000}:root[data-skin=oled_amoled] .card{background:#050505;border-color:#222;box-shadow:none}:root[data-skin=oled_amoled] .topbar{background:#000;border-color:#151515}:root[data-skin=mobile_focus] body{background:linear-gradient(180deg,#0d1014,#151a20)}:root[data-skin=mobile_focus] .card{border-radius:22px;padding:16px}:root[data-skin=mobile_focus] .topbar h1{font-size:15px}@media(max-width:700px){.skin-group-grid{grid-template-columns:1fr 1fr}.skin-btn{padding:10px}.skin-btn .preview{height:38px}.data-tool-head{align-items:flex-start}}
 </style>
 </head>
 <body>
@@ -918,6 +921,7 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
 </section>
 
 <section class="view" id="view-datos">
+  <div class="card data-tool-card" id="callesTool"><div class="data-tool-head"><div><h2><span class="h-ic" data-icon="wrench"></span>Normalización de calles <span class="tag">Datos</span></h2><p class="hint">Detectá variantes, agrupá nombres similares y unificá alias directamente sobre los datos cargados.</p></div><button class="secondary miniBtn" id="calleAnalizarTop"><span class="b-ic" data-icon="refresh"></span>Analizar</button></div><details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Abrir herramienta</summary><div style="margin-top:10px"><div class="row" style="margin-bottom:10px"><div class="field" style="max-width:200px"><label>Umbral</label><select id="calleUmbral"><option value="0.60">0.60 (más sugerencias)</option><option value="0.72" selected>0.72 (equilibrado)</option><option value="0.82">0.82 (solo casi idénticas)</option></select></div><div class="field" style="max-width:230px"><button class="ghost" id="calleExportAlias"><span class="b-ic" data-icon="download"></span>Exportar diccionario</button></div><div class="field" style="max-width:230px"><button class="ghost" id="calleImportAlias"><span class="b-ic" data-icon="upload"></span>Importar diccionario</button></div></div><div id="calleResumen" class="hint"></div><div id="calleSugerencias" style="margin-top:10px"></div><details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Calles detectadas (todas)</summary><div id="calleListado" style="margin-top:8px"></div></details></div></details></div>
   <div class="card">
     <h2><span class="h-ic" data-icon="table"></span>Explorador <span class="tag" id="dvTag">0 filas</span> <button class="ghost miniBtn" id="dvCardsToggle" style="margin-left:auto"><span data-icon="columns"></span>Tarjetas</button></h2>
     <p class="hint">Doble clic para ver ficha. Clic derecho para más opciones.</p>
@@ -1251,27 +1255,6 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
         <div class="card"><h2><span class="h-ic" data-icon="save"></span>Preferencias</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap"><button class="secondary" id="btnSaveCfg"><span class="b-ic" data-icon="save"></span>Guardar</button><span class="status-line" id="cfgStatus"></span></div>
         </div>
-        <div class="card">
-          <h2><span class="h-ic" data-icon="wrench"></span>Normalización de calles</h2>
-          <p class="hint">Herramienta de datos: detecta variantes de nombres de calles, sugiere coincidencias y permite unificar alias.</p>
-          <div class="card">
-                    <h2><span class="h-ic" data-icon="wrench"></span>Análisis de calles</h2>
-                    <p class="hint">El sistema agrupa por firma fonética y similitud. Confirmá las fusiones que quieras aplicar.</p>
-                    <div class="row" style="margin-bottom:10px">
-                      <div class="field" style="max-width:200px"><label>Umbral</label>
-                        <select id="calleUmbral">
-                          <option value="0.60">0.60 (más sugerencias)</option>
-                          <option value="0.72" selected>0.72 (equilibrado)</option>
-                          <option value="0.82">0.82 (solo casi idénticas)</option>
-                        </select></div>
-                      <div class="field" style="max-width:200px"><button class="secondary" id="calleAnalizar"><span class="b-ic" data-icon="refresh"></span>Analizar</button></div>
-                      <div class="field" style="max-width:230px"><button class="ghost" id="calleExportAlias"><span class="b-ic" data-icon="download"></span>Exportar diccionario</button></div>
-                      <div class="field" style="max-width:230px"><button class="ghost" id="calleImportAlias"><span class="b-ic" data-icon="upload"></span>Importar diccionario</button></div>
-                    </div>
-                    <div id="calleResumen" class="hint"></div>
-                    <div id="calleSugerencias" style="margin-top:10px"></div>
-                    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Calles detectadas (todas)</summary><div id="calleListado" style="margin-top:8px"></div></details>
-                  </div>
         </div>
       </div>
 
@@ -1553,7 +1536,12 @@ const SKINS={
   ps1_lab:{name:'Emulador · 32-bit',desc:'CRT gris · interfaz noventera',colors:['#26272b','#c7c7c7','#5d6cff']},
   dreamcast_lab:{name:'Emulador · Dreamwave',desc:'Azul eléctrico · formas orbitales',colors:['#07131f','#18a8ff','#eaf7ff']},
   dungeon_scroll:{name:'Concepto · Dungeon',desc:'RPG clásico · pergamino interactivo',colors:['#17110d','#d39a52','#6fa36b']},
-  film_projector:{name:'Concepto · Cine',desc:'Proyector · fotogramas y polvo',colors:['#11100e','#f0d28a','#b75c36']}
+  film_projector:{name:'Concepto · Cine',desc:'Proyector · fotogramas y polvo',colors:['#11100e','#f0d28a','#b75c36']},
+  lost_dharma:{name:'Serie · LOST / Dharma',desc:'Isla · escotilla · números y pulsos',colors:['#07110d','#d8d2a2','#4fa06b']},xfiles_signal:{name:'Serie · Expediente X',desc:'CRT · señal · archivos clasificados',colors:['#050a0d','#78c8d6','#b8d8d8']},mrrobot_terminal:{name:'Serie · Mr. Robot',desc:'Terminal · glitch · rojo de alerta',colors:['#090909','#e50914','#d9d9d9']},
+  alien_mother:{name:'Película · Nostromo',desc:'Sci-fi industrial · radar y emergencia',colors:['#080b0a','#b8d6c0','#e2a53a']},bladerunner_rain:{name:'Película · Neo-Noir',desc:'Lluvia · neón · ciudad nocturna',colors:['#071016','#00b7c7','#ff6b3d']},tron_grid:{name:'Película · TRON Grid',desc:'Rejilla luminosa · circuitos · pulso',colors:['#02070b','#00e5ff','#ff8a00']},jurassic_park:{name:'Película · Parque 93',desc:'Ámbar · fósil · sistema de acceso',colors:['#11120d','#e2b84f','#4d8b55']},
+  playstation2:{name:'Consola · PlayStation 2',desc:'Negro brillante · azul frío · boot',colors:['#090a0d','#3f5bff','#c7d0e0']},gamecube:{name:'Consola · GameCube',desc:'Indigo · menú orbital · cubos',colors:['#1d1740','#8b6cff','#d9d4ff']},xbox_original:{name:'Consola · Xbox',desc:'Verde Xbox · acero · dashboard',colors:['#071009','#8bc34a','#cfd8d3']},sega_saturn:{name:'Consola · Sega Saturn',desc:'Gris oscuro · anillos · arcade',colors:['#17181b','#b8bdc7','#6c7cff']},
+  mac_system7:{name:'Computador · System 7',desc:'Mac clásica · ventanas · escritorio',colors:['#d6d6d6','#111111','#6f6f6f']},msdos:{name:'Computador · MS-DOS',desc:'Boot · cursor · texto ámbar',colors:['#050505','#d6d6d6','#b9a45a']},amiga_workbench:{name:'Computador · Amiga Workbench',desc:'Workbench · ventanas · azul eléctrico',colors:['#c9c9c9','#0055aa','#ffffff']},windows_xp:{name:'Computador · Windows XP',desc:'Luna · azul · brillo clásico',colors:['#1b5ca8','#5fa8ff','#dcecff']},linux_ghost:{name:'Computador · Linux',desc:'Shell · verde fósforo · proceso',colors:['#080b0d','#7cc576','#d8e6dc']},
+  iphone_glass:{name:'Móvil · Liquid Glass',desc:'Vidrio · profundidad · microreflejos',colors:['#eef2f7','#111820','#8ea4ba']},android_material:{name:'Móvil · Material',desc:'Cards suaves · profundidad · dinámica',colors:['#101114','#a8c7fa','#d3e3fd']},oled_amoled:{name:'Móvil · AMOLED',desc:'Negro real · píxeles · bajo consumo',colors:['#000000','#ffffff','#6ee7ff']},mobile_focus:{name:'Móvil · Focus',desc:'Interfaz vertical · gestos · lectura rápida',colors:['#0d1014','#8fb8ff','#b8f1d2']}
 };
 
 /* SKIN ANIM DEFAULT */
@@ -1586,7 +1574,7 @@ const SKIN_ANIM_DEFAULT = {
   ps1_lab:'scanlines shimmer',
   dreamcast_lab:'glow float',
   dungeon_scroll:'float',
-  film_projector:'flicker shimmer',
+  film_projector:'flicker shimmer',lost_dharma:'pulse blink scanlines',xfiles_signal:'scanlines flicker',mrrobot_terminal:'glitch blink',alien_mother:'radar pulse scanlines',bladerunner_rain:'rain shimmer glow',tron_grid:'grid pulse glow',jurassic_park:'flicker pulse',playstation2:'boot pulse glow',gamecube:'orbit float',xbox_original:'pulse glow',sega_saturn:'orbit shimmer',mac_system7:'blink shimmer',msdos:'cursor blink',amiga_workbench:'scanlines blink',windows_xp:'shimmer float',linux_ghost:'cursor pulse',iphone_glass:'glass shimmer float',android_material:'float pulse',oled_amoled:'blink glow',mobile_focus:'float shimmer',
   '':'pulse'
 };
 
@@ -1744,12 +1732,8 @@ function applyCfg(){
   renderSkinGrid();renderPaletteGrid();renderAnimGrid();renderHeaderEditor();renderFooterEditor();
   previewPdfStyle();previewLstStyle();previewGapsStyle();
 }
-function renderSkinGrid(){
-  const grid=document.getElementById('skinGrid');if(!grid)return;
-  const sc=document.getElementById('skinCount');if(sc)sc.textContent=Object.keys(SKINS).length;
-  grid.innerHTML=Object.entries(SKINS).map(([k,s])=>`<div class="skin-btn ${CFG.skin===k?'active':''}" data-skin="${k}"><div class="preview"><div style="background:${s.colors[0]}"></div><div style="background:${s.colors[1]}"></div><div style="background:${s.colors[2]}"></div></div><b>${s.name}</b><small>${s.desc}</small></div>`).join('');
-  grid.querySelectorAll('.skin-btn').forEach(b=>{b.onclick=()=>{CFG.skin=b.dataset.skin;CFG.anim=null;try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}applyCfg();notify('Skin: '+(SKINS[CFG.skin]?SKINS[CFG.skin].name:'Estándar'),'ok');};});
-}
+function skinCategory(k){if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_/.test(k))return 'Conceptuales';return 'Generales';}
+function renderSkinGrid(){const grid=document.getElementById('skinGrid');if(!grid)return;const sc=document.getElementById('skinCount');if(sc)sc.textContent=Object.keys(SKINS).length;const groups=['Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];grid.innerHTML=groups.map(cat=>{const items=Object.entries(SKINS).filter(([k])=>skinCategory(k)===cat);if(!items.length)return '';return `<div class="skin-group"><div class="skin-group-title">${cat}<span>${items.length}</span></div><div class="skin-group-grid">${items.map(([k,s])=>`<div class="skin-btn ${CFG.skin===k?'active':''}" data-skin="${k}"><div class="preview"><div style="background:${s.colors[0]}"></div><div style="background:${s.colors[1]}"></div><div style="background:${s.colors[2]}"></div></div><b>${s.name}</b><small>${s.desc}</small></div>`).join('')}</div></div>`;}).join('');grid.querySelectorAll('.skin-btn').forEach(b=>{b.onclick=()=>{CFG.skin=b.dataset.skin;CFG.anim=null;try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}applyCfg();notify('Skin: '+(SKINS[CFG.skin]?SKINS[CFG.skin].name:'Estándar'),'ok');};});}
 function renderAnimGrid(){
   const grid = document.getElementById('animGrid'); if(!grid) return;
   const cur = new Set((document.documentElement.getAttribute('data-anim')||'').split(/\s+/).filter(Boolean));
@@ -1952,7 +1936,7 @@ function renderCallesPanel(){
     }
   });
 }
-document.getElementById('calleAnalizar').onclick = renderCallesPanel;
+const calleAnalizar=document.getElementById('calleAnalizar');if(calleAnalizar)calleAnalizar.onclick=renderCallesPanel;
 document.getElementById('calleUmbral').onchange = renderCallesPanel;
 document.getElementById('calleExportAlias').onclick = ()=>{
   const blob = new Blob([JSON.stringify(CALLE_ALIAS,null,2)],{type:'application/json'});
@@ -1973,7 +1957,8 @@ document.getElementById('calleImportAlias').onclick = ()=>{
   inp.click();
 };
 
-document.getElementById('setMenu').addEventListener('click',e=>{const b=e.target.closest('button[data-set]');if(!b)return;const pane=b.dataset.set;document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+pane));if(pane==='skin'){renderSkinGrid();renderPaletteGrid();renderAnimGrid();}if(pane==='design'||pane==='headerfooter'){previewPdfStyle();previewLstStyle();previewGapsStyle();}if(pane==='design'){try{renderStyle();}catch(e){}}if(pane==='data'){const s=document.getElementById('backupStatus');updateBackupStatus2(s?s.textContent:'');setTimeout(renderCallesPanel,30);}if(pane==='profiles')renderProfiles();});
+document.getElementById('setMenu').addEventListener('click',e=>{const b=e.target.closest('button[data-set]');if(!b)return;const pane=b.dataset.set;document.querySelectorAll('#setMenu button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.set-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+pane));if(pane==='skin'){renderSkinGrid();renderPaletteGrid();renderAnimGrid();}if(pane==='design'||pane==='headerfooter'){previewPdfStyle();previewLstStyle();previewGapsStyle();}if(pane==='design'){try{renderStyle();}catch(e){}}if(pane==='data'){const s=document.getElementById('backupStatus');updateBackupStatus2(s?s.textContent:'');}if(pane==='profiles')renderProfiles();});
+const calleTop=document.getElementById('calleAnalizarTop');if(calleTop)calleTop.onclick=()=>{try{renderCallesPanel();}catch(e){notify('Cargá datos primero','warn');}};
 
 /* PROFILES */
 const PROFILES_KEY='nora_profiles_v2';
