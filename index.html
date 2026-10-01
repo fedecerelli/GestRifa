@@ -1350,13 +1350,19 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
         <div class="card"><h2><span class="h-ic" data-icon="save"></span>Preferencias</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap"><button class="secondary" id="btnSaveCfg"><span class="b-ic" data-icon="save"></span>Guardar</button><span class="status-line" id="cfgStatus"></span></div>
         </div>
-        </div>
       </div>
 
       <div class="set-pane" id="pane-profiles">
         <div class="profile-layout">
           <div class="card profile-create-card">
-            <div class="profile-head"><div><div class="eyebrow">CONFIGURACIONES GUARDADAS</div><h2><span class="h-ic" data-icon="layers"></span>Perfiles</h2><p class="hint">Guardá una instantánea de la configuración actual para recuperarla después.</p></div><span class="profile-count" id="profileCount">0</span></div>
+            <div class="profile-head">
+              <div>
+                <div class="eyebrow">CONFIGURACIONES GUARDADAS</div>
+                <h2><span class="h-ic" data-icon="layers"></span>Perfiles</h2>
+                <p class="hint">Guardá una instantánea de la configuración actual para recuperarla después.</p>
+              </div>
+              <span class="profile-count" id="profileCount">0</span>
+            </div>
             <div class="profile-create">
               <div class="field"><label>Nombre del perfil</label><input type="text" id="profileName" placeholder="Ej: Trabajo nocturno"></div>
               <button class="primary profile-save" id="btnSaveProfile"><span class="b-ic" data-icon="save"></span>Guardar perfil actual</button>
@@ -1364,15 +1370,17 @@ body.sb-mini .navlbl,body.sb-mini .brand div:last-child,body.sb-mini .sidebar .s
             <div class="profile-list-head"><span>Tus perfiles</span><small>Se guardan localmente en este navegador</small></div>
             <div id="profilesList" class="profiles-list"></div>
           </div>
-          <div class="card profile-help-card"><h2><span class="h-ic" data-icon="info"></span>Atajos</h2>
-          <div class="kbd-help">
-            <kbd>Ctrl</kbd><span>+ K — Búsqueda global</span>
-            <kbd>?</kbd><span>— Ayuda</span>
-            <kbd>Ctrl</kbd><span>+ Ñ — Consola de logs</span>
-            <kbd>Alt</kbd><span>+ ← / → — Atrás / adelante</span>
-            <kbd>Alt</kbd><span>+ 1..9 — Vista N</span>
-            <kbd>Ctrl</kbd><span>+ S — Guardar respaldo</span>
-            <kbd>Esc</kbd><span>— Cerrar modales</span>
+          <div class="card profile-help-card">
+            <h2><span class="h-ic" data-icon="info"></span>Atajos</h2>
+            <div class="kbd-help">
+              <kbd>Ctrl</kbd><span>+ K — Búsqueda global</span>
+              <kbd>?</kbd><span>— Ayuda</span>
+              <kbd>Ctrl</kbd><span>+ Ñ — Consola de logs</span>
+              <kbd>Alt</kbd><span>+ ← / → — Atrás / adelante</span>
+              <kbd>Alt</kbd><span>+ 1..9 — Vista N</span>
+              <kbd>Ctrl</kbd><span>+ S — Guardar respaldo</span>
+              <kbd>Esc</kbd><span>— Cerrar modales</span>
+            </div>
           </div>
         </div>
       </div>
