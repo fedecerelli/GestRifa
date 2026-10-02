@@ -834,6 +834,50 @@ body.sb-mini .skin-homage{justify-content:center;padding:7px 4px}.sb-mini .skin-
 :root[data-skin=adidas_three]{--bg:#f1f1f1;--panel:#fff;--panel2:#e7e7e7;--ink:#111;--sub:#555;--line:#bbb;--accent:#111;--accent-ink:#fff;--accent2:#333;--radius:3px}:root[data-skin=adidas_three] body{background:repeating-linear-gradient(135deg,#f4f4f4 0 24px,#ededed 24px 48px)}:root[data-skin=adidas_three] .card{box-shadow:5px 5px 0 #1111}:root[data-skin=adidas_three] button.primary{background:#111;color:#fff}
 :root[data-skin=xfiles_classic]{--bg:#03080b;--panel:#0b1519;--panel2:#102126;--ink:#e7f6f8;--sub:#8fb5ba;--line:#24434a;--accent:#9fd7df;--accent-ink:#031014;--accent2:#dceff1;--radius:4px}:root[data-skin=xfiles_classic] body{background:radial-gradient(circle at 50% 5%,#1a3036,#020608 58%);background-attachment:fixed}:root[data-skin=xfiles_classic] .topbar h1{letter-spacing:.08em}:root[data-skin=xfiles_classic] button.primary{background:#9fd7df;color:#031014}
 
+/* ===== NORA PLUS ===== */
+:root{--nx-rp:3px;--nx-fs:12px;--nx-sh:var(--shadow)}
+.card{box-shadow:var(--nx-sh)}
+#view-datos>.card:not(.data-tool-card){padding:8px 10px}
+#view-datos>.card>p.hint{display:none}
+#view-datos .dv-toolbar{display:grid;grid-template-columns:minmax(220px,2.2fr) repeat(auto-fit,minmax(96px,1fr));gap:4px 6px;padding:6px;margin-bottom:6px;align-items:end}
+#view-datos .dv-search-help{display:none}
+#view-datos .dv-toolbar .field{min-width:0}
+#view-datos .dv-toolbar .field label{font-size:9px;line-height:1.1;margin:0}
+#view-datos .dv-toolbar input,#view-datos .dv-toolbar select{padding:4px 6px;font-size:11.5px}
+#view-datos .dv-wrap{max-height:calc(100vh - 215px);min-height:300px}
+#view-datos .dv-table{font-size:var(--nx-fs)}
+#view-datos .dv-table td{padding:var(--nx-rp) 8px;max-width:220px}
+#view-datos .dv-table th{padding:5px 8px}
+#view-datos .dv-col-toggle{gap:3px;margin-bottom:4px;max-height:64px;overflow:auto}
+#view-datos .dv-col-toggle label{padding:1px 6px;font-size:10.5px}
+#view-datos .dv-footer{margin-top:4px}
+body.nx-zebra .dv-table tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+body.nx-freeze .dv-table td:first-child,body.nx-freeze .dv-table th:first-child{position:sticky;left:0;z-index:1;background:var(--panel2)}
+body.nx-focus .sidebar,body.nx-focus .topbar,body.nx-focus .bottom-nav{display:none!important}
+body.nx-focus #view-datos .dv-wrap{max-height:calc(100vh - 100px)}
+body.nx-focus #view-datos>.data-tool-card{display:none}
+.nx-bar{display:inline-flex;gap:3px;margin-left:auto;align-items:center}
+.nx-bar button{padding:2px 7px;font-size:11px}
+#nxBg{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;pointer-events:none}
+/* widgets */
+.nx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;align-items:start}
+.nx-w{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;min-width:0;box-shadow:var(--nx-sh)}
+.nx-w.s2{grid-column:span 2}.nx-w.s3{grid-column:span 3}
+.nx-wh{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.nx-wh span:first-child{flex:1}.nx-wh button{padding:0 5px;font-size:11px;background:none;border:0;color:var(--sub);cursor:pointer;min-height:0}
+.nx-big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+.nx-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;font-size:11px}
+.nx-cal b{color:var(--sub);font-size:9px}.nx-cal i{font-style:normal;padding:2px 0;border-radius:5px}.nx-cal i.t{background:var(--accent);color:var(--accent-ink,#fff)}
+.nx-w textarea{width:100%;min-height:90px;resize:vertical;font-size:12px}
+.nx-calc{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.nx-calc button{padding:6px 0;font-size:13px}.nx-calc input{grid-column:1/-1;text-align:right;font-size:16px}
+.nx-li{font-size:12px;padding:3px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.nx-add{display:flex;gap:6px;margin:8px 0 0;align-items:center;font-size:12px}
+.nx-fab{position:fixed;right:14px;z-index:60;width:42px;height:42px;border-radius:50%;padding:0;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#nxFabW{bottom:calc(76px + var(--safe-bot,0px))}#nxFabP{bottom:calc(126px + var(--safe-bot,0px))}
+.nx-drawer{position:fixed;right:12px;bottom:calc(76px + var(--safe-bot,0px));width:min(340px,calc(100vw - 24px));max-height:70vh;overflow:auto;z-index:61;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:none}
+.nx-drawer.on{display:block}.nx-drawer .nx-grid{grid-template-columns:1fr}.nx-drawer .nx-w.s2,.nx-drawer .nx-w.s3{grid-column:auto}
+.nx-pr{display:grid;grid-template-columns:110px 1fr;gap:6px;align-items:center;font-size:12px;margin:5px 0}
+.nx-pr input[type=text],.nx-pr select{width:100%;font-size:12px;padding:3px 5px}
 </style>
 </head>
 <body>
@@ -2212,7 +2256,7 @@ function applyCfg(){
   try{updateSkinHomage();}catch(e){}
 }
 window.applyCfg = applyCfg;
-function skinCategory(k){if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_|^mario_|^zelda_|^star_|^simpsons_/.test(k))return 'Conceptuales';return 'Generales';}
+function skinCategory(k){if(window.NXCAT&&NXCAT[k])return NXCAT[k];if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_|^mario_|^zelda_|^star_|^simpsons_/.test(k))return 'Conceptuales';return 'Generales';}
 const SKIN_FAV_KEY='nora_skin_favs_v1',SKIN_RECENT_KEY='nora_skin_recent_v1';
 function getSkinFavs(){try{return JSON.parse(localStorage.getItem(SKIN_FAV_KEY)||'[]');}catch(e){return[];}}
 function getSkinRecent(){try{return JSON.parse(localStorage.getItem(SKIN_RECENT_KEY)||'[]');}catch(e){return[];}}
@@ -2248,7 +2292,7 @@ function renderSkinGrid(){
     if(!q)return true;
     return [k,s.name,s.desc,s.homage,skinCategory(k)].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
-  const categories=['Todos','Favoritos','Recientes','Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
+  const categories=['Todos','Favoritos','Recientes','Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales','Arte','Homenajes'];
   if(collection&&!collection.dataset.bound){collection.innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join('');collection.dataset.bound='1';collection.onchange=renderSkinGrid;}
   if(document.getElementById('skinCount'))document.getElementById('skinCount').textContent=all.length;
   const cur=SKINS[CFG.skin]||SKINS[''];
@@ -2256,7 +2300,7 @@ function renderSkinGrid(){
   const quickKeys=['winamp_classic','mac_classic','boca_xeneize','adidas_three','xfiles_classic','mario_8bit','zelda_hyrule','star_terminal'].filter(k=>SKINS[k]);
   if(quick)quick.innerHTML=`<div class="skin-quick-label">Destacadas</div>`+quickKeys.map(k=>{const s=SKINS[k],img=skinRealImage(k,s);return `<button class="skin-quick-item ${CFG.skin===k?'active':''}" data-quick-skin="${k}" title="${esc(s.name)}"><img src="${img}" alt="" loading="lazy"><span>${esc(s.name.replace(/^Homenaje · /,''))}</span></button>`;}).join('');
   quick?.querySelectorAll('[data-quick-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.quickSkin));
-  const limit=80;
+  const limit=500;
   grid.innerHTML=match.slice(0,limit).map(([k,s])=>{const img=skinRealImage(k,s);return `<button class="skin-list-item ${CFG.skin===k?'active':''}" data-skin="${k}"><span class="skin-list-logo skin-real-photo"><img src="${img}" alt="" loading="lazy"></span><span class="skin-list-main"><b>${esc(s.name)}</b><small>${esc(s.desc||'')}</small></span><span class="skin-list-meta">${skinCategory(k)}${favs.has(k)?' · ★':''}</span><span class="skin-list-go">${CFG.skin===k?'✓':'›'}</span></button>`;}).join('')||(q?'<div class="skin-empty">No encontré una skin con ese criterio.</div>':'<div class="skin-empty">No hay skins en esta colección.</div>');
   grid.querySelectorAll('[data-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.skin));
   if(results)results.textContent=`${match.length} resultado${match.length===1?'':'s'}`;
@@ -3581,6 +3625,122 @@ renderProfiles();
 renderReports();
 try { updateSkinWatermark(); } catch(e) {}
 if(window._boot)window._boot.then(()=>setTimeout(()=>{renderHome();},200));
+</script>
+<script>
+(function(){
+const $=s=>document.querySelector(s),LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const el=(h)=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild};
+/* ---------- 1. SKINS: arte + homenajes (ilustraciones SVG propias, inspiradas en la obra) ---------- */
+const M={
+stars:c=>`<g fill="none" stroke="${c.a2}" stroke-width="3"><circle cx="60" cy="60" r="14"/><circle cx="60" cy="60" r="26"/><circle cx="60" cy="60" r="38" stroke-dasharray="6 5"/></g><circle cx="10" cy="14" r="3" fill="${c.ac}"/><circle cx="108" cy="100" r="2.5" fill="${c.ac}"/>`,
+waves:c=>`<g fill="none" stroke="${c.ac}" stroke-width="2"><circle cx="30" cy="30" r="28"/><circle cx="30" cy="30" r="19"/><circle cx="30" cy="30" r="10"/><circle cx="0" cy="15" r="28"/><circle cx="60" cy="15" r="28"/></g>`,
+mondrian:c=>`<rect x="0" y="0" width="57" height="67" fill="#d0201c"/><rect x="143" y="73" width="57" height="127" fill="${c.ac}"/><rect x="63" y="153" width="74" height="47" fill="#f2c200"/><path d="M0 70H200M60 0V200M140 70V200M0 150H60" stroke="${c.ink}" stroke-width="6"/>`,
+klimt:c=>`<g fill="none" stroke="${c.ac}" stroke-width="2"><circle cx="40" cy="40" r="30"/><circle cx="40" cy="40" r="20" stroke="${c.a2}"/><circle cx="0" cy="0" r="14"/><circle cx="80" cy="80" r="14"/></g><circle cx="40" cy="40" r="6" fill="${c.ac}"/>`,
+monet:c=>`<ellipse cx="40" cy="30" rx="30" ry="10" fill="${c.a2}" opacity=".45"/><ellipse cx="95" cy="80" rx="26" ry="9" fill="${c.ac}" opacity=".35"/><circle cx="46" cy="27" r="4" fill="#f4a6c8"/>`,
+kand:c=>`<circle cx="50" cy="50" r="30" fill="none" stroke="${c.ac}" stroke-width="4"/><circle cx="50" cy="50" r="10" fill="${c.a2}"/><path d="M0 120L120 90M70 0L90 40L50 40Z" stroke="${c.ink}" stroke-width="2" fill="${c.ac}" opacity=".6"/>`,
+bauhaus:c=>`<polygon points="10,70 40,20 70,70" fill="${c.ac}"/><circle cx="105" cy="35" r="22" fill="${c.a2}"/><rect x="80" y="80" width="30" height="30" fill="${c.ink}" opacity=".7"/>`,
+deco:c=>`<g fill="none" stroke="${c.ac}" stroke-width="2"><circle cx="0" cy="0" r="25"/><circle cx="0" cy="0" r="50"/><circle cx="0" cy="0" r="75"/><circle cx="100" cy="100" r="25"/><circle cx="100" cy="100" r="50"/><circle cx="100" cy="100" r="75"/></g>`,
+pop:c=>`<g fill="${c.ac}"><circle cx="10" cy="10" r="6"/><circle cx="30" cy="30" r="6"/></g><g fill="${c.a2}"><circle cx="30" cy="10" r="3"/><circle cx="10" cy="30" r="3"/></g>`,
+cubism:c=>`<polygon points="0,0 60,10 40,70" fill="${c.ac}" opacity=".6"/><polygon points="60,10 120,0 100,80 40,70" fill="${c.a2}" opacity=".5"/><polygon points="0,90 40,70 100,80 120,120 0,120" fill="${c.ink}" opacity=".18"/>`,
+celeste:c=>`<rect width="40" height="80" fill="${c.ac}"/><circle cx="60" cy="40" r="7" fill="#f6b40e"/>`,
+rombo:c=>`<polygon points="40,0 80,40 40,80 0,40" fill="none" stroke="${c.ac}" stroke-width="3"/><polygon points="40,20 60,40 40,60 20,40" fill="${c.a2}" opacity=".7"/>`,
+mont:c=>`<polygon points="0,80 40,20 70,60 100,10 160,80" fill="${c.ac}" opacity=".5"/><polygon points="0,80 30,50 60,80" fill="${c.a2}" opacity=".6"/>`,
+sunset:c=>`<rect y="0" width="10" height="20" fill="${c.ac}" opacity=".7"/><rect y="20" width="10" height="12" fill="${c.a2}" opacity=".6"/><rect y="32" width="10" height="8" fill="${c.ink}" opacity=".3"/>`,
+aurora:c=>`<path d="M0 40Q30 0 60 40T120 40" fill="none" stroke="${c.ac}" stroke-width="5" opacity=".6"/><path d="M0 70Q30 30 60 70T120 70" fill="none" stroke="${c.a2}" stroke-width="3" opacity=".6"/>`};
+const SK=[ // key,nombre,desc,categoría,tile w,h,motivo,bg,panel,ink,accent,accent2,homenaje
+['art_vangogh','Arte · Noche estrellada','Espirales · azul cobalto · amarillo','Arte',120,120,'stars','#0e1e45','#14295c','#f4e9b8','#f2c230','#6fa3e8','Homenaje a La noche estrellada (Van Gogh, 1889)'],
+['art_hokusai','Arte · La gran ola','Ukiyo-e · olas · índigo','Arte',60,30,'waves','#e9e2cf','#f8f3e4','#1b2a4a','#1d4e89','#7aa5c9','Homenaje a La gran ola de Kanagawa (Hokusai, c.1831)'],
+['art_mondrian','Arte · Mondrian','Neoplasticismo · rojo · amarillo','Arte',200,200,'mondrian','#f4f1e8','#fff','#111','#1f4fa8','#d0201c','Homenaje a las composiciones de Piet Mondrian'],
+['art_klimt','Arte · Klimt dorado','Art Nouveau vienés · oro','Arte',80,80,'klimt','#2a1f12','#3a2b17','#f6e6b4','#d4a017','#8c6d2f','Homenaje a El beso (Gustav Klimt, 1908)'],
+['art_monet','Arte · Nenúfares','Impresionismo · agua · lilas','Arte',120,120,'monet','#dfeaf0','#f6fafc','#23403f','#3e7d78','#7da6c9','Homenaje a los Nenúfares de Claude Monet'],
+['art_kandinsky','Arte · Kandinsky','Abstracción · círculos · líneas','Arte',120,120,'kand','#f1ead8','#fffaf0','#1c1c28','#c0392b','#2a6f97','Homenaje a la abstracción de Vasili Kandinsky'],
+['art_bauhaus','Arte · Bauhaus','Formas primarias · funcional','Arte',120,120,'bauhaus','#ece8df','#fff','#16181d','#e63b2e','#1d5fbf','Homenaje a la escuela Bauhaus (1919)'],
+['art_deco','Arte · Art Déco','Abanicos · negro · oro','Arte',100,100,'deco','#0f0f14','#191920','#f2e6c0','#c9a227','#8a7020','Homenaje al Art Déco de los años 20'],
+['art_pop','Arte · Pop Art','Medios tonos · rosa · cian','Arte',40,40,'pop','#fff3c4','#fff','#1a1a1a','#e6007e','#00a8e8','Homenaje al Pop Art de los años 60'],
+['art_cubismo','Arte · Cubismo','Facetas · ocres · grises','Arte',120,120,'cubism','#d8cdb6','#efe8d6','#2b2620','#9c5a2c','#5b6b73','Homenaje al Cubismo de Picasso y Braque'],
+['hom_albiceleste','Homenaje · Albiceleste','Celeste y blanco · Sol de Mayo','Homenajes',80,80,'celeste','#ffffff','#f5faff','#10243d','#4a90d9','#f6b40e','Homenaje a los colores de la bandera argentina'],
+['hom_tango','Homenaje · Tango porteño','Rombos · rojo bordó · negro','Homenajes',80,80,'rombo','#1a0d10','#26141a','#f3dede','#c0392b','#e0b36a','Homenaje al tango y a Buenos Aires'],
+['hom_patagonia','Homenaje · Patagonia','Montañas · glaciares','Homenajes',160,80,'mont','#e8f1f5','#fafdff','#16313f','#2f6f8f','#8fb7c9','Homenaje a la Patagonia argentina'],
+['hom_pampa','Homenaje · Pampa','Atardecer · horizonte · campo','Homenajes',10,40,'sunset','#2b1a14','#3a241b','#ffe2c4','#ee8a3b','#c7a14a','Homenaje al campo y los atardeceres de la pampa'],
+['hom_aurora','Homenaje · Aurora austral','Cielo nocturno · verde · violeta','Homenajes',120,100,'aurora','#07101f','#0d1a30','#d7f5e8','#3ddc97','#9b7bff','Homenaje a las auroras del cielo austral']];
+const lum=h=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255};
+let css='';window.NXCAT={};
+SK.forEach(([k,n,d,cat,w,h,m,bg,pn,ink,ac,a2,hm])=>{
+ const c={ac,a2,ink,bg},tile=M[m](c);
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><defs><pattern id="p" width="${w}" height="${h}" patternUnits="userSpaceOnUse">${tile}</pattern></defs><rect width="400" height="300" fill="${bg}"/><rect width="400" height="300" fill="url(#p)"/></svg>`;
+ const uri='data:image/svg+xml,'+encodeURIComponent(svg);
+ const tileUri='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${bg}"/>${tile}</svg>`);
+ SKINS[k]={name:n,desc:d,colors:[bg,ac,a2],homage:hm,photo:uri,mark:uri};NXCAT[k]=cat;
+ css+=`:root[data-skin=${k}]{--bg:${bg};--panel:${pn};--panel2:color-mix(in srgb,${pn} 90%,${ink} 10%);--ink:${ink};--sub:color-mix(in srgb,${ink} 62%,${pn});--line:color-mix(in srgb,${ink} 20%,${pn});--accent:${ac};--accent-ink:${lum(ac)>.6?'#111':'#fff'};--accent2:${a2}}:root[data-skin=${k}] body{background:${bg} url("${tileUri}");background-attachment:fixed}`;
+});
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:css}));
+/* ---------- 2. EXPLORADOR: modo compacto ---------- */
+const P=Object.assign({scale:100,sbw:216,font:'',bg:'',dim:30,pop:100,sh:'',rp:3,fs:12,zebra:true,freeze:false},LS('nx_p_v1',{}));
+function applyP(){
+ const r=document.documentElement.style,b=document.body;
+ b.style.zoom=P.scale/100;r.setProperty('--sidebar-w',P.sbw+'px');
+ P.font?r.setProperty('--font-ui',P.font,'important'):r.removeProperty('--font-ui');
+ r.setProperty('--nx-rp',P.rp+'px');r.setProperty('--nx-fs',P.fs+'px');
+ r.setProperty('--nx-sh',P.sh==='none'?'none':P.sh==='strong'?'0 6px 20px rgba(0,0,0,.25)':P.sh==='soft'?'0 2px 8px rgba(0,0,0,.1)':'var(--shadow)');
+ b.classList.toggle('nx-zebra',!!P.zebra);b.classList.toggle('nx-freeze',!!P.freeze);
+ let bg=$('#nxBg');if(!bg){bg=el('<div id="nxBg"></div>');document.body.prepend(bg)}
+ bg.style.backgroundImage=P.bg?`linear-gradient(rgba(0,0,0,${P.dim/100}),rgba(0,0,0,${P.dim/100})),url("${P.bg}")`:'none';
+ document.querySelectorAll('.card').forEach(c=>c.style.opacity='');
+ r.setProperty('--panel-op',P.pop+'%');
+ if(P.pop<100)b.classList.add('nx-tr');else b.classList.remove('nx-tr');
+}
+const st=document.createElement('style');st.textContent='body.nx-tr .card,body.nx-tr .nx-w{background:color-mix(in srgb,var(--panel) var(--panel-op),transparent)!important}';document.head.appendChild(st);
+const save=()=>{SV('nx_p_v1',P);applyP()};
+(function explorer(){
+ const card=$('#view-datos>.card:not(.data-tool-card)'),tool=$('#callesTool');if(!card)return;
+ if(tool)card.after(tool); // herramienta de calles pasa debajo de la tabla
+ const h2=card.querySelector('h2'),bar=el(`<span class="nx-bar"><button class="ghost miniBtn" id="nxRm" title="Filas más compactas">▤−</button><button class="ghost miniBtn" id="nxRp" title="Filas más altas">▤+</button><button class="ghost miniBtn" id="nxZ" title="Zebra">Z</button><button class="ghost miniBtn" id="nxF" title="Fijar 1ª columna">⇤</button><button class="secondary miniBtn" id="nxFocus" title="Pantalla completa (Esc para salir)">⛶ Enfocar</button></span>`);
+ const tg=$('#dvCardsToggle');tg&&(tg.style.marginLeft='6px');h2.insertBefore(bar,tg);
+ const d=card.querySelector('details');d&&d.removeAttribute('open');
+ $('#nxRm').onclick=()=>{P.rp=Math.max(0,P.rp-1);P.fs=Math.max(10,P.fs-.5);save()};
+ $('#nxRp').onclick=()=>{P.rp=Math.min(10,P.rp+1);P.fs=Math.min(15,P.fs+.5);save()};
+ $('#nxZ').onclick=()=>{P.zebra=!P.zebra;save()};$('#nxF').onclick=()=>{P.freeze=!P.freeze;save()};
+ const foc=()=>document.body.classList.toggle('nx-focus');$('#nxFocus').onclick=foc;
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('nx-focus')});
+})();
+/* ---------- 3. WIDGETS ---------- */
+const days=['L','M','X','J','V','S','D'];let tick=[];
+const W={
+reloj:{n:'Reloj',i:'🕒',r(b){const f=()=>{const d=new Date();b.innerHTML=`<div class="nx-big">${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`};f();return setInterval(f,1000)}},
+calendario:{n:'Calendario',i:'📅',r(b){let d=new Date();const f=()=>{const y=d.getFullYear(),m=d.getMonth(),o=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),t=new Date();let h=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><button class="ghost miniBtn" data-m="-1">‹</button><b>${d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</b><button class="ghost miniBtn" data-m="1">›</button></div><div class="nx-cal">${days.map(x=>`<b>${x}</b>`).join('')}${'<i></i>'.repeat(o)}`;for(let i=1;i<=n;i++)h+=`<i class="${i===t.getDate()&&m===t.getMonth()&&y===t.getFullYear()?'t':''}">${i}</i>`;b.innerHTML=h+'</div>';b.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{d=new Date(y,m+ +x.dataset.m,1);f()})};f()}},
+notas:{n:'Notas',i:'📝',r(b,w){b.innerHTML='<textarea placeholder="Escribí algo…"></textarea>';const t=b.firstChild;t.value=localStorage.getItem('nx_note_'+w.id)||'';t.oninput=()=>localStorage.setItem('nx_note_'+w.id,t.value)}},
+tareas:{n:'Tareas pendientes',i:'✅',r(b){const f=()=>{const l=(typeof TASKS!=='undefined'?TASKS:[]).filter(t=>!t.done).slice(0,6);b.innerHTML=(l.length?l.map(t=>`<div class="nx-li">${esc(t.title||'Tarea')}</div>`).join(''):'<div class="hint">Sin tareas pendientes 🎉</div>')+'<button class="ghost miniBtn" style="margin-top:6px">Abrir tareas</button>';b.querySelectorAll('.nx-li,button').forEach(x=>x.onclick=()=>setView('tasks'))};f();return setInterval(f,5000)}},
+datos:{n:'Buscar en Explorador',i:'🔎',r(b){b.innerHTML=`<div class="hint">${typeof RECORDS!=='undefined'?RECORDS.length:0} registros cargados</div><input type="text" placeholder="Buscar y ir al Explorador…" style="width:100%;margin-top:6px">`;b.querySelector('input').onkeydown=e=>{if(e.key==='Enter'){setView('datos');setTimeout(()=>{const s=$('#dvSearch');s.value=e.target.value;s.dispatchEvent(new Event('input',{bubbles:true}))},120)}}}},
+calc:{n:'Calculadora',i:'🧮',r(b){const k='7 8 9 / 4 5 6 * 1 2 3 - 0 . = +'.split(' ');b.innerHTML=`<div class="nx-calc"><input type="text" value="" inputmode="decimal">${k.map(x=>`<button class="secondary">${x}</button>`).join('')}<button class="ghost" style="grid-column:1/-1">C</button></div>`;const i=b.querySelector('input');const go=()=>{try{if(/^[\d+\-*/.() ]+$/.test(i.value))i.value=String(Function('"use strict";return('+i.value+')')())}catch(e){i.value='Error'}};b.querySelectorAll('button').forEach(x=>x.onclick=()=>{const v=x.textContent;v==='C'?i.value='':v==='='?go():i.value+=v});i.onkeydown=e=>{if(e.key==='Enter')go()}}},
+timer:{n:'Temporizador',i:'⏱️',r(b){let s=1500,run=0;b.innerHTML='<div class="nx-big">25:00</div><div class="nx-add"><input type="number" value="25" min="1" style="width:56px"> min <button class="primary miniBtn">▶</button><button class="ghost miniBtn">↺</button></div>';const t=b.querySelector('.nx-big'),[i,go,rs]=b.querySelectorAll('input,button'),f=()=>t.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');go.onclick=()=>{run=!run;go.textContent=run?'⏸':'▶'};rs.onclick=()=>{s=i.value*60;run=0;go.textContent='▶';f()};return setInterval(()=>{if(run&&s>0){s--;f();if(!s){run=0;go.textContent='▶';notify('⏱️ Tiempo cumplido','ok')}}},1000)}},
+dolar:{n:'Cotización dólar',i:'💵',r(b){b.textContent='Cargando…';fetch('https://dolarapi.com/v1/dolares').then(r=>r.json()).then(a=>{b.innerHTML=a.filter(x=>['oficial','blue','bolsa'].includes(x.casa)).map(x=>`<div class="nx-li" style="cursor:default"><b>${x.nombre}</b> · compra $${x.compra} · venta $${x.venta}</div>`).join('')}).catch(()=>b.innerHTML='<div class="hint">Sin conexión</div>')}},
+atajos:{n:'Accesos rápidos',i:'⚡',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{setView(x.dataset.v);$('#nxDrawerW')?.classList.remove('on')})}}};
+const WS=LS('nx_w_v1',null)||{home:['reloj','tareas','calendario','datos','notas','dolar'].map((t,i)=>({id:'h'+i,t,s:1})),float:['calc','timer','notas'].map((t,i)=>({id:'f'+i,t,s:1}))};
+function zone(box,key){
+ tick.filter(x=>x.z===key).forEach(x=>clearInterval(x.h));tick=tick.filter(x=>x.z!==key);box.innerHTML='';
+ const g=el('<div class="nx-grid"></div>');box.appendChild(g);const L=WS[key];
+ L.forEach((w,ix)=>{const d=W[w.t];if(!d)return;const n=el(`<div class="nx-w s${w.s}"><div class="nx-wh"><span>${d.i} ${d.n}</span><button data-a="l">◀</button><button data-a="r">▶</button><button data-a="s">⤢</button><button data-a="x">✕</button></div><div class="nx-wb"></div></div>`);g.appendChild(n);
+  const h=d.r(n.querySelector('.nx-wb'),w);if(h)tick.push({z:key,h});
+  n.querySelector('.nx-wh').onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){L.splice(ix,1)}else if(a==='s'){w.s=w.s%3+1}else{const j=ix+(a==='l'?-1:1);if(j<0||j>=L.length)return;[L[ix],L[j]]=[L[j],L[ix]]}SV('nx_w_v1',WS);zone(box,key)}});
+ const sel=el(`<div class="nx-add"><select>${Object.entries(W).map(([k,v])=>`<option value="${k}">${v.i} ${v.n}</option>`).join('')}</select><button class="primary miniBtn">+ Agregar widget</button></div>`);
+ sel.querySelector('button').onclick=()=>{L.push({id:key[0]+Date.now(),t:sel.querySelector('select').value,s:1});SV('nx_w_v1',WS);zone(box,key)};box.appendChild(sel);
+}
+const home=$('#view-home'),hk=$('#hHeroKpis');
+if(home&&hk){const c=el('<div class="card"><h2 style="margin-bottom:8px">🧩 Mis widgets <span class="tag">personalizables</span></h2><div id="nxHome"></div></div>');hk.after(c);zone($('#nxHome'),'home')}
+/* ---------- 4. PANELES FLOTANTES: widgets + personalización ---------- */
+document.body.append(el('<button class="primary nx-fab" id="nxFabW" title="Widgets flotantes">🧩</button>'),el('<button class="secondary nx-fab" id="nxFabP" title="Personalizar">🎨</button>'),el('<div class="nx-drawer" id="nxDrawerW"><h3 style="margin:0 0 6px;font-size:13px">🧩 Widgets flotantes</h3><div id="nxFloat"></div></div>'),el('<div class="nx-drawer" id="nxDrawerP"></div>'));
+zone($('#nxFloat'),'float');
+const tog=(a,b)=>{$(b).classList.remove('on');$(a).classList.toggle('on')};
+$('#nxFabW').onclick=()=>tog('#nxDrawerW','#nxDrawerP');
+const FONTS={'':'Predeterminada','Georgia,serif':'Serif clásica','"Trebuchet MS",Verdana,sans-serif':'Humanista','"Segoe UI",Tahoma,sans-serif':'Segoe','ui-rounded,"Nunito","Varela Round",sans-serif':'Redondeada','Consolas,monospace':'Monoespaciada','"Courier New",monospace':'Máquina de escribir'};
+function panelP(){const d=$('#nxDrawerP'),row=(l,c)=>`<div class="nx-pr"><label>${l}</label>${c}</div>`,rg=(k,a,b)=>`<input type="range" data-k="${k}" min="${a}" max="${b}" value="${P[k]}">`;
+ d.innerHTML=`<h3 style="margin:0 0 6px;font-size:13px">🎨 Personalización</h3>`+row('Zoom interfaz %',rg('scale',80,130))+row('Ancho barra lateral',rg('sbw',150,320))+row('Tipografía',`<select data-k="font">${Object.entries(FONTS).map(([k,v])=>`<option value='${k}' ${P.font===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Sombras',`<select data-k="sh">${[['','Normal'],['none','Ninguna'],['soft','Suaves'],['strong','Marcadas']].map(([k,v])=>`<option value="${k}" ${P.sh===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Opacidad paneles %',rg('pop',40,100))+row('Imagen de fondo',`<input type="text" data-k="bg" placeholder="URL de imagen" value="${P.bg.startsWith('data:')?'':P.bg}">`)+row('',`<input type="file" accept="image/*" id="nxFile" style="font-size:11px">`)+row('Oscurecer fondo %',rg('dim',0,80))+row('Altura filas Explorador',rg('rp',0,10))+row('Tamaño letra tabla',rg('fs',10,15))+`<div class="nx-add"><label><input type="checkbox" data-k="zebra" ${P.zebra?'checked':''}> Zebra</label><label><input type="checkbox" data-k="freeze" ${P.freeze?'checked':''}> Fijar 1ª col.</label><button class="ghost miniBtn" id="nxReset" style="margin-left:auto">Restablecer</button></div>`;
+ d.querySelectorAll('[data-k]').forEach(i=>i.oninput=i.onchange=()=>{const k=i.dataset.k;P[k]=i.type==='checkbox'?i.checked:i.type==='range'?+i.value:i.value;save()});
+ $('#nxFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,1400/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);P.bg=c.toDataURL('image/jpeg',.72);save()};im.src=URL.createObjectURL(f)};
+ $('#nxReset').onclick=()=>{localStorage.removeItem('nx_p_v1');Object.assign(P,{scale:100,sbw:216,font:'',bg:'',dim:30,pop:100,sh:'',rp:3,fs:12,zebra:true,freeze:false});save();panelP()}}
+$('#nxFabP').onclick=()=>{panelP();tog('#nxDrawerP','#nxDrawerW')};
+applyP();try{renderSkinGrid()}catch(e){}
+})();
 </script>
 </body>
 </html>
