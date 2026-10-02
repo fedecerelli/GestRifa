@@ -893,6 +893,13 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 #view-datos .dv-toolbar .field,#view-datos .dv-toolbar .dv-search-mode{flex:1 1 105px;min-width:90px;max-width:190px}
 #view-datos .dv-toolbar select,#view-datos .dv-toolbar input{width:100%;min-width:0;box-sizing:border-box}
 #view-datos .dv-toolbar>button{flex:0 0 auto}
+
+.sidebar{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.nx-dock{display:flex;gap:6px;margin:0 2px 10px}
+.nx-nb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 4px;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);cursor:pointer;min-height:0;min-width:0}
+.nx-nb i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nx-nb.active,.iconbtn.active{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
+body.sb-mini .nx-dock{flex-direction:column}body.sb-mini .nx-nb i{display:none}
 </style>
 </head>
 <body>
@@ -3771,12 +3778,14 @@ function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${
  $('#nxFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,1400/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);P.bg=c.toDataURL('image/jpeg',.72);save()};im.src=URL.createObjectURL(f)};
  $('#nxReset').onclick=()=>{localStorage.removeItem('nx_p_v1');Object.assign(P,{scale:100,sbw:216,font:'',bg:'',dim:30,pop:100,sh:'',rp:3,fs:12,zebra:true,freeze:false});save();panelP(PWIN.body)}}
 
-/* accesos: barra lateral y barra superior */
-const nav=$('#sideNav');
-if(nav){const lbl=[...nav.querySelectorAll('.navlbl')].find(x=>/Sistemas/.test(x.textContent)),set=nav.querySelector('[data-view=settings]');
- [['nxNavW','Widgets','layers',WWIN],['nxNavP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button id="${id}" data-icon="${ic}"><span class="nav-ic"></span>${t}</button>`);b.onclick=()=>w.toggle();set?nav.insertBefore(b,set):nav.appendChild(b)});}
+if(typeof window.setView==='function'&&!window.setView._nx){const _sv=window.setView;window.setView=function(v,k){if(!v)return;return _sv.call(this,v,k)};window.setView._nx=1}
+/* accesos: bloque propio (fuera de .nav para no heredar su manejo de clics) */
+const home0=$('.skin-homage'),side=$('.sidebar');
+if(side){const dock=el(`<div class="nx-dock"><button type="button" class="nx-nb" id="nxNavW" title="Widgets flotantes"><span data-icon="layers"></span><i>Widgets</i></button><button type="button" class="nx-nb" id="nxNavP" title="Personalización"><span data-icon="palette"></span><i>Personalizar</i></button></div>`);
+ home0?home0.after(dock):side.prepend(dock);
+ $('#nxNavW').onclick=e=>{e.stopPropagation();WWIN.toggle()};$('#nxNavP').onclick=e=>{e.stopPropagation();PWIN.toggle()};}
 const ta=$('.topbar-actions');
-if(ta){[['nxTopW','Widgets flotantes','layers',WWIN],['nxTopP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button class="iconbtn" id="${id}" title="${t}" aria-label="${t}" data-icon="${ic}"></button>`);b.onclick=()=>w.toggle();ta.appendChild(b)});}
+if(ta){[['nxTopW','Widgets flotantes','layers',WWIN],['nxTopP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button type="button" class="iconbtn" id="${id}" title="${t}" aria-label="${t}" data-icon="${ic}"></button>`);b.onclick=e=>{e.stopPropagation();w.toggle()};ta.appendChild(b)});}
 try{paintIcons()}catch(e){}sync();
 applyP();try{renderSkinGrid()}catch(e){}
 })();
