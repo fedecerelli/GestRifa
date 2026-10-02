@@ -345,7 +345,12 @@ footer.app-footer{text-align:center;color:var(--sub);font-size:11.5px;padding:16
 .bottom-nav button{all:unset;cursor:pointer;flex:1;min-width:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;border-radius:11px;color:var(--sub);font-size:10px;font-weight:600;transition:.15s;position:relative}
 .bottom-nav button .icon{margin:0;width:21px;height:21px}
 .bottom-nav button.active{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
- .set-grid{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr);gap:20px;align-items:start}
+ 
+/* ====== SKIN STUDIO / EXPLORADOR / PERFILES ====== */
+.skin-studio-card{overflow:visible!important}.skin-studio-head{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}.skin-studio-head>div{min-width:0;flex:1}.skin-studio-controls{display:grid;grid-template-columns:minmax(260px,1fr) 220px;gap:10px;align-items:end;margin-top:14px}.skin-search-large{height:42px}.skin-collection-field{margin:0}.skin-current-hero{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--panel2)),var(--panel2));border-radius:12px}.skin-current-mark{width:58px;height:58px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto}.skin-current-mark img{max-width:86%;max-height:86%;object-fit:contain}.skin-current-mark span{width:100%;height:100%;display:block}.skin-current-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.skin-current-copy b{font-size:14px}.skin-current-copy small{color:var(--sub);font-size:11px}.skin-quick{display:flex;gap:7px;overflow-x:auto;padding:10px 0 6px;scrollbar-width:thin}.skin-quick-label{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;align-self:center;margin-right:2px}.skin-quick-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:999px;padding:6px 9px;cursor:pointer;font-size:11px}.skin-quick-item:hover,.skin-quick-item.active{border-color:var(--accent);color:var(--accent)}.skin-quick-item img{width:22px;height:22px;object-fit:contain;border-radius:4px}.quick-swatch{width:22px;height:22px;border-radius:4px;display:block}.skin-studio-results-head{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:4px;font-size:12px}.skin-studio-results-head span{color:var(--sub);font-size:11px}.skin-list{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-height:520px;overflow:auto}.skin-list-item{display:grid;grid-template-columns:42px minmax(0,1fr) auto 24px;gap:10px;align-items:center;width:100%;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:7px 9px;text-align:left;color:var(--ink);cursor:pointer}.skin-list-item:hover,.skin-list-item.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.skin-list-logo{width:34px;height:34px;border-radius:7px;background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--line)}.skin-list-logo img{max-width:88%;max-height:88%;object-fit:contain}.skin-list-logo i{display:block;width:100%;height:100%}.skin-list-main{min-width:0;display:flex;flex-direction:column;gap:1px}.skin-list-main b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.skin-list-main small{font-size:10.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.skin-list-meta{font-size:10px;color:var(--sub);white-space:nowrap}.skin-list-go{font-size:16px;color:var(--sub);text-align:center}.skin-empty{padding:30px;text-align:center;color:var(--sub);border:1px dashed var(--line);border-radius:10px}.skin-filters-hidden{display:none!important}.profile-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,300px);gap:14px;align-items:start}.profile-help-card{position:sticky;top:16px}.set-grid>div:nth-child(2){min-width:0}.dv-toolbar{display:grid;grid-template-columns:minmax(280px,2fr) repeat(5,minmax(120px,1fr)) auto auto;gap:8px;align-items:end}.dv-search-main{min-width:0}.dv-search-row{height:40px;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:0 10px}.dv-search-row input{border:0!important;background:transparent!important;padding:0!important;min-width:0}.dv-search-help{font-size:10px;color:var(--sub);margin-top:4px}.dv-search-mode{min-width:120px}.dv-toolbar .field{margin:0}.dv-toolbar .miniBtn{height:40px;align-self:end}.dv-col-toggle{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:6px;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;margin-top:6px}.dv-col-toggle label{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);background:var(--panel);border-radius:7px;font-size:11px;color:var(--sub);cursor:pointer}.dv-col-toggle label:hover{border-color:var(--accent);color:var(--ink)}
+@media(max-width:1100px){.dv-toolbar{grid-template-columns:minmax(260px,1fr) repeat(2,minmax(140px,1fr))}.dv-toolbar .dv-search-main{grid-column:1/-1}.skin-studio-controls{grid-template-columns:1fr}.profile-layout{grid-template-columns:1fr}.profile-help-card{position:static}}
+@media(max-width:700px){.dv-toolbar{grid-template-columns:1fr}.skin-list-item{grid-template-columns:38px minmax(0,1fr) 22px}.skin-list-meta{display:none}.skin-current-hero{flex-wrap:wrap}.skin-current-hero .miniBtn{width:100%}}
+.set-grid{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr);gap:20px;align-items:start}
 .set-grid>div{min-width:0}.set-pane{min-width:0;overflow:hidden}.set-pane .card{min-width:0;overflow:hidden}
 .profile-pill{max-width:100%;flex-wrap:wrap;word-break:break-word}
 .profile-pill .pname{min-width:0;overflow-wrap:anywhere}.profile-pill small{min-width:0;overflow-wrap:anywhere}.profile-pill button{flex:0 0 auto}
@@ -787,6 +792,12 @@ body.sb-mini .skin-homage{justify-content:center;padding:7px 4px}.sb-mini .skin-
 .homage-chip{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:3px 7px;border-radius:999px;border:1px solid var(--line);font-size:9px;color:var(--sub);vertical-align:middle}
 @media(max-width:820px){.topbar{position:sticky;top:0}.topbar-actions{justify-content:flex-start}.dv-search-main{min-width:100%}.dv-search-row{flex-wrap:wrap}.dv-search-mode{max-width:none;flex:1;min-width:130px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}}
+:root[data-skin=winamp_classic]{--bg:#161616;--panel:#202020;--panel2:#2a2a2a;--ink:#e7e7e7;--sub:#9da39d;--line:#414141;--accent:#79c800;--accent-ink:#0b0b0b;--accent2:#ffb000;--radius:3px;--font-ui:Arial,sans-serif}:root[data-skin=winamp_classic] body{background:linear-gradient(180deg,#0c0c0c,#242424)}:root[data-skin=winamp_classic] .card{border:1px solid #79c80055}:root[data-skin=winamp_classic] .topbar h1{font-family:Arial Black,Arial,sans-serif;letter-spacing:-.03em}:root[data-skin=winamp_classic] button.primary{background:linear-gradient(#9be51a,#5f9f00);color:#101010;border:1px solid #c8ff62}
+:root[data-skin=mac_classic]{--bg:#c6c6c6;--panel:#e2e2e2;--panel2:#d2d2d2;--ink:#111;--sub:#4f4f4f;--line:#777;--accent:#111;--accent-ink:#fff;--accent2:#444;--radius:2px;--font-ui:Geneva,Chicago,Arial,sans-serif}:root[data-skin=mac_classic] body{background:#bdbdbd}:root[data-skin=mac_classic] .card{border:2px outset #fff;box-shadow:2px 2px #666;border-radius:2px}:root[data-skin=mac_classic] button{border:2px outset #fff;border-radius:2px;background:#d8d8d8;color:#111}
+:root[data-skin=boca_xeneize]{--bg:#03143e;--panel:#08245f;--panel2:#0d347d;--ink:#fff;--sub:#d9e4ff;--line:#2757a4;--accent:#f5c400;--accent-ink:#071633;--accent2:#4da3ff;--radius:8px}:root[data-skin=boca_xeneize] body{background:linear-gradient(160deg,#03143e,#0a2b75 52%,#07152f)}:root[data-skin=boca_xeneize] .topbar{border-bottom-color:#f5c400}:root[data-skin=boca_xeneize] button.primary{background:#f5c400;color:#071633}
+:root[data-skin=adidas_three]{--bg:#f1f1f1;--panel:#fff;--panel2:#e7e7e7;--ink:#111;--sub:#555;--line:#bbb;--accent:#111;--accent-ink:#fff;--accent2:#333;--radius:3px}:root[data-skin=adidas_three] body{background:repeating-linear-gradient(135deg,#f4f4f4 0 24px,#ededed 24px 48px)}:root[data-skin=adidas_three] .card{box-shadow:5px 5px 0 #1111}:root[data-skin=adidas_three] button.primary{background:#111;color:#fff}
+:root[data-skin=xfiles_classic]{--bg:#03080b;--panel:#0b1519;--panel2:#102126;--ink:#e7f6f8;--sub:#8fb5ba;--line:#24434a;--accent:#9fd7df;--accent-ink:#031014;--accent2:#dceff1;--radius:4px}:root[data-skin=xfiles_classic] body{background:radial-gradient(circle at 50% 5%,#1a3036,#020608 58%);background-attachment:fixed}:root[data-skin=xfiles_classic] .topbar h1{letter-spacing:.08em}:root[data-skin=xfiles_classic] button.primary{background:#9fd7df;color:#031014}
+
 </style>
 </head>
 <body>
@@ -1200,15 +1211,24 @@ body.sb-mini .skin-homage{justify-content:center;padding:7px 4px}.sb-mini .skin-
     </div>
     <div>
       <div class="set-pane active" id="pane-skin">
-        <div class="card">
-          <h2><span class="h-ic" data-icon="palette"></span>Skins <span class="tag" id="skinCount">0</span></h2>
-          <p class="hint">Elegí por nombre, categoría o favoritos. La vista está pensada para encontrar una skin rápido, sin recorrer cientos de tarjetas.</p>
-          <div class="skin-toolbar">
-            <div class="skin-search-wrap"><span data-icon="search"></span><input id="skinSearch" type="search" placeholder="Buscar skin, película, consola, concepto…" autocomplete="off"><button type="button" id="skinClearSearch" title="Limpiar búsqueda">×</button></div>
-            <div id="skinResults" class="skin-results"></div>
+        <div class="card skin-studio-card">
+          <div class="skin-studio-head">
+            <div>
+              <div class="eyebrow">SKIN STUDIO</div>
+              <h2><span class="h-ic" data-icon="palette"></span>Elegí cómo querés ver Nora <span class="tag" id="skinCount">0</span></h2>
+              <p class="hint">Ahora podés elegir por búsqueda, colección, favoritos o una selección visual. No hace falta recorrer todas las skins.</p>
+            </div>
+            <button class="secondary miniBtn" id="skinRandom" type="button" title="Elegir una skin al azar"><span class="b-ic" data-icon="shuffle"></span> Sorprendeme</button>
           </div>
-          <div id="skinFilters" class="skin-filters" data-active="Todos"></div>
-          <div class="skin-grid" id="skinGrid"></div>
+          <div class="skin-current-hero" id="skinCurrentHero"></div>
+          <div class="skin-studio-controls">
+            <div class="skin-search-wrap skin-search-large"><span data-icon="search"></span><input id="skinSearch" type="search" placeholder="Buscá: Winamp, Mac, Boca, X-Files, azul…" autocomplete="off" aria-label="Buscar skins"></div>
+            <div class="field skin-collection-field"><label>Colección</label><select id="skinCollection" aria-label="Colección de skins"></select></div>
+          </div>
+          <div class="skin-quick" id="skinQuick"></div>
+          <div class="skin-studio-results-head"><b>Resultados</b><span id="skinResults"></span></div>
+          <div class="skin-list" id="skinGrid"></div>
+          <div id="skinFilters" class="skin-filters skin-filters-hidden" data-active="Todos"></div>
         </div>
         <div class="card"><h2><span class="h-ic" data-icon="layers"></span>Paletas</h2><div class="palette-grid" id="paletteGrid"></div></div>
         <div class="card"><h2><span class="h-ic" data-icon="sliders"></span>Ajustes finos</h2>
@@ -1389,7 +1409,6 @@ body.sb-mini .skin-homage{justify-content:center;padding:7px 4px}.sb-mini .skin-
         </div>
         <div class="card"><h2><span class="h-ic" data-icon="save"></span>Preferencias</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap"><button class="secondary" id="btnSaveCfg"><span class="b-ic" data-icon="save"></span>Guardar</button><span class="status-line" id="cfgStatus"></span></div>
-        </div>
         </div>
       </div>
 
@@ -1877,6 +1896,7 @@ window._boot=_boot;
 const CFG_KEY='cobranza_suite_cfg_v6';const CFG_VERSION=9;
 const DEFAULT_HEADER_ROWS=[{label:'Localidad:',value:'{{localidad}}',sep:false},{label:'Mes:',value:'{{mes}}',sep:false},{label:'Situación:',value:'{{situacion}}',sep:false},{label:'Total:',value:'{{total}}',sep:false}];
 const DEFAULT_FOOTER_ITEMS=[{text:'Generado el {{fecha_generacion}}',align:'left'},{text:'Página {{pagina}} de {{total_paginas}}',align:'right'}];
+
 const PALETTES={clasico:{name:'Clásico azul',accent:'#1f4e8c',accent2:'#2f7a4f'},corporativo:{name:'Corporativo',accent:'#2c3e50',accent2:'#16a085'},contraste:{name:'Alto contraste',accent:'#000',accent2:'#006400'},retro:{name:'Retro',accent:'#b8562f',accent2:'#8b6f2a'},verde:{name:'Verde institución',accent:'#1e5631',accent2:'#4c9a2a'},bordo:{name:'Bordó ejecutivo',accent:'#8b2c3c',accent2:'#c1873b'},purpura:{name:'Púrpura moderno',accent:'#5b2c6f',accent2:'#af7ac5'},arena:{name:'Arena cálida',accent:'#8a6d3b',accent2:'#5d8a66'},oceano:{name:'Océano',accent:'#0d4c73',accent2:'#1f9bb8'},bosque:{name:'Bosque',accent:'#1c3a2e',accent2:'#5c9e6a'},atardecer:{name:'Atardecer',accent:'#c44536',accent2:'#f2a541'},lavanda:{name:'Lavanda',accent:'#6a4c93',accent2:'#b8a9d9'},coral:{name:'Coral',accent:'#c2185b',accent2:'#f48fb1'},monocromo:{name:'Monocromo',accent:'#2b2b2b',accent2:'#7a7a7a'},nordico:{name:'Nórdico',accent:'#3b5b77',accent2:'#8fa9bd'},cyber:{name:'Cyberpunk',accent:'#7b2cbf',accent2:'#ff006e'},sepia:{name:'Sepia',accent:'#6b4423',accent2:'#a67c52'},vino:{name:'Rojo vino',accent:'#722f37',accent2:'#b08456'},turquesa:{name:'Turquesa',accent:'#0e7c86',accent2:'#4ecdc4'},miel:{name:'Miel',accent:'#a67c00',accent2:'#d4a017'}};
 const SKINS={
   '':{name:'Estándar',desc:'Estilo moderno',colors:['#eef1f5','#1f4e8c','#2f7a4f']},
@@ -1955,6 +1975,14 @@ const SKINS={
 
 /* SKINS HOMENAJE · referencias visibles también en la sidebar */
 Object.assign(SKINS,{mario_8bit:{name:'Homenaje · Mario 8-bit',desc:'Arcade · bloques · pixel',colors:['#5b1b1b','#f2c94c','#2d74da'],homage:'Homenaje a los plataformas de 8 bits'},zelda_hyrule:{name:'Homenaje · Hyrule',desc:'Aventura · pergamino · bosque',colors:['#1b2d1d','#c9a44a','#6e8f54'],homage:'Homenaje a las aventuras de fantasía de Hyrule'},star_terminal:{name:'Homenaje · Galaxia Terminal',desc:'Sci-fi · terminal · estelar',colors:['#080b16','#7fd8ff','#e9d36a'],homage:'Homenaje a la ciencia ficción espacial clásica'},simpsons_vhs:{name:'Homenaje · VHS Amarillo',desc:'Retro · televisión · VHS',colors:['#f4d35e','#2f5aa8','#ef476f'],homage:'Homenaje a la animación televisiva de los 90'}});
+Object.assign(SKINS,{
+  winamp_classic:{name:'Homenaje · Winamp',desc:'Reproductor clásico · verde · naranja',colors:['#101010','#78c800','#ffb000'],homage:'Homenaje a Winamp y su estética de reproductor clásico',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Winamp%20Logo.svg'},
+  mac_classic:{name:'Homenaje · Macintosh',desc:'Mac clásica · escritorio · System',colors:['#bdbdbd','#111111','#ffffff'],homage:'Homenaje a la estética Macintosh clásica',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/MacLogo.svg'},
+  boca_xeneize:{name:'Homenaje · Boca Juniors',desc:'Azul · oro · identidad xeneize',colors:['#061b55','#f2c300','#0a2d83'],homage:'Homenaje a la identidad visual del Club Atlético Boca Juniors',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boca%20Juniors%20-%20Novo%20Escudo.svg'},
+  adidas_three:{name:'Homenaje · adidas',desc:'Tres barras · deporte · negro y blanco',colors:['#050505','#ffffff','#c7c7c7'],homage:'Homenaje a la identidad histórica de adidas',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Adidas%20Logo.svg'},
+  xfiles_classic:{name:'Homenaje · The X-Files',desc:'Expedientes · FBI · misterio',colors:['#03070a','#9fd7df','#ffffff'],homage:'Homenaje a The X-Files',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20X-Files%20logo.svg'}
+});
+
 /* SKIN ANIM DEFAULT */
 const SKIN_ANIM_DEFAULT = {
   matrix:'flicker scanlines blink',
@@ -2155,45 +2183,43 @@ function getSkinRecent(){try{return JSON.parse(localStorage.getItem(SKIN_RECENT_
 if(typeof SKINS!=='undefined'){Object.entries(SKINS).forEach(([k,v])=>{if(!v.homage&&/^lost_|^xfiles_|^mrrobot_|^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^playstation2|^gamecube|^xbox_|^sega_|^mac_|^msdos|^amiga_|^windows_|^iphone_|^android_/.test(k))v.homage='Referencia temática: '+v.name.replace(/^.*?·\s*/,'');});}
 function renderSkinGrid(){
   const grid=document.getElementById('skinGrid');if(!grid)return;
-  const sc=document.getElementById('skinCount'),search=document.getElementById('skinSearch'),filters=document.getElementById('skinFilters'),results=document.getElementById('skinResults');
-  const groups=['Todos','Favoritos','Recientes','Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
-  const active=filters?.dataset.active||'Todos';
-  if(filters&&!filters.dataset.ready){
-    filters.dataset.ready='1';
-    filters.innerHTML=groups.map(g=>`<button type="button" class="skin-filter ${g===active?'active':''}" data-skin-filter="${g}">${g}</button>`).join('');
-    filters.addEventListener('click',e=>{const b=e.target.closest('[data-skin-filter]');if(!b)return;filters.dataset.active=b.dataset.skinFilter;renderSkinGrid();});
-    document.getElementById('skinSearch')?.addEventListener('input',renderSkinGrid);
-    document.getElementById('skinClearSearch')?.addEventListener('click',()=>{if(search)search.value='';filters.dataset.active='Todos';renderSkinGrid();});
-  }
-  const q=(search?.value||'').trim().toLowerCase(),favs=new Set(getSkinFavs()),recent=getSkinRecent();
-  const items=Object.entries(SKINS).filter(([k,s])=>{
-    const hay=(k+' '+s.name+' '+s.desc).toLowerCase();
-    if(q&&!hay.includes(q))return false;
+  const search=document.getElementById('skinSearch'),collection=document.getElementById('skinCollection'),results=document.getElementById('skinResults'),hero=document.getElementById('skinCurrentHero'),quick=document.getElementById('skinQuick');
+  const favs=(()=>{try{return new Set(JSON.parse(localStorage.getItem('nora_skin_favs_v1')||'[]'));}catch(e){return new Set();}})();
+  const recents=(()=>{try{return JSON.parse(localStorage.getItem('nora_skin_recent_v1')||'[]');}catch(e){return [];}})();
+  const q=(search?.value||'').trim().toLowerCase();
+  const active=collection?.value||'Todos';
+  const all=Object.entries(SKINS);
+  const match=all.filter(([k,s])=>{
     if(active==='Favoritos'&&!favs.has(k))return false;
-    if(active==='Recientes'&&!recent.includes(k))return false;
-    if(!['Todos','Favoritos','Recientes'].includes(active)&&skinCategory(k)!==active)return false;
-    return true;
+    if(active==='Recientes'&&!recents.includes(k))return false;
+    if(active!=='Todos'&&active!=='Favoritos'&&active!=='Recientes'&&skinCategory(k)!==active)return false;
+    if(!q)return true;
+    return [k,s.name,s.desc,s.homage,skinCategory(k)].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
-  if(sc)sc.textContent=Object.keys(SKINS).length;
-  if(results)results.textContent=`${items.length} skin${items.length===1?'':'s'} visibles · ${favs.size} favoritos`;
-  if(filters)filters.querySelectorAll('[data-skin-filter]').forEach(b=>b.classList.toggle('active',b.dataset.skinFilter===active));
-  const byCat=['Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
-  grid.innerHTML=byCat.map(cat=>{
-    const catItems=items.filter(([k])=>skinCategory(k)===cat);if(!catItems.length)return '';
-    return `<div class="skin-group"><div class="skin-group-title">${cat}<span>${catItems.length}</span></div><div class="skin-group-grid">${catItems.map(([k,s])=>`<div class="skin-btn ${CFG.skin===k?'active':''}" data-skin="${k}">${CFG.skin===k?'<span class="skin-check">ACTUAL</span>':''}<button type="button" class="fav ${favs.has(k)?'on':''}" data-fav="${k}" title="${favs.has(k)?'Quitar de favoritos':'Agregar a favoritos'}">${favs.has(k)?'★':'☆'}</button><div class="preview"><div style="background:${s.colors[0]}"></div><div style="background:${s.colors[1]}"></div><div style="background:${s.colors[2]}"></div>${s.mark?`<img class="skin-mark" src="${s.mark}" alt="" aria-hidden="true">`:''}</div><b title="${esc(s.name)}">${s.name}</b><small title="${esc(s.desc)}">${s.desc}</small></div>`).join('')}</div></div>`;
-  }).join('')||'<div class="hint">No hay skins que coincidan con la búsqueda.</div>';
-  grid.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation();const k=b.dataset.fav,arr=getSkinFavs(),i=arr.indexOf(k);if(i>=0)arr.splice(i,1);else arr.unshift(k);
-    try{localStorage.setItem(SKIN_FAV_KEY,JSON.stringify(arr));}catch(e){}renderSkinGrid();
-  });
-  grid.querySelectorAll('.skin-btn').forEach(b=>b.onclick=e=>{
-    if(e.target.closest('[data-fav]'))return;
-    const k=b.dataset.skin;CFG.skin=k;CFG.anim=null;
-    const arr=getSkinRecent().filter(x=>x!==k);arr.unshift(k);
-    try{localStorage.setItem(SKIN_RECENT_KEY,JSON.stringify(arr.slice(0,8)));localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}
-    applyCfg();notify('Skin: '+(SKINS[k]?SKINS[k].name:'Estándar'),'ok');AppLog.write('Skin aplicado: '+k,'ok');renderSkinGrid();
-  });
+  const categories=['Todos','Favoritos','Recientes','Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales'];
+  if(collection&&!collection.dataset.bound){collection.innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join('');collection.dataset.bound='1';collection.onchange=renderSkinGrid;}
+  if(document.getElementById('skinCount'))document.getElementById('skinCount').textContent=all.length;
+  const cur=SKINS[CFG.skin]||SKINS[''];
+  if(hero)hero.innerHTML=`<div class="skin-current-mark">${cur?.mark?`<img src="${cur.mark}" alt="">`:`<span style="background:${cur?.colors?.[0]||'#222'}"></span>`}</div><div class="skin-current-copy"><span class="eyebrow">ACTUAL</span><b>${esc(cur?.name||'Estándar')}</b><small>${esc(cur?.desc||'Apariencia base de Nora')}</small></div><button class="secondary miniBtn" id="skinClearCurrent">Usar estándar</button>`;
+  const quickKeys=['winamp_classic','mac_classic','boca_xeneize','adidas_three','xfiles_classic','mario_8bit','zelda_hyrule','star_terminal'].filter(k=>SKINS[k]);
+  if(quick)quick.innerHTML=`<div class="skin-quick-label">Destacadas</div>`+quickKeys.map(k=>{const s=SKINS[k];return `<button class="skin-quick-item ${CFG.skin===k?'active':''}" data-quick-skin="${k}" title="${esc(s.name)}">${s.mark?`<img src="${s.mark}" alt="">`:`<span class="quick-swatch" style="background:${s.colors[1]}"></span>`}<span>${esc(s.name.replace(/^Homenaje · /,''))}</span></button>`;}).join('');
+  quick?.querySelectorAll('[data-quick-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.quickSkin));
+  const limit=80;
+  grid.innerHTML=match.slice(0,limit).map(([k,s])=>`<button class="skin-list-item ${CFG.skin===k?'active':''}" data-skin="${k}"><span class="skin-list-logo">${s.mark?`<img src="${s.mark}" alt="">`:`<i style="background:${s.colors[1]}"></i>`}</span><span class="skin-list-main"><b>${esc(s.name)}</b><small>${esc(s.desc||'')}</small></span><span class="skin-list-meta">${skinCategory(k)}${favs.has(k)?' · ★':''}</span><span class="skin-list-go">${CFG.skin===k?'✓':'›'}</span></button>`).join('')||(q?'<div class="skin-empty">No encontré una skin con ese criterio.</div>':'<div class="skin-empty">No hay skins en esta colección.</div>');
+  grid.querySelectorAll('[data-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.skin));
+  if(results)results.textContent=`${match.length} resultado${match.length===1?'':'s'}`;
+  const clr=document.getElementById('skinClearSearch');if(clr&&!clr.dataset.bound){clr.dataset.bound='1';clr.onclick=()=>{search.value='';renderSkinGrid();search.focus();};}
+  const random=document.getElementById('skinRandom');if(random&&!random.dataset.bound){random.dataset.bound='1';random.onclick=()=>{const pool=all.filter(([k])=>k!==CFG.skin);if(pool.length)selectSkin(pool[Math.floor(Math.random()*pool.length)][0]);};}
+  const clearCur=document.getElementById('skinClearCurrent');if(clearCur)clearCur.onclick=()=>selectSkin('');
+  if(search&&!search.dataset.bound){search.dataset.bound='1';search.addEventListener('input',renderSkinGrid);}
+  const filter=document.getElementById('skinFilters');if(filter)filter.innerHTML='';
 }
+function selectSkin(k){
+  if(!SKINS[k])k=''; CFG.skin=k;CFG.anim=null;
+  try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));const r=JSON.parse(localStorage.getItem('nora_skin_recent_v1')||'[]').filter(x=>x!==k);r.unshift(k);localStorage.setItem('nora_skin_recent_v1',JSON.stringify(r.slice(0,10)));}catch(e){}
+  applyCfg();updateSkinHomage();notify('Skin: '+(SKINS[k]?SKINS[k].name:'Estándar'),'ok');AppLog.write('Skin aplicado: '+k,'ok');renderSkinGrid();
+}
+
 function renderAnimGrid(){
   const grid = document.getElementById('animGrid'); if(!grid) return;
   const cur = new Set((document.documentElement.getAttribute('data-anim')||'').split(/\s+/).filter(Boolean));
@@ -2554,17 +2580,32 @@ async function handleFiles(files,silent,opts){
 window.handleFiles = handleFiles;
 function refreshSelects(){fillSourceSelect('fSource');fillSourceSelect('dSource');[['fSit','situacion'],['fMes','mes'],['fLoc','localidad'],['dSit','situacion'],['dMes','mes'],['dLoc','localidad']].forEach(([id,f])=>fillSelect(id,uniq(f)));}
 function populateBulkPdfSelectors(){
-  const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc');if(!src||!mes||!loc)return;
-  const ps={src:src.value,mes:mes.value,loc:loc.value};
-  src.innerHTML='<option value="">Todos los archivos</option>'+FILES.map(f=>`<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('');
-  const base=ps.src?RECORDS.filter(r=>r.source===ps.src):RECORDS;
-  const months=[...new Set(base.map(r=>String(r.mes||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-  const locs=[...new Set(base.map(r=>String(r.localidad||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc'),type=document.getElementById('bulkPdfType');
+  if(!src||!mes||!loc)return;
+  const prev={src:src.value,mes:mes.value,loc:loc.value,type:type?type.value:'both'};
+  const sourceFiles=FILES.slice();
+  src.innerHTML='<option value="">Todos los archivos</option>'+sourceFiles.map(f=>{const kind=classifyFileName(f.name)==='sorteo'?' · SORTEO':classifyFileName(f.name)==='cobranza'?' · COBRANZA':'';return `<option value="${esc(f.name)}">${esc(f.name)}${kind}</option>`;}).join('');
+  if([...src.options].some(o=>o.value===prev.src))src.value=prev.src;
+  if(type&&[...type.options].some(o=>o.value===prev.type))type.value=prev.type;
+  let base=src.value?RECORDS.filter(r=>r.source===src.value):RECORDS.slice();
+  const selectedType=type?.value||'both';
+  const typeSet=selectedType==='cuotas'?['Cuotas']:selectedType==='contados'?['Medios Contados']:['Cuotas','Medios Contados'];
+  const typed=base.filter(r=>{const t=normalizeCobType(r.situacion);return !selectedType||selectedType==='both'?typeSet.includes(t):t===typeSet[0];});
+  const months=[...new Set(typed.map(r=>String(r.mes||'').trim()).filter(Boolean))].sort((a,b)=>{const da=parseMonthKey(a),db=parseMonthKey(b);return (da-db)||a.localeCompare(b,'es');});
+  const locs=[...new Set(typed.map(r=>String(r.localidad||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
   mes.innerHTML='<option value="">Seleccioná un mes</option>'+months.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   loc.innerHTML='<option value="">Todas las localidades</option>'+locs.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  if([...src.options].some(o=>o.value===ps.src))src.value=ps.src;if([...mes.options].some(o=>o.value===ps.mes))mes.value=ps.mes;if([...loc.options].some(o=>o.value===ps.loc))loc.value=ps.loc;
+  if([...mes.options].some(o=>o.value===prev.mes))mes.value=prev.mes;
+  if([...loc.options].some(o=>o.value===prev.loc))loc.value=prev.loc;
+  const box=document.getElementById('bulkPdfStatus');
+  if(box)box.textContent=months.length?`${months.length} mes(es) con datos disponibles · ${locs.length} localidad(es)`:'No hay meses con datos para la combinación seleccionada.';
 }
-function bindBulkPdfSelectors(){const src=document.getElementById('bulkPdfSource');if(src&&!src.dataset.bound){src.dataset.bound='1';src.addEventListener('change',populateBulkPdfSelectors);}}
+function parseMonthKey(v){const s=String(v||'').trim().toLowerCase();const names={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};let m=s.match(/(\d{4})[-\/](\d{1,2})/);if(m)return Number(m[1])*100+Number(m[2]);m=s.match(/(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)[^\d]*(\d{4})/);if(m)return Number(m[2])*100+names[m[1]];return 999999;}
+
+function bindBulkPdfSelectors(){
+  ['bulkPdfSource','bulkPdfLoc','bulkPdfType'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.bound){el.dataset.bound='1';el.addEventListener('change',populateBulkPdfSelectors);}});
+  const mes=document.getElementById('bulkPdfMonth');if(mes&&!mes.dataset.bound){mes.dataset.bound='1';mes.addEventListener('change',()=>{const box=document.getElementById('bulkPdfStatus');if(box)box.textContent='Mes seleccionado: '+(mes.value||'—');});}
+}
 function updateStatusLine(added,replaced,errors){const st=document.getElementById('status');const parts=[];if(added.length)parts.push('Agregados: '+added.join(', '));if(replaced.length)parts.push('Reemplazados: '+replaced.join(', '));if(errors.length)parts.push(errors.length+' con problemas');st.className=errors.length?'status-line err':'status-line ok';st.textContent=RECORDS.length+' registros desde '+FILES.length+' archivo(s). '+parts.join(' · ');document.getElementById('sideStatus').innerHTML='<b>'+RECORDS.length+'</b> registros<br>'+FILES.length+' archivo(s)';}
 function renderFilesList(){const fl=document.getElementById('filesList');fl.innerHTML=FILES.map((f,i)=>{const act=f.records.filter(r=>!r._excluded).length;const ex=f.records.length-act;return `<span class="file-pill"><b title="${f.name}">${f.name}</b> · ${act} reg.${ex?` <span style="color:var(--danger)">(−${ex})</span>`:''} <button data-remove="${i}">✕</button></span>`;}).join('');fl.querySelectorAll('[data-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(parseInt(b.dataset.remove),1);rebuildRecords();renderFilesList();refreshSelects();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('filesActions').classList.add('hidden');document.getElementById('dashEmpty').classList.remove('hidden');document.getElementById('dashBody').classList.add('hidden');dz.classList.remove('ready');document.getElementById('status').textContent='Sin archivo.';document.getElementById('sideStatus').innerHTML='Sin datos.';}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
 document.getElementById('btnClearFiles').onclick=async()=>{if(!confirm('¿Vaciar todos los archivos?'))return;FILES=[];RECORDS=[];await clearState();renderFilesList();updateStatusLine([],[],[]);['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('filesActions').classList.add('hidden');document.getElementById('dashEmpty').classList.remove('hidden');document.getElementById('dashBody').classList.add('hidden');dz.classList.remove('ready');document.getElementById('status').textContent='Sin archivo.';notify('Vaciado','ok');renderHome();};
