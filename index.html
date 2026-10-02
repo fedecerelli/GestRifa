@@ -183,6 +183,42 @@ html{scroll-padding-top:var(--safe-top)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);min-height:100%;font-size:var(--density-font);-webkit-text-size-adjust:100%}
 body.ff-serif{font-family:Georgia,serif}
 body.ff-mono{font-family:var(--font-mono)}
+
+
+/* ===== SKINS · FOTOGRAFÍAS REALES ===== */
+.skin-real-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  filter:saturate(.88) contrast(1.05);
+}
+.skin-real-photo{position:relative;background:#111}
+.skin-real-photo::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(0,0,0,.05),rgba(0,0,0,.28));
+  pointer-events:none;
+}
+.skin-quick-item img{
+  width:32px;height:32px;border-radius:7px;object-fit:cover;
+  display:block;flex:0 0 auto;
+}
+.skin-current-mark.skin-real-hero{
+  width:92px;height:62px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);flex:0 0 auto;
+}
+.skin-current-mark.skin-real-hero img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+
+/* ===== FECHAS DE SORTEO: TEXTO, NO DATE ===== */
+.sorteo-date-text{
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+}
+
 /* ===== SIDEBAR REDESIGN ===== */
 .sidebar{background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--accent) 12%));border-right:1px solid color-mix(in srgb,var(--line) 70%,var(--accent) 30%);padding:14px 10px;box-shadow:8px 0 28px #00000012;z-index:20}
 .brand{margin:0 2px 12px;padding:10px 9px 14px;border-bottom:1px solid var(--line);align-items:center}
@@ -2181,6 +2217,22 @@ const SKIN_FAV_KEY='nora_skin_favs_v1',SKIN_RECENT_KEY='nora_skin_recent_v1';
 function getSkinFavs(){try{return JSON.parse(localStorage.getItem(SKIN_FAV_KEY)||'[]');}catch(e){return[];}}
 function getSkinRecent(){try{return JSON.parse(localStorage.getItem(SKIN_RECENT_KEY)||'[]');}catch(e){return[];}}
 if(typeof SKINS!=='undefined'){Object.entries(SKINS).forEach(([k,v])=>{if(!v.homage&&/^lost_|^xfiles_|^mrrobot_|^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^playstation2|^gamecube|^xbox_|^sega_|^mac_|^msdos|^amiga_|^windows_|^iphone_|^android_/.test(k))v.homage='Referencia temática: '+v.name.replace(/^.*?·\s*/,'');});}
+
+function skinRealImage(k,s){
+  if(s&&s.photo)return s.photo;
+  const u='https://images.unsplash.com/';
+  const imgs={
+    'Computadores':'photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=900&q=80',
+    'Consolas':'photo-1600080972464-8e5e7c1d9a1f?auto=format&fit=crop&w=900&q=80',
+    'Móvil':'photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80',
+    'Películas':'photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=80',
+    'Series':'photo-1524985069026-dd778a71c7b4?auto=format&fit=crop&w=900&q=80',
+    'Conceptuales':'photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80',
+    'Generales':'photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80'
+  };
+  return u+(imgs[skinCategory(k)]||imgs.Generales);
+}
+
 function renderSkinGrid(){
   const grid=document.getElementById('skinGrid');if(!grid)return;
   const search=document.getElementById('skinSearch'),collection=document.getElementById('skinCollection'),results=document.getElementById('skinResults'),hero=document.getElementById('skinCurrentHero'),quick=document.getElementById('skinQuick');
@@ -2200,12 +2252,12 @@ function renderSkinGrid(){
   if(collection&&!collection.dataset.bound){collection.innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join('');collection.dataset.bound='1';collection.onchange=renderSkinGrid;}
   if(document.getElementById('skinCount'))document.getElementById('skinCount').textContent=all.length;
   const cur=SKINS[CFG.skin]||SKINS[''];
-  if(hero)hero.innerHTML=`<div class="skin-current-mark">${cur?.mark?`<img src="${cur.mark}" alt="">`:`<span style="background:${cur?.colors?.[0]||'#222'}"></span>`}</div><div class="skin-current-copy"><span class="eyebrow">ACTUAL</span><b>${esc(cur?.name||'Estándar')}</b><small>${esc(cur?.desc||'Apariencia base de Nora')}</small></div><button class="secondary miniBtn" id="skinClearCurrent">Usar estándar</button>`;
+  if(hero){const curKey=CFG.skin||'';const curImg=skinRealImage(curKey,cur);hero.innerHTML=`<div class="skin-current-mark skin-real-hero"><img src="${curImg}" alt="" loading="lazy"></div><div class="skin-current-copy"><span class="eyebrow">ACTUAL</span><b>${esc(cur?.name||'Estándar')}</b><small>${esc(cur?.desc||'Apariencia base de Nora')}</small></div><button class="secondary miniBtn" id="skinClearCurrent">Usar estándar</button>`;}
   const quickKeys=['winamp_classic','mac_classic','boca_xeneize','adidas_three','xfiles_classic','mario_8bit','zelda_hyrule','star_terminal'].filter(k=>SKINS[k]);
-  if(quick)quick.innerHTML=`<div class="skin-quick-label">Destacadas</div>`+quickKeys.map(k=>{const s=SKINS[k];return `<button class="skin-quick-item ${CFG.skin===k?'active':''}" data-quick-skin="${k}" title="${esc(s.name)}">${s.mark?`<img src="${s.mark}" alt="">`:`<span class="quick-swatch" style="background:${s.colors[1]}"></span>`}<span>${esc(s.name.replace(/^Homenaje · /,''))}</span></button>`;}).join('');
+  if(quick)quick.innerHTML=`<div class="skin-quick-label">Destacadas</div>`+quickKeys.map(k=>{const s=SKINS[k],img=skinRealImage(k,s);return `<button class="skin-quick-item ${CFG.skin===k?'active':''}" data-quick-skin="${k}" title="${esc(s.name)}"><img src="${img}" alt="" loading="lazy"><span>${esc(s.name.replace(/^Homenaje · /,''))}</span></button>`;}).join('');
   quick?.querySelectorAll('[data-quick-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.quickSkin));
   const limit=80;
-  grid.innerHTML=match.slice(0,limit).map(([k,s])=>`<button class="skin-list-item ${CFG.skin===k?'active':''}" data-skin="${k}"><span class="skin-list-logo">${s.mark?`<img src="${s.mark}" alt="">`:`<i style="background:${s.colors[1]}"></i>`}</span><span class="skin-list-main"><b>${esc(s.name)}</b><small>${esc(s.desc||'')}</small></span><span class="skin-list-meta">${skinCategory(k)}${favs.has(k)?' · ★':''}</span><span class="skin-list-go">${CFG.skin===k?'✓':'›'}</span></button>`).join('')||(q?'<div class="skin-empty">No encontré una skin con ese criterio.</div>':'<div class="skin-empty">No hay skins en esta colección.</div>');
+  grid.innerHTML=match.slice(0,limit).map(([k,s])=>{const img=skinRealImage(k,s);return `<button class="skin-list-item ${CFG.skin===k?'active':''}" data-skin="${k}"><span class="skin-list-logo skin-real-photo"><img src="${img}" alt="" loading="lazy"></span><span class="skin-list-main"><b>${esc(s.name)}</b><small>${esc(s.desc||'')}</small></span><span class="skin-list-meta">${skinCategory(k)}${favs.has(k)?' · ★':''}</span><span class="skin-list-go">${CFG.skin===k?'✓':'›'}</span></button>`;}).join('')||(q?'<div class="skin-empty">No encontré una skin con ese criterio.</div>':'<div class="skin-empty">No hay skins en esta colección.</div>');
   grid.querySelectorAll('[data-skin]').forEach(b=>b.onclick=()=>selectSkin(b.dataset.skin));
   if(results)results.textContent=`${match.length} resultado${match.length===1?'':'s'}`;
   const clr=document.getElementById('skinClearSearch');if(clr&&!clr.dataset.bound){clr.dataset.bound='1';clr.onclick=()=>{search.value='';renderSkinGrid();search.focus();};}
@@ -3419,7 +3471,7 @@ async function syncSorteoIntoDataCenter(files){if(!files||!files.length)return;f
 async function loadFiles(files,silent){const ok=[],err=[];const validFiles=files.filter(f=>isSorteoFileName(f.name));files.filter(f=>!isSorteoFileName(f.name)).forEach(f=>err.push(f.name+': no participa del sorteo porque no comienza con L -'));files=validFiles;if(!files.length){$('sFilesMsg').className='status-line warn';$('sFilesMsg').textContent=err.join(' | ')||'No hay archivos L - para sorteo.';if(!silent&&err.length)notify(err.join(' · '),'warn');return;}$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}if(ok.length){try{await syncSorteoIntoDataCenter(files);}catch(e){AppLog.error('Integración sorteo → Centro de datos: '+(e.message||e));}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
-function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} números duplicados dentro del archivo</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="date" data-start="${i}" value="${esc(f.inicioSorteo||'')}"></div><div class="field"><label>Finaliza sorteo</label><input type="date" data-end="${i}" value="${esc(f.finSorteo||'')}"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar?')){S.files.splice(x.dataset.del,1);save();render();}});}
+function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} números duplicados dentro del archivo</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="text" data-start="${i}" value="${esc(f.inicioSorteo||'')}" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off"></div><div class="field"><label>Finaliza sorteo</label><input type="text" data-end="${i}" value="${esc(f.finSorteo||'')}" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar?')){S.files.splice(x.dataset.del,1);save();render();}});}
 let cards=[];
 const defDate=()=>{const t=new Date().toISOString().slice(0,10),m=month();return !m||t.slice(0,7)===m?t:m+'-01';};
 const blank=()=>({lot:'',turno:'',id:uid(),saved:false,dirty:true,name:'',date:defDate(),nums:Array(20).fill('')});
