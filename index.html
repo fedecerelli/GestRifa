@@ -872,12 +872,27 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 .nx-calc{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.nx-calc button{padding:6px 0;font-size:13px}.nx-calc input{grid-column:1/-1;text-align:right;font-size:16px}
 .nx-li{font-size:12px;padding:3px 0;border-bottom:1px dashed var(--line);cursor:pointer}
 .nx-add{display:flex;gap:6px;margin:8px 0 0;align-items:center;font-size:12px}
-.nx-fab{position:fixed;right:14px;z-index:60;width:42px;height:42px;border-radius:50%;padding:0;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
-#nxFabW{bottom:calc(76px + var(--safe-bot,0px))}#nxFabP{bottom:calc(126px + var(--safe-bot,0px))}
-.nx-drawer{position:fixed;right:12px;bottom:calc(76px + var(--safe-bot,0px));width:min(340px,calc(100vw - 24px));max-height:70vh;overflow:auto;z-index:61;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:none}
-.nx-drawer.on{display:block}.nx-drawer .nx-grid{grid-template-columns:1fr}.nx-drawer .nx-w.s2,.nx-drawer .nx-w.s3{grid-column:auto}
 .nx-pr{display:grid;grid-template-columns:110px 1fr;gap:6px;align-items:center;font-size:12px;margin:5px 0}
 .nx-pr input[type=text],.nx-pr select{width:100%;font-size:12px;padding:3px 5px}
+
+.nx-win{position:fixed;z-index:60;display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.35);overflow:hidden;flex-direction:column;max-width:calc(100vw - 16px)}
+.nx-win.on{display:flex}
+.nx-wt{display:flex;align-items:center;gap:2px;padding:6px 6px 6px 12px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:move;user-select:none;touch-action:none;font-size:12px}
+.nx-wt b{flex:1;font-size:12px}
+.nx-wt button{width:26px;height:26px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:var(--sub);cursor:pointer;border-radius:6px;min-height:0}
+.nx-wt button:hover{background:var(--line);color:var(--ink)}
+.nx-wbody{padding:8px;overflow:auto;max-height:min(62vh,560px)}
+.nx-win.min .nx-wbody{display:none}.nx-win.min .nx-wt{border-bottom:0}
+.nx-win .nx-grid{grid-template-columns:1fr}.nx-win .nx-w.s2,.nx-win .nx-w.s3{grid-column:auto}
+.nx-wh button{font-size:10px!important;text-transform:none;letter-spacing:0}
+.nx-w.nx-wmin .nx-wb{display:none}.nx-w.nx-wmin .nx-wh{margin-bottom:0}
+.nx-bar button{white-space:nowrap}
+/* explorador: barra de filtros sin superposición */
+#view-datos .dv-toolbar{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:flex-end}
+#view-datos .dv-search-main{flex:2 1 260px;min-width:0}
+#view-datos .dv-toolbar .field,#view-datos .dv-toolbar .dv-search-mode{flex:1 1 105px;min-width:90px;max-width:190px}
+#view-datos .dv-toolbar select,#view-datos .dv-toolbar input{width:100%;min-width:0;box-sizing:border-box}
+#view-datos .dv-toolbar>button{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -3694,7 +3709,7 @@ const save=()=>{SV('nx_p_v1',P);applyP()};
 (function explorer(){
  const card=$('#view-datos>.card:not(.data-tool-card)'),tool=$('#callesTool');if(!card)return;
  if(tool)card.after(tool); // herramienta de calles pasa debajo de la tabla
- const h2=card.querySelector('h2'),bar=el(`<span class="nx-bar"><button class="ghost miniBtn" id="nxRm" title="Filas más compactas">▤−</button><button class="ghost miniBtn" id="nxRp" title="Filas más altas">▤+</button><button class="ghost miniBtn" id="nxZ" title="Zebra">Z</button><button class="ghost miniBtn" id="nxF" title="Fijar 1ª columna">⇤</button><button class="secondary miniBtn" id="nxFocus" title="Pantalla completa (Esc para salir)">⛶ Enfocar</button></span>`);
+ const h2=card.querySelector('h2'),bar=el(`<span class="nx-bar"><button class="ghost miniBtn" id="nxRm" title="Filas más compactas">Filas −</button><button class="ghost miniBtn" id="nxRp" title="Filas más altas">Filas +</button><button class="ghost miniBtn" id="nxZ" title="Filas alternadas">Alternar</button><button class="ghost miniBtn" id="nxF" title="Fijar 1ª columna">Fijar col.</button><button class="secondary miniBtn" id="nxFocus" title="Pantalla completa (Esc para salir)">Enfocar</button></span>`);
  const tg=$('#dvCardsToggle');tg&&(tg.style.marginLeft='6px');h2.insertBefore(bar,tg);
  const d=card.querySelector('details');d&&d.removeAttribute('open');
  $('#nxRm').onclick=()=>{P.rp=Math.max(0,P.rp-1);P.fs=Math.max(10,P.fs-.5);save()};
@@ -3706,39 +3721,63 @@ const save=()=>{SV('nx_p_v1',P);applyP()};
 /* ---------- 3. WIDGETS ---------- */
 const days=['L','M','X','J','V','S','D'];let tick=[];
 const W={
-reloj:{n:'Reloj',i:'🕒',r(b){const f=()=>{const d=new Date();b.innerHTML=`<div class="nx-big">${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`};f();return setInterval(f,1000)}},
-calendario:{n:'Calendario',i:'📅',r(b){let d=new Date();const f=()=>{const y=d.getFullYear(),m=d.getMonth(),o=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),t=new Date();let h=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><button class="ghost miniBtn" data-m="-1">‹</button><b>${d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</b><button class="ghost miniBtn" data-m="1">›</button></div><div class="nx-cal">${days.map(x=>`<b>${x}</b>`).join('')}${'<i></i>'.repeat(o)}`;for(let i=1;i<=n;i++)h+=`<i class="${i===t.getDate()&&m===t.getMonth()&&y===t.getFullYear()?'t':''}">${i}</i>`;b.innerHTML=h+'</div>';b.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{d=new Date(y,m+ +x.dataset.m,1);f()})};f()}},
-notas:{n:'Notas',i:'📝',r(b,w){b.innerHTML='<textarea placeholder="Escribí algo…"></textarea>';const t=b.firstChild;t.value=localStorage.getItem('nx_note_'+w.id)||'';t.oninput=()=>localStorage.setItem('nx_note_'+w.id,t.value)}},
-tareas:{n:'Tareas pendientes',i:'✅',r(b){const f=()=>{const l=(typeof TASKS!=='undefined'?TASKS:[]).filter(t=>!t.done).slice(0,6);b.innerHTML=(l.length?l.map(t=>`<div class="nx-li">${esc(t.title||'Tarea')}</div>`).join(''):'<div class="hint">Sin tareas pendientes 🎉</div>')+'<button class="ghost miniBtn" style="margin-top:6px">Abrir tareas</button>';b.querySelectorAll('.nx-li,button').forEach(x=>x.onclick=()=>setView('tasks'))};f();return setInterval(f,5000)}},
-datos:{n:'Buscar en Explorador',i:'🔎',r(b){b.innerHTML=`<div class="hint">${typeof RECORDS!=='undefined'?RECORDS.length:0} registros cargados</div><input type="text" placeholder="Buscar y ir al Explorador…" style="width:100%;margin-top:6px">`;b.querySelector('input').onkeydown=e=>{if(e.key==='Enter'){setView('datos');setTimeout(()=>{const s=$('#dvSearch');s.value=e.target.value;s.dispatchEvent(new Event('input',{bubbles:true}))},120)}}}},
-calc:{n:'Calculadora',i:'🧮',r(b){const k='7 8 9 / 4 5 6 * 1 2 3 - 0 . = +'.split(' ');b.innerHTML=`<div class="nx-calc"><input type="text" value="" inputmode="decimal">${k.map(x=>`<button class="secondary">${x}</button>`).join('')}<button class="ghost" style="grid-column:1/-1">C</button></div>`;const i=b.querySelector('input');const go=()=>{try{if(/^[\d+\-*/.() ]+$/.test(i.value))i.value=String(Function('"use strict";return('+i.value+')')())}catch(e){i.value='Error'}};b.querySelectorAll('button').forEach(x=>x.onclick=()=>{const v=x.textContent;v==='C'?i.value='':v==='='?go():i.value+=v});i.onkeydown=e=>{if(e.key==='Enter')go()}}},
-timer:{n:'Temporizador',i:'⏱️',r(b){let s=1500,run=0;b.innerHTML='<div class="nx-big">25:00</div><div class="nx-add"><input type="number" value="25" min="1" style="width:56px"> min <button class="primary miniBtn">▶</button><button class="ghost miniBtn">↺</button></div>';const t=b.querySelector('.nx-big'),[i,go,rs]=b.querySelectorAll('input,button'),f=()=>t.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');go.onclick=()=>{run=!run;go.textContent=run?'⏸':'▶'};rs.onclick=()=>{s=i.value*60;run=0;go.textContent='▶';f()};return setInterval(()=>{if(run&&s>0){s--;f();if(!s){run=0;go.textContent='▶';notify('⏱️ Tiempo cumplido','ok')}}},1000)}},
-dolar:{n:'Cotización dólar',i:'💵',r(b){b.textContent='Cargando…';fetch('https://dolarapi.com/v1/dolares').then(r=>r.json()).then(a=>{b.innerHTML=a.filter(x=>['oficial','blue','bolsa'].includes(x.casa)).map(x=>`<div class="nx-li" style="cursor:default"><b>${x.nombre}</b> · compra $${x.compra} · venta $${x.venta}</div>`).join('')}).catch(()=>b.innerHTML='<div class="hint">Sin conexión</div>')}},
-atajos:{n:'Accesos rápidos',i:'⚡',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{setView(x.dataset.v);$('#nxDrawerW')?.classList.remove('on')})}}};
+reloj:{n:'Reloj',r(b){const f=()=>{const d=new Date();b.innerHTML=`<div class="nx-big">${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`};f();return setInterval(f,1000)}},
+calendario:{n:'Calendario',r(b){let d=new Date();const f=()=>{const y=d.getFullYear(),m=d.getMonth(),o=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),t=new Date();let h=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><button class="ghost miniBtn" data-m="-1">‹</button><b>${d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</b><button class="ghost miniBtn" data-m="1">›</button></div><div class="nx-cal">${days.map(x=>`<b>${x}</b>`).join('')}${'<i></i>'.repeat(o)}`;for(let i=1;i<=n;i++)h+=`<i class="${i===t.getDate()&&m===t.getMonth()&&y===t.getFullYear()?'t':''}">${i}</i>`;b.innerHTML=h+'</div>';b.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{d=new Date(y,m+ +x.dataset.m,1);f()})};f()}},
+notas:{n:'Notas',r(b,w){b.innerHTML='<textarea placeholder="Escribí algo…"></textarea>';const t=b.firstChild;t.value=localStorage.getItem('nx_note_'+w.id)||'';t.oninput=()=>localStorage.setItem('nx_note_'+w.id,t.value)}},
+tareas:{n:'Tareas pendientes',r(b){const f=()=>{const l=(typeof TASKS!=='undefined'?TASKS:[]).filter(t=>!t.done).slice(0,6);b.innerHTML=(l.length?l.map(t=>`<div class="nx-li">${esc(t.title||'Tarea')}</div>`).join(''):'<div class="hint">Sin tareas pendientes</div>')+'<button class="ghost miniBtn" style="margin-top:6px">Abrir tareas</button>';b.querySelectorAll('.nx-li,button').forEach(x=>x.onclick=()=>setView('tasks'))};f();return setInterval(f,5000)}},
+datos:{n:'Buscar en Explorador',r(b){b.innerHTML=`<div class="hint">${typeof RECORDS!=='undefined'?RECORDS.length:0} registros cargados</div><input type="text" placeholder="Buscar y ir al Explorador…" style="width:100%;margin-top:6px">`;b.querySelector('input').onkeydown=e=>{if(e.key==='Enter'){setView('datos');setTimeout(()=>{const s=$('#dvSearch');s.value=e.target.value;s.dispatchEvent(new Event('input',{bubbles:true}))},120)}}}},
+calc:{n:'Calculadora',r(b){const k='7 8 9 / 4 5 6 * 1 2 3 - 0 . = +'.split(' ');b.innerHTML=`<div class="nx-calc"><input type="text" value="" inputmode="decimal">${k.map(x=>`<button class="secondary">${x}</button>`).join('')}<button class="ghost" style="grid-column:1/-1">C</button></div>`;const i=b.querySelector('input');const go=()=>{try{if(/^[\d+\-*/.() ]+$/.test(i.value))i.value=String(Function('"use strict";return('+i.value+')')())}catch(e){i.value='Error'}};b.querySelectorAll('button').forEach(x=>x.onclick=()=>{const v=x.textContent;v==='C'?i.value='':v==='='?go():i.value+=v});i.onkeydown=e=>{if(e.key==='Enter')go()}}},
+timer:{n:'Temporizador',r(b){let s=1500,run=0;b.innerHTML='<div class="nx-big">25:00</div><div class="nx-add"><input type="number" value="25" min="1" style="width:56px"> min <button class="primary miniBtn">Iniciar</button><button class="ghost miniBtn">Reiniciar</button></div>';const t=b.querySelector('.nx-big'),[i,go,rs]=b.querySelectorAll('input,button'),f=()=>t.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');go.onclick=()=>{run=!run;go.textContent=run?'Pausar':'Iniciar'};rs.onclick=()=>{s=i.value*60;run=0;go.textContent='Iniciar';f()};return setInterval(()=>{if(run&&s>0){s--;f();if(!s){run=0;go.textContent='Iniciar';notify('Tiempo cumplido','ok')}}},1000)}},
+dolar:{n:'Cotización dólar',r(b){b.textContent='Cargando…';fetch('https://dolarapi.com/v1/dolares').then(r=>r.json()).then(a=>{b.innerHTML=a.filter(x=>['oficial','blue','bolsa'].includes(x.casa)).map(x=>`<div class="nx-li" style="cursor:default"><b>${x.nombre}</b> · compra $${x.compra} · venta $${x.venta}</div>`).join('')}).catch(()=>b.innerHTML='<div class="hint">Sin conexión</div>')}},
+atajos:{n:'Accesos rápidos',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{setView(x.dataset.v);$('#nxDrawerW')?.classList.remove('on')})}}};
 const WS=LS('nx_w_v1',null)||{home:['reloj','tareas','calendario','datos','notas','dolar'].map((t,i)=>({id:'h'+i,t,s:1})),float:['calc','timer','notas'].map((t,i)=>({id:'f'+i,t,s:1}))};
 function zone(box,key){
  tick.filter(x=>x.z===key).forEach(x=>clearInterval(x.h));tick=tick.filter(x=>x.z!==key);box.innerHTML='';
  const g=el('<div class="nx-grid"></div>');box.appendChild(g);const L=WS[key];
- L.forEach((w,ix)=>{const d=W[w.t];if(!d)return;const n=el(`<div class="nx-w s${w.s}"><div class="nx-wh"><span>${d.i} ${d.n}</span><button data-a="l">◀</button><button data-a="r">▶</button><button data-a="s">⤢</button><button data-a="x">✕</button></div><div class="nx-wb"></div></div>`);g.appendChild(n);
+ L.forEach((w,ix)=>{const d=W[w.t];if(!d)return;const n=el(`<div class="nx-w s${w.s}"><div class="nx-wh"><span>${d.n}</span><button data-a="l" title="Mover antes">‹</button><button data-a="r" title="Mover después">›</button><button data-a="s" title="Cambiar ancho">Ancho</button><button data-a="m" title="Minimizar widget">Min</button><button data-a="x" title="Quitar">Quitar</button></div><div class="nx-wb"></div></div>`);g.appendChild(n);n.classList.toggle('nx-wmin',!!w.m);
   const h=d.r(n.querySelector('.nx-wb'),w);if(h)tick.push({z:key,h});
-  n.querySelector('.nx-wh').onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){L.splice(ix,1)}else if(a==='s'){w.s=w.s%3+1}else{const j=ix+(a==='l'?-1:1);if(j<0||j>=L.length)return;[L[ix],L[j]]=[L[j],L[ix]]}SV('nx_w_v1',WS);zone(box,key)}});
- const sel=el(`<div class="nx-add"><select>${Object.entries(W).map(([k,v])=>`<option value="${k}">${v.i} ${v.n}</option>`).join('')}</select><button class="primary miniBtn">+ Agregar widget</button></div>`);
+  n.querySelector('.nx-wh').onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){L.splice(ix,1)}else if(a==='m'){w.m=!w.m}else if(a==='s'){w.s=w.s%3+1}else{const j=ix+(a==='l'?-1:1);if(j<0||j>=L.length)return;[L[ix],L[j]]=[L[j],L[ix]]}SV('nx_w_v1',WS);zone(box,key)}});
+ const sel=el(`<div class="nx-add"><select>${Object.entries(W).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('')}</select><button class="primary miniBtn">+ Agregar widget</button></div>`);
  sel.querySelector('button').onclick=()=>{L.push({id:key[0]+Date.now(),t:sel.querySelector('select').value,s:1});SV('nx_w_v1',WS);zone(box,key)};box.appendChild(sel);
 }
 const home=$('#view-home'),hk=$('#hHeroKpis');
-if(home&&hk){const c=el('<div class="card"><h2 style="margin-bottom:8px">🧩 Mis widgets <span class="tag">personalizables</span></h2><div id="nxHome"></div></div>');hk.after(c);zone($('#nxHome'),'home')}
-/* ---------- 4. PANELES FLOTANTES: widgets + personalización ---------- */
-document.body.append(el('<button class="primary nx-fab" id="nxFabW" title="Widgets flotantes">🧩</button>'),el('<button class="secondary nx-fab" id="nxFabP" title="Personalizar">🎨</button>'),el('<div class="nx-drawer" id="nxDrawerW"><h3 style="margin:0 0 6px;font-size:13px">🧩 Widgets flotantes</h3><div id="nxFloat"></div></div>'),el('<div class="nx-drawer" id="nxDrawerP"></div>'));
-zone($('#nxFloat'),'float');
-const tog=(a,b)=>{$(b).classList.remove('on');$(a).classList.toggle('on')};
-$('#nxFabW').onclick=()=>tog('#nxDrawerW','#nxDrawerP');
+if(home&&hk){const c=el('<div class="card"><h2 style="margin-bottom:8px">Mis widgets <span class="tag">personalizables</span></h2><div id="nxHome"></div></div>');hk.after(c);zone($('#nxHome'),'home')}
+/* ---------- 4. VENTANAS: widgets + personalización (movibles, minimizables) ---------- */
+const WIN=LS('nx_win_v1',{});const sw=()=>SV('nx_win_v1',WIN);
+const SVG={min:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="5" y1="12" x2="19" y2="12"/></svg>',max:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',x:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>'};
+function mkWin(id,title,dx,dy,onOpen){
+ const S=WIN[id]=Object.assign({x:dx,y:dy,min:false,open:false,w:330},WIN[id]||{});
+ const w=el(`<div class="nx-win" id="${id}"><div class="nx-wt"><b>${title}</b><button data-a="min" title="Minimizar">${SVG.min}</button><button data-a="x" title="Cerrar">${SVG.x}</button></div><div class="nx-wbody"></div></div>`);
+ document.body.appendChild(w);
+ const clamp=()=>{S.x=Math.max(0,Math.min(S.x,innerWidth-80));S.y=Math.max(0,Math.min(S.y,innerHeight-34))};
+ const paint=()=>{clamp();w.style.left=S.x+'px';w.style.top=S.y+'px';w.style.width=Math.min(S.w,innerWidth-16)+'px';w.classList.toggle('on',S.open);w.classList.toggle('min',S.min);w.querySelector('[data-a=min]').innerHTML=S.min?SVG.max:SVG.min;w.querySelector('[data-a=min]').title=S.min?'Restaurar':'Minimizar'};
+ const hd=w.querySelector('.nx-wt');
+ hd.onclick=e=>{const a=e.target.closest('button')?.dataset.a;if(a==='x')S.open=false;else if(a==='min')S.min=!S.min;else return;sw();paint();sync()};
+ hd.ondblclick=e=>{if(e.target.closest('button'))return;S.min=!S.min;sw();paint()};
+ hd.onpointerdown=e=>{if(e.target.closest('button'))return;const ox=e.clientX-S.x,oy=e.clientY-S.y;hd.setPointerCapture(e.pointerId);hd.onpointermove=m=>{S.x=m.clientX-ox;S.y=m.clientY-oy;paint()};hd.onpointerup=()=>{hd.onpointermove=hd.onpointerup=null;sw()}};
+ w.addEventListener('pointerdown',()=>{document.querySelectorAll('.nx-win').forEach(o=>o.style.zIndex=60);w.style.zIndex=61});
+ const api={el:w,body:w.querySelector('.nx-wbody'),toggle(){S.open=!S.open;if(S.open){S.min=false;onOpen&&onOpen(api.body)}sw();paint();sync()},paint,S};
+ if(S.open)onOpen&&onOpen(api.body);paint();addEventListener('resize',paint);return api;
+}
+const sync=()=>{[['nxNavW',WWIN],['nxNavP',PWIN],['nxTopW',WWIN],['nxTopP',PWIN]].forEach(([i,w])=>{const b=document.getElementById(i);b&&b.classList.toggle('active',!!w&&w.S.open)})};
+let WWIN,PWIN;
+WWIN=mkWin('nxWinW','Widgets flotantes',Math.max(8,innerWidth-350),Math.max(60,innerHeight-420),b=>{zone(b,'float')});
+PWIN=mkWin('nxWinP','Personalización',Math.max(8,innerWidth-690),70,b=>panelP(b));
+if(!WWIN.body.firstChild)zone(WWIN.body,'float');
 const FONTS={'':'Predeterminada','Georgia,serif':'Serif clásica','"Trebuchet MS",Verdana,sans-serif':'Humanista','"Segoe UI",Tahoma,sans-serif':'Segoe','ui-rounded,"Nunito","Varela Round",sans-serif':'Redondeada','Consolas,monospace':'Monoespaciada','"Courier New",monospace':'Máquina de escribir'};
-function panelP(){const d=$('#nxDrawerP'),row=(l,c)=>`<div class="nx-pr"><label>${l}</label>${c}</div>`,rg=(k,a,b)=>`<input type="range" data-k="${k}" min="${a}" max="${b}" value="${P[k]}">`;
- d.innerHTML=`<h3 style="margin:0 0 6px;font-size:13px">🎨 Personalización</h3>`+row('Zoom interfaz %',rg('scale',80,130))+row('Ancho barra lateral',rg('sbw',150,320))+row('Tipografía',`<select data-k="font">${Object.entries(FONTS).map(([k,v])=>`<option value='${k}' ${P.font===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Sombras',`<select data-k="sh">${[['','Normal'],['none','Ninguna'],['soft','Suaves'],['strong','Marcadas']].map(([k,v])=>`<option value="${k}" ${P.sh===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Opacidad paneles %',rg('pop',40,100))+row('Imagen de fondo',`<input type="text" data-k="bg" placeholder="URL de imagen" value="${P.bg.startsWith('data:')?'':P.bg}">`)+row('',`<input type="file" accept="image/*" id="nxFile" style="font-size:11px">`)+row('Oscurecer fondo %',rg('dim',0,80))+row('Altura filas Explorador',rg('rp',0,10))+row('Tamaño letra tabla',rg('fs',10,15))+`<div class="nx-add"><label><input type="checkbox" data-k="zebra" ${P.zebra?'checked':''}> Zebra</label><label><input type="checkbox" data-k="freeze" ${P.freeze?'checked':''}> Fijar 1ª col.</label><button class="ghost miniBtn" id="nxReset" style="margin-left:auto">Restablecer</button></div>`;
+function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${l}</label>${c}</div>`,rg=(k,a,b)=>`<input type="range" data-k="${k}" min="${a}" max="${b}" value="${P[k]}">`;
+ d.innerHTML=``+row('Zoom interfaz %',rg('scale',80,130))+row('Ancho barra lateral',rg('sbw',150,320))+row('Tipografía',`<select data-k="font">${Object.entries(FONTS).map(([k,v])=>`<option value='${k}' ${P.font===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Sombras',`<select data-k="sh">${[['','Normal'],['none','Ninguna'],['soft','Suaves'],['strong','Marcadas']].map(([k,v])=>`<option value="${k}" ${P.sh===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Opacidad paneles %',rg('pop',40,100))+row('Imagen de fondo',`<input type="text" data-k="bg" placeholder="URL de imagen" value="${P.bg.startsWith('data:')?'':P.bg}">`)+row('',`<input type="file" accept="image/*" id="nxFile" style="font-size:11px">`)+row('Oscurecer fondo %',rg('dim',0,80))+row('Altura filas Explorador',rg('rp',0,10))+row('Tamaño letra tabla',rg('fs',10,15))+`<div class="nx-add"><label><input type="checkbox" data-k="zebra" ${P.zebra?'checked':''}> Zebra</label><label><input type="checkbox" data-k="freeze" ${P.freeze?'checked':''}> Fijar 1ª col.</label><button class="ghost miniBtn" id="nxReset" style="margin-left:auto">Restablecer</button></div>`;
  d.querySelectorAll('[data-k]').forEach(i=>i.oninput=i.onchange=()=>{const k=i.dataset.k;P[k]=i.type==='checkbox'?i.checked:i.type==='range'?+i.value:i.value;save()});
  $('#nxFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,1400/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);P.bg=c.toDataURL('image/jpeg',.72);save()};im.src=URL.createObjectURL(f)};
- $('#nxReset').onclick=()=>{localStorage.removeItem('nx_p_v1');Object.assign(P,{scale:100,sbw:216,font:'',bg:'',dim:30,pop:100,sh:'',rp:3,fs:12,zebra:true,freeze:false});save();panelP()}}
-$('#nxFabP').onclick=()=>{panelP();tog('#nxDrawerP','#nxDrawerW')};
+ $('#nxReset').onclick=()=>{localStorage.removeItem('nx_p_v1');Object.assign(P,{scale:100,sbw:216,font:'',bg:'',dim:30,pop:100,sh:'',rp:3,fs:12,zebra:true,freeze:false});save();panelP(PWIN.body)}}
+
+/* accesos: barra lateral y barra superior */
+const nav=$('#sideNav');
+if(nav){const lbl=[...nav.querySelectorAll('.navlbl')].find(x=>/Sistemas/.test(x.textContent)),set=nav.querySelector('[data-view=settings]');
+ [['nxNavW','Widgets','layers',WWIN],['nxNavP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button id="${id}" data-icon="${ic}"><span class="nav-ic"></span>${t}</button>`);b.onclick=()=>w.toggle();set?nav.insertBefore(b,set):nav.appendChild(b)});}
+const ta=$('.topbar-actions');
+if(ta){[['nxTopW','Widgets flotantes','layers',WWIN],['nxTopP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button class="iconbtn" id="${id}" title="${t}" aria-label="${t}" data-icon="${ic}"></button>`);b.onclick=()=>w.toggle();ta.appendChild(b)});}
+try{paintIcons()}catch(e){}sync();
 applyP();try{renderSkinGrid()}catch(e){}
 })();
 </script>
