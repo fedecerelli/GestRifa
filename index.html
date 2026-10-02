@@ -894,12 +894,21 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 #view-datos .dv-toolbar select,#view-datos .dv-toolbar input{width:100%;min-width:0;box-sizing:border-box}
 #view-datos .dv-toolbar>button{flex:0 0 auto}
 
-.sidebar{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
-.nx-dock{display:flex;gap:6px;margin:0 2px 10px}
-.nx-nb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 4px;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);cursor:pointer;min-height:0;min-width:0}
-.nx-nb i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx-nb.active,.iconbtn.active{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
-body.sb-mini .nx-dock{flex-direction:column}body.sb-mini .nx-nb i{display:none}
+
+/* sidebar: todo visible sin barra de desplazamiento; alturas proporcionales al alto de pantalla */
+.sidebar{overflow:hidden!important;display:flex;flex-direction:column;padding-top:calc(clamp(6px,1.4vh,14px) + var(--safe-top));padding-bottom:clamp(6px,1.2vh,12px)}
+.sidebar .brand{margin:0 2px clamp(3px,.8vh,8px);padding:clamp(2px,.6vh,8px) 8px clamp(4px,1vh,10px)}
+.sidebar .brand img{width:clamp(22px,3.6vh,32px)!important;height:clamp(22px,3.6vh,32px)!important}
+.sidebar .skin-homage{margin:0 2px clamp(3px,.8vh,8px);padding:clamp(3px,.7vh,7px) 8px}
+.sidebar .skin-homage img{width:clamp(18px,3vh,26px);height:clamp(18px,3vh,26px);flex-basis:clamp(18px,3vh,26px)}
+.sidebar .nav{flex:0 1 auto;min-height:0;gap:clamp(0px,.3vh,3px);padding:0}
+.sidebar .nav button{min-height:0;padding:clamp(3px,.85vh,8px) 11px;font-size:clamp(11.5px,1.65vh,13.5px);border-radius:8px}
+.sidebar .nav button .icon{width:clamp(14px,2.1vh,18px);height:clamp(14px,2.1vh,18px);flex-basis:clamp(14px,2.1vh,18px)}
+.sidebar .navlbl{padding:clamp(4px,1vh,10px) 12px clamp(1px,.3vh,3px);font-size:clamp(9px,1.3vh,10.5px)}
+.sidebar #sbToggle{margin-top:clamp(3px,.8vh,8px)!important;padding:clamp(2px,.5vh,5px) 0;min-height:0}
+.sidebar .status{margin:clamp(3px,.8vh,8px) 2px 0;padding:clamp(4px,.9vh,9px) 9px;font-size:clamp(9.5px,1.4vh,11.5px);line-height:1.35;overflow:hidden;max-height:12vh}
+@media (max-height:600px){.sidebar .status,.sidebar .skin-homage{display:none}}
 </style>
 </head>
 <body>
@@ -3780,13 +3789,39 @@ function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${
 
 if(typeof window.setView==='function'&&!window.setView._nx){const _sv=window.setView;window.setView=function(v,k){if(!v)return;return _sv.call(this,v,k)};window.setView._nx=1}
 /* accesos: bloque propio (fuera de .nav para no heredar su manejo de clics) */
-const home0=$('.skin-homage'),side=$('.sidebar');
-if(side){const dock=el(`<div class="nx-dock"><button type="button" class="nx-nb" id="nxNavW" title="Widgets flotantes"><span data-icon="layers"></span><i>Widgets</i></button><button type="button" class="nx-nb" id="nxNavP" title="Personalización"><span data-icon="palette"></span><i>Personalizar</i></button></div>`);
- home0?home0.after(dock):side.prepend(dock);
- $('#nxNavW').onclick=e=>{e.stopPropagation();WWIN.toggle()};$('#nxNavP').onclick=e=>{e.stopPropagation();PWIN.toggle()};}
 const ta=$('.topbar-actions');
 if(ta){[['nxTopW','Widgets flotantes','layers',WWIN],['nxTopP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button type="button" class="iconbtn" id="${id}" title="${t}" aria-label="${t}" data-icon="${ic}"></button>`);b.onclick=e=>{e.stopPropagation();w.toggle()};ta.appendChild(b)});}
 try{paintIcons()}catch(e){}sync();
+
+/* ---------- IMÁGENES DE SKINS: ilustración propia generada con los colores reales de cada skin ---------- */
+(function(){
+ const R=document.documentElement,prev=R.getAttribute('data-skin');
+ const rd=()=>{const cs=getComputedStyle(R),g=n=>cs.getPropertyValue(n).trim();return{bg:g('--bg'),pn:g('--panel'),p2:g('--panel2'),ink:g('--ink'),ln:g('--line'),ac:g('--accent'),a2:g('--accent2')}};
+ const M=[
+  [/matrix|crt|terminal|cmd|msdos|hacker|mrrobot|linux|pipboy|amber|c64|ghost/,(c)=>`<rect x="205" y="150" width="170" height="120" rx="6" fill="#000" opacity=".82"/><g fill="${c.ac}"><rect x="217" y="166" width="70" height="7"/><rect x="217" y="184" width="120" height="7" opacity=".7"/><rect x="217" y="202" width="90" height="7" opacity=".5"/><rect x="217" y="224" width="12" height="14"/></g>`],
+  [/gameboy|nes|snes|ps1|dreamcast|playstation|gamecube|xbox|sega|arcade|mario|zelda|dungeon|emul/,(c)=>`<g><rect x="215" y="170" width="150" height="80" rx="38" fill="${c.ink}" opacity=".88"/><rect x="238" y="198" width="30" height="8" fill="${c.pn}"/><rect x="249" y="187" width="8" height="30" fill="${c.pn}"/><circle cx="326" cy="197" r="8" fill="${c.ac}"/><circle cx="344" cy="212" r="8" fill="${c.a2}"/></g>`],
+  [/iphone|android|oled|mobile|material_you/,(c)=>`<rect x="262" y="140" width="76" height="140" rx="14" fill="${c.ink}" opacity=".9"/><rect x="268" y="152" width="64" height="116" rx="8" fill="${c.pn}"/><rect x="274" y="160" width="52" height="18" rx="4" fill="${c.ac}"/><rect x="274" y="184" width="52" height="10" rx="3" fill="${c.ln}"/><rect x="274" y="200" width="36" height="10" rx="3" fill="${c.ln}"/>`],
+  [/film|btt|stranger|ring|blade|alien|jurassic|terminator|lost|xfiles|simpsons|vhs|noir|cine/,(c)=>`<g><rect x="205" y="160" width="170" height="100" rx="4" fill="${c.ink}" opacity=".9"/>${[0,1,2,3,4,5].map(i=>`<rect x="${213+i*27}" y="166" width="14" height="9" fill="${c.pn}"/><rect x="${213+i*27}" y="245" width="14" height="9" fill="${c.pn}"/>`).join('')}<rect x="218" y="182" width="66" height="50" fill="${c.ac}" opacity=".8"/><rect x="296" y="182" width="66" height="50" fill="${c.a2}" opacity=".7"/></g>`],
+  [/tron|synth|vapor|retro80|cyberpunk|space|star|galax/,(c)=>`<g stroke="${c.ac}" stroke-width="2" fill="none"><path d="M205 270H375M225 235H355M245 205H335M265 180H315"/><path d="M290 175V270M255 175L215 270M325 175L365 270"/></g><circle cx="340" cy="165" r="18" fill="${c.a2}"/>`],
+  [/mac|amiga|windows|retro90|winamp|xp/,(c)=>`<g><rect x="205" y="150" width="170" height="115" fill="${c.pn}" stroke="${c.ink}" stroke-width="3"/><rect x="205" y="150" width="170" height="22" fill="${c.ac}"/><rect x="215" y="184" width="100" height="8" fill="${c.ink}" opacity=".6"/><rect x="215" y="202" width="140" height="8" fill="${c.ink}" opacity=".35"/><rect x="215" y="220" width="70" height="8" fill="${c.ink}" opacity=".35"/></g>`],
+  [/boca/,(c)=>`<rect x="205" y="170" width="170" height="26" fill="${c.ac}"/><rect x="205" y="196" width="170" height="40" fill="${c.a2}" opacity=".55"/>`],
+  [/adidas/,(c)=>`<g fill="${c.ink}"><polygon points="235,260 290,170 305,170 250,260"/><polygon points="272,260 327,170 342,170 287,260"/><polygon points="309,260 364,170 379,170 324,260"/></g>`]
+ ];
+ const mk=(k,s,c)=>{
+  const nm=k+' '+(s.name||''),m=M.find(x=>x[0].test(nm.toLowerCase())),over=m?m[1](c):`<g><circle cx="240" cy="215" r="28" fill="${c.ac}"/><circle cx="300" cy="215" r="28" fill="${c.a2}"/><circle cx="360" cy="215" r="28" fill="${c.ink}" opacity=".75"/></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300"><rect width="400" height="300" fill="${c.bg}"/><rect x="18" y="18" width="364" height="264" rx="10" fill="${c.pn}" stroke="${c.ln}" stroke-width="2"/><rect x="18" y="18" width="76" height="264" rx="10" fill="${c.p2}"/><rect x="30" y="36" width="52" height="9" rx="3" fill="${c.ac}"/>${[0,1,2,3,4].map(i=>`<rect x="30" y="${62+i*20}" width="${i%2?40:50}" height="7" rx="3" fill="${c.ink}" opacity=".3"/>`).join('')}<rect x="108" y="34" width="150" height="12" rx="4" fill="${c.ink}" opacity=".75"/><rect x="108" y="54" width="220" height="7" rx="3" fill="${c.ink}" opacity=".3"/><rect x="108" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="196" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="284" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="116" y="84" width="30" height="8" rx="3" fill="${c.ac}"/><rect x="204" y="84" width="30" height="8" rx="3" fill="${c.a2}"/><rect x="292" y="84" width="30" height="8" rx="3" fill="${c.ink}" opacity=".5"/><rect x="108" y="140" width="96" height="9" rx="4" fill="${c.ac}" opacity=".85"/>${over}</svg>`};
+ Object.entries(SKINS).forEach(([k,s])=>{
+  const has=s.photo&&s.photo.startsWith('data:');
+  if(has)return;
+  if(k)R.setAttribute('data-skin',k);else R.removeAttribute('data-skin');
+  const c=rd();
+  if(!c.bg||!c.ac||/color-mix|var\(/.test(c.bg+c.pn+c.p2+c.ink+c.ln+c.ac+c.a2)){const col=s.colors||['#eef1f5','#1f4e8c','#2f7a4f'];c.bg=c.bg&&!/color-mix|var\(/.test(c.bg)?c.bg:col[0];c.pn=/color-mix|var\(/.test(c.pn)||!c.pn?c.bg:c.pn;c.p2=/color-mix|var\(/.test(c.p2)||!c.p2?c.pn:c.p2;c.ink=/color-mix|var\(/.test(c.ink)||!c.ink?'#888':c.ink;c.ln=/color-mix|var\(/.test(c.ln)||!c.ln?'rgba(128,128,128,.3)':c.ln;c.ac=/color-mix|var\(/.test(c.ac)||!c.ac?col[1]:c.ac;c.a2=/color-mix|var\(/.test(c.a2)||!c.a2?col[2]||col[1]:c.a2}
+  if(k&&s.colors&&s.colors.length>=2&&(c.ac==='#1f4e8c'||c.ac==='#1f4e8c'.toUpperCase())){const col=s.colors,L=h=>{const n=parseInt((h||'#888888').replace(/^#(.)(.)(.)$/,'#$1$1$2$2$3$3').slice(1,7),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255},dark=L(col[0])<.5;c.bg=col[0];c.pn=col[0];c.p2=dark?'rgba(255,255,255,.11)':'rgba(0,0,0,.07)';c.ink=dark?'#eeeeee':'#222222';c.ln=dark?'rgba(255,255,255,.2)':'rgba(0,0,0,.15)';c.ac=col[1];c.a2=col[2]||col[1];}
+  s.photo='data:image/svg+xml,'+encodeURIComponent(mk(k,s,c));
+  if(s.mark&&!s.mark.startsWith('data:'))s.mark=s.photo;
+ });
+ if(prev)R.setAttribute('data-skin',prev);else R.removeAttribute('data-skin');
+})();
 applyP();try{renderSkinGrid()}catch(e){}
 })();
 </script>
