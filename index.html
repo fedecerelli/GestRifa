@@ -1400,7 +1400,7 @@ body.sb-mini .skin-homage{justify-content:center;padding:7px 4px}.sb-mini .skin-
         <div class="card"><h2><span class="h-ic" data-icon="folder"></span>Archivos vinculados</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap">
             <button class="secondary" id="btnLinkCobFiles2"><span class="b-ic" data-icon="link"></span>Vincular cobranza</button>
-            <button class="secondary" id="btnReconnectCobFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
+            <button class="secondary hidden" id="btnReconnectCobFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
             <button class="secondary" id="btnLinkSorteoFiles2"><span class="b-ic" data-icon="link"></span>Vincular sorteos</button>
             <button class="secondary" id="btnReconnectSorteoFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
           </div>
@@ -1981,6 +1981,40 @@ Object.assign(SKINS,{
   boca_xeneize:{name:'Homenaje · Boca Juniors',desc:'Azul · oro · identidad xeneize',colors:['#061b55','#f2c300','#0a2d83'],homage:'Homenaje a la identidad visual del Club Atlético Boca Juniors',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boca%20Juniors%20-%20Novo%20Escudo.svg'},
   adidas_three:{name:'Homenaje · adidas',desc:'Tres barras · deporte · negro y blanco',colors:['#050505','#ffffff','#c7c7c7'],homage:'Homenaje a la identidad histórica de adidas',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Adidas%20Logo.svg'},
   xfiles_classic:{name:'Homenaje · The X-Files',desc:'Expedientes · FBI · misterio',colors:['#03070a','#9fd7df','#ffffff'],homage:'Homenaje a The X-Files',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20X-Files%20logo.svg'}
+});
+
+/* IMAGENES REALES PARA TEMAS / HOMENAJES */
+Object.assign(SKINS,{
+  mario_8bit:{mark:'https://cdn.simpleicons.org/mario'},
+  zelda_hyrule:{mark:'https://cdn.simpleicons.org/thelegendofzelda'},
+  simpsons_vhs:{mark:'https://cdn.simpleicons.org/simpsons'},
+  matrix:{mark:'https://cdn.simpleicons.org/matrix'},
+  pipboy:{mark:'https://cdn.simpleicons.org/fallout'},
+  c64:{mark:'https://cdn.simpleicons.org/commodore'},
+  btt88:{mark:'https://cdn.simpleicons.org/backtothefuture'},
+  stranger_vhs:{mark:'https://cdn.simpleicons.org/strangerthings'},
+  blade_noir:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Blade%20Runner%20franchise%20logo%202017.png'},
+  terminator_hud:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20Terminator%20Logo.svg'},
+  lost_dharma:{mark:'https://cdn.simpleicons.org/abc'},
+  mrrobot_terminal:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/MR%20Robot.svg'},
+  alien_mother:{mark:'https://cdn.simpleicons.org/alienware'},
+  playstation2:{mark:'https://cdn.simpleicons.org/playstation'},
+  gamecube:{mark:'https://cdn.simpleicons.org/gamecube'},
+  xbox_original:{mark:'https://cdn.simpleicons.org/xbox'},
+  sega_saturn:{mark:'https://cdn.simpleicons.org/sega'},
+  mac_system7:{mark:'https://cdn.simpleicons.org/apple'},
+  msdos:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/MS-DOS%20logo.svg'},
+  amiga_workbench:{mark:'https://cdn.simpleicons.org/amiga'},
+  windows_xp:{mark:'https://cdn.simpleicons.org/windows'},
+  linux_ghost:{mark:'https://cdn.simpleicons.org/linux'},
+  android_material:{mark:'https://cdn.simpleicons.org/android'},
+  ubuntu_yaru:{mark:'https://cdn.simpleicons.org/ubuntu'},
+  winamp_classic:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Winamp%20Logo.svg'},
+  mac_classic:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/MacLogo.svg'},
+  boca_xeneize:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boca%20Juniors%20-%20Novo%20Escudo.svg'},
+  adidas_three:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Adidas%20Logo.svg'},
+  xfiles_classic:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20X-Files%20logo.svg'},
+  xfiles_signal:{mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20X-Files%20logo.svg'}
 });
 
 /* SKIN ANIM DEFAULT */
@@ -2579,28 +2613,64 @@ async function handleFiles(files,silent,opts){
 }
 window.handleFiles = handleFiles;
 function refreshSelects(){fillSourceSelect('fSource');fillSourceSelect('dSource');[['fSit','situacion'],['fMes','mes'],['fLoc','localidad'],['dSit','situacion'],['dMes','mes'],['dLoc','localidad']].forEach(([id,f])=>fillSelect(id,uniq(f)));}
+function normalizeTextValue(v){return String(v??'').replace(/\s+/g,' ').trim();}
 function populateBulkPdfSelectors(){
   const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc'),type=document.getElementById('bulkPdfType');
   if(!src||!mes||!loc)return;
-  const prev={src:src.value,mes:mes.value,loc:loc.value,type:type?type.value:'both'};
-  const sourceFiles=FILES.slice();
-  src.innerHTML='<option value="">Todos los archivos</option>'+sourceFiles.map(f=>{const kind=classifyFileName(f.name)==='sorteo'?' · SORTEO':classifyFileName(f.name)==='cobranza'?' · COBRANZA':'';return `<option value="${esc(f.name)}">${esc(f.name)}${kind}</option>`;}).join('');
+  const prev={src:normalizeTextValue(src.value),mes:normalizeTextValue(mes.value),loc:normalizeTextValue(loc.value),type:type?type.value:'both'};
+
+  src.innerHTML='<option value="">Todos los archivos</option>'+FILES.map(f=>{
+    const kind=classifyFileName(f.name)==='sorteo'?' · SORTEO':classifyFileName(f.name)==='cobranza'?' · COBRANZA':'';
+    return `<option value="${esc(f.name)}">${esc(f.name)}${kind}</option>`;
+  }).join('');
   if([...src.options].some(o=>o.value===prev.src))src.value=prev.src;
   if(type&&[...type.options].some(o=>o.value===prev.type))type.value=prev.type;
-  let base=src.value?RECORDS.filter(r=>r.source===src.value):RECORDS.slice();
+
   const selectedType=type?.value||'both';
-  const typeSet=selectedType==='cuotas'?['Cuotas']:selectedType==='contados'?['Medios Contados']:['Cuotas','Medios Contados'];
-  const typed=base.filter(r=>{const t=normalizeCobType(r.situacion);return !selectedType||selectedType==='both'?typeSet.includes(t):t===typeSet[0];});
-  const months=[...new Set(typed.map(r=>String(r.mes||'').trim()).filter(Boolean))].sort((a,b)=>{const da=parseMonthKey(a),db=parseMonthKey(b);return (da-db)||a.localeCompare(b,'es');});
-  const locs=[...new Set(typed.map(r=>String(r.localidad||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const typeMatches=r=>{
+    if(selectedType==='both')return true;
+    const t=normalizeCobType(r.situacion);
+    return selectedType==='cuotas'?t==='Cuotas':t==='Medios Contados';
+  };
+  const sourceMatches=r=>!src.value||r.source===src.value;
+  const common=RECORDS.filter(r=>sourceMatches(r)&&typeMatches(r));
+
+  // IMPORTANTE: r.mes es TEXTO. No se convierte a Date ni se compara como fecha.
+  // Los valores del selector son exactamente los textos que existen en los datos.
+  const monthText=r=>normalizeTextValue(r.mes);
+  const locText=r=>normalizeTextValue(r.localidad);
+
+  // Si hay localidad seleccionada, mostrar únicamente los meses que realmente existen en esa localidad.
+  const monthRows=common.filter(r=>!prev.loc||locText(r)===prev.loc);
+  const months=[];
+  const seenMonths=new Set();
+  monthRows.forEach(r=>{
+    const v=monthText(r);if(v&&!seenMonths.has(v)){seenMonths.add(v);months.push(v);}
+  });
+  // Orden textual estable: primero por el texto del dato, sin convertirlo en fecha.
+  months.sort((a,b)=>a.localeCompare(b,'es',{numeric:true,sensitivity:'base'}));
+
+  // Si hay mes seleccionado, mostrar únicamente las localidades que realmente tienen ese texto de mes.
+  const locRows=common.filter(r=>!prev.mes||monthText(r)===prev.mes);
+  const locs=[];
+  const seenLocs=new Set();
+  locRows.forEach(r=>{
+    const v=locText(r);if(v&&!seenLocs.has(v)){seenLocs.add(v);locs.push(v);}
+  });
+  locs.sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+
   mes.innerHTML='<option value="">Seleccioná un mes</option>'+months.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   loc.innerHTML='<option value="">Todas las localidades</option>'+locs.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  if([...mes.options].some(o=>o.value===prev.mes))mes.value=prev.mes;
-  if([...loc.options].some(o=>o.value===prev.loc))loc.value=prev.loc;
+
+  if(months.includes(prev.mes))mes.value=prev.mes;
+  if(locs.includes(prev.loc))loc.value=prev.loc;
+
   const box=document.getElementById('bulkPdfStatus');
-  if(box)box.textContent=months.length?`${months.length} mes(es) con datos disponibles · ${locs.length} localidad(es)`:'No hay meses con datos para la combinación seleccionada.';
+  if(box){
+    const scope=[src.value||'todos los archivos',selectedType==='both'?'todos los tipos':selectedType==='cuotas'?'cuotas':'medios contados'];
+    box.textContent=months.length?`${months.length} mes(es) de texto disponibles · ${locs.length} localidad(es) · ${scope.join(' · ')}`:'No hay meses de texto con datos para la combinación seleccionada.';
+  }
 }
-function parseMonthKey(v){const s=String(v||'').trim().toLowerCase();const names={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};let m=s.match(/(\d{4})[-\/](\d{1,2})/);if(m)return Number(m[1])*100+Number(m[2]);m=s.match(/(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)[^\d]*(\d{4})/);if(m)return Number(m[2])*100+names[m[1]];return 999999;}
 
 function bindBulkPdfSelectors(){
   ['bulkPdfSource','bulkPdfLoc','bulkPdfType'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.bound){el.dataset.bound='1';el.addEventListener('change',populateBulkPdfSelectors);}});
