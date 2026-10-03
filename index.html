@@ -2865,7 +2865,7 @@ document.getElementById('btnReprintAll').onclick=()=>{
   const blob=r.doc.output('blob');const url=URL.createObjectURL(blob);
   const iframe=document.createElement('iframe');iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
   iframe.src=url;document.body.appendChild(iframe);
-  iframe.onload=()=>{setTimeout(()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);},300);};
+  iframe.onload=()=>{setTimeout(()=>{try{nrIfPrint(iframe,url);}catch(e){}setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);},300);};
 };
 function prepareBatches(silent){
   const r=getActiveReport();const stEl=document.getElementById('printStatus');
@@ -2904,7 +2904,7 @@ function printBatch(idx){
   const blob=doc.output('blob');const url=URL.createObjectURL(blob);
   const iframe=document.createElement('iframe');iframe.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
   iframe.src=url;document.body.appendChild(iframe);
-  iframe.onload=()=>{setTimeout(()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}setTimeout(()=>{r.batchState.printed.add(idx);renderBatchList();updateBatchProgress();renderReports();const remaining=r.batchState.ranges.length-r.batchState.printed.size;document.getElementById('printStatus').className='status-line ok';document.getElementById('printStatus').textContent='Lote '+(idx+1)+' impreso. '+remaining+' pendiente(s).';notify('Lote '+(idx+1)+' impreso','ok');},800);setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);},300);};
+  iframe.onload=()=>{setTimeout(()=>{try{nrIfPrint(iframe,url);}catch(e){}setTimeout(()=>{r.batchState.printed.add(idx);renderBatchList();updateBatchProgress();renderReports();const remaining=r.batchState.ranges.length-r.batchState.printed.size;document.getElementById('printStatus').className='status-line ok';document.getElementById('printStatus').textContent='Lote '+(idx+1)+' impreso. '+remaining+' pendiente(s).';notify('Lote '+(idx+1)+' impreso','ok');},800);setTimeout(()=>{try{URL.revokeObjectURL(url);iframe.remove();}catch(e){}},60000);},300);};
 }
 document.getElementById('batchSize').addEventListener('change',()=>{const r=getActiveReport();if(r&&r.batchState.ranges.length)prepareBatches(true);});
 
@@ -4607,7 +4607,7 @@ const _rr=window.renderReports;window.renderReports=function(){const r=_rr.apply
   const del=el.querySelector('[data-del-r]');if(del&&!el.querySelector('[data-nr-pr]')){const b=document.createElement('button');b.className='ghost miniBtn';b.dataset.nrPr=x.id;b.title='Imprimir todo';b.setAttribute('aria-label','Imprimir todo');b.innerHTML=icon('printer');b.onclick=e=>{e.stopPropagation();printAll(x);};del.before(b);}});});return r;};
 const PF=()=>window.PDFLib;
 async function slice(blob,pages){const src=await PF().PDFDocument.load(await blob.arrayBuffer(),{ignoreEncryption:true});const out=await PF().PDFDocument.create();(await out.copyPages(src,pages.map(p=>p-1))).forEach(p=>out.addPage(p));return new Blob([await out.save()],{type:'application/pdf'});}
-function printBlob(blob){const url=URL.createObjectURL(blob),f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';f.src=url;document.body.appendChild(f);
+function printBlob(blob){if(window.nrIsMobile&&window.nrIsMobile()){window.nrMobilePrint(blob,'reporte.pdf');return;}const url=URL.createObjectURL(blob),f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';f.src=url;document.body.appendChild(f);
  f.onload=()=>setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>{try{URL.revokeObjectURL(url);f.remove();}catch(e){}},60000);},300);}
 function printAll(r){if(!r.blob){notify('Este reporte no tiene PDF guardado','warn');return;}printBlob(r.blob);}
 function ranges(r){r.batchState.ranges=[];const s=r.batchState.size||2;for(let a=1;a<=r.totalPages;a+=s)r.batchState.ranges.push({start:a,end:Math.min(r.totalPages,a+s-1)});}
@@ -4650,6 +4650,111 @@ safe('restore',async()=>{if(!window.indexedDB)return;if(navigator.storage&&navig
  REPORTS.sort((a,b)=>b.ts-a.ts);if(!activeReportId&&REPORTS[0])activeReportId=REPORTS[0].id;renderReports();renderBatchList();updateBatchProgress();info();});
 
 safe('boot',()=>applyCfg());
+})();
+</script>
+<script id="nora-v2b-js">
+/* ===== NORA v2.1 · carga única de Excel + impresión móvil ===== */
+(()=>{
+'use strict';
+const $=s=>document.getElementById(s),safe=(n,f)=>{try{return f()}catch(e){console.warn('[nora-v2.1]',n,e)}};
+
+/* ---------- 1) Un solo lugar para cargar y vincular Excel ---------- */
+const XL={description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}};
+const isL=n=>typeof isSorteoFileName==='function'&&isSorteoFileName(n);
+function pickPlain(){const i=$('dataCenterFile');if(i)i.click();}
+async function linkAll(){
+ if(!window.showOpenFilePicker){notify('Este navegador no permite vincular. Cargá los Excel (todos juntos) y se reparten solos.','warn');pickPlain();return;}
+ let hs;try{hs=await showOpenFilePicker({multiple:true,types:[XL]});}catch(e){if(e.name!=='AbortError')console.warn(e);return;}
+ const all=hs.map(h=>({name:h.name,handle:h}));
+ cobFileHandles=all;sorteoFileHandles=all.filter(x=>isL(x.name));
+ await storeCobHandles(cobFileHandles);await storeSorteoHandles(sorteoFileHandles);
+ const msg=all.length+' Excel vinculados ('+sorteoFileHandles.length+' de sorteo "L -", '+(all.length-sorteoFileHandles.length)+' del resto)';
+ updateCobLinkStatus(msg,false);updateSorteoLinkStatus(msg,false);notify(msg,'ok');
+ await reloadCobFiles(true);}
+async function reloadAll(){
+ if(!cobFileHandles.length)cobFileHandles=await getCobHandles();
+ if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
+ const names=new Set(cobFileHandles.map(x=>x.name));let added=0;
+ sorteoFileHandles.forEach(x=>{if(!names.has(x.name)){cobFileHandles.push(x);added++;}});
+ if(added)await storeCobHandles(cobFileHandles);
+ if(!cobFileHandles.length){notify('Todavía no hay Excel vinculados. Elegilos una sola vez.','info');return linkAll();}
+ return reloadCobFiles(false);}
+async function reconnectAll(){if(!cobFileHandles.length)cobFileHandles=await getCobHandles();return reconnectCobFiles();}
+safe('btns',()=>{
+ const set=(id,fn)=>{const b=$(id);if(b)b.onclick=fn;},label=(id,t)=>{const b=$(id);if(b){const ic=b.querySelector('.b-ic');b.textContent=t;if(ic)b.prepend(ic);}},hide=id=>{const b=$(id);if(b){b.hidden=true;b.style.display='none';}};
+ ['btnLinkCobFiles','btnLinkCobFiles2','btnLinkSorteoFiles','btnLinkSorteoFiles2'].forEach(i=>set(i,linkAll));
+ ['btnReloadCobFiles','btnReloadSorteoFiles'].forEach(i=>set(i,()=>reloadAll()));
+ ['btnReconnectCobFiles','btnReconnectCobFiles2','btnReconnectSorteoFiles','btnReconnectSorteoFiles2'].forEach(i=>set(i,reconnectAll));
+ label('btnLinkCobFiles','Vincular Excel');label('btnLinkCobFiles2','Vincular Excel (todos)');label('btnReloadCobFiles','Releer todo');
+ label('dataCenterLink','Vincular Excel (todos)');label('dataCenterReload','Releer todo');
+ hide('dataCenterLinkSorteo');hide('btnLinkSorteoFiles2');hide('btnReconnectSorteoFiles2');
+ /* Pestaña Sorteos > Archivos: ya no carga por su cuenta */
+ const row=$('btnLinkSorteoFiles')&&$('btnLinkSorteoFiles').parentElement;if(row)row.style.display='none';
+ const dz=$('sDz');if(dz){const fi=$('sFile');dz.innerHTML='<span class="b-ic" data-icon="upload"></span>Cargá tus Excel acá o en <b>Inicio › Centro de datos</b> (es lo mismo)<div class="hint">Los que empiezan con "L -" también quedan en Sorteos; el resto va a Cobranza, Dashboard y Listados.</div>';dz.appendChild(fi);
+  try{paintIcons(dz)}catch(e){}
+  dz.onclick=e=>{if(e.target!==fi)pickPlain();};dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ready');handleFiles([...e.dataTransfer.files]);};fi.onchange=()=>{};
+  const go=document.createElement('button');go.type='button';go.className='ghost miniBtn';go.style.marginTop='8px';go.textContent='Ir al Centro de datos';go.onclick=()=>{try{setView('home')}catch(e){}setTimeout(()=>{const c=$('dataCenterCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'})},120);};
+  dz.after(go);}
+ const h=document.querySelector('#dataCenterCard .hint');if(h)h.innerHTML='<b>Un solo lugar para todos tus Excel.</b> Cargalos o vinculalos acá una vez: los "L -" alimentan también Sorteos, y todo alimenta Dashboard, Explorador, Cobranza y Listados.';
+ const st=$('dataCenterStatus');if(st&&!$('nrDcSum')){const d=document.createElement('div');d.id='nrDcSum';d.className='hint';d.style.marginTop='4px';st.after(d);}});
+function sum(){const d=$('nrDcSum');if(!d||typeof FILES==='undefined')return;const l=FILES.filter(f=>isL(f.name)||f.sourceType==='sorteo').length;d.textContent=FILES.length?`${FILES.length} archivo(s): ${l} de sorteo ("L -") y ${FILES.length-l} de cobranza/otros · ya disponibles en todas las secciones.`:'';}
+const _hf=window.handleFiles;window.handleFiles=async function(){const r=await _hf.apply(this,arguments);safe('sum',sum);return r;};
+setTimeout(()=>safe('sum',sum),1500);
+
+/* ---------- 2) Impresión desde el celular ---------- */
+const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(matchMedia('(pointer:coarse)').matches&&innerWidth<1024);
+window.nrIsMobile=isMobile;
+let pdfjs=null;
+async function loadPdfJs(){
+ if(pdfjs)return pdfjs;
+ await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=ok;s.onerror=()=>no(new Error('pdf.js'));document.head.appendChild(s);});
+ const lib=window.pdfjsLib;
+ try{const code=await (await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js')).text();lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));}
+ catch(e){lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
+ return pdfjs=lib;}
+const css=document.createElement('style');css.textContent=`
+#nrPrintArea{display:none}
+#nrPM{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+#nrPM .b{width:100%;max-width:440px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+#nrPM h3{margin:0 0 4px;font-size:16px}#nrPM p{margin:0 0 12px;color:var(--sub);font-size:13px;line-height:1.4}
+#nrPM .bar{height:6px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-bottom:12px}#nrPM .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+#nrPM .g{display:grid;gap:8px}#nrPM button,#nrPM a.nb{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}
+#nrPM .pr{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+@media print{body.nr-printing>*:not(#nrPrintArea){display:none!important}body.nr-printing #nrPrintArea{display:block!important}#nrPrintArea img{display:block;break-after:page;page-break-after:always;margin:0}#nrPrintArea img:last-child{break-after:auto;page-break-after:auto}}`;
+document.head.appendChild(css);
+function mobilePrint(blob,name){
+ name=name||'documento.pdf';
+ document.getElementById('nrPM')?.remove();
+ const url=URL.createObjectURL(blob),m=document.createElement('div');m.id='nrPM';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');
+ m.innerHTML=`<div class="b"><h3>Imprimir PDF</h3><p id="nrPMt">Preparando las páginas del PDF…</p><div class="bar"><i id="nrPMb"></i></div>
+ <div class="g"><button class="pr" id="nrPMp" disabled>🖨️ Imprimir ahora</button><button id="nrPMs">📤 Compartir / enviar a imprimir</button><a class="nb" href="${url}" target="_blank" rel="noopener">📄 Abrir el PDF</a><a class="nb" href="${url}" download="${name.replace(/"/g,'')}">⬇️ Descargar</a><button id="nrPMx">Cerrar</button></div></div>`;
+ document.body.appendChild(m);
+ const t=m.querySelector('#nrPMt'),bar=m.querySelector('#nrPMb');let area=null,sty=null;
+ const clean=()=>{document.body.classList.remove('nr-printing');area&&area.remove();sty&&sty.remove();area=sty=null;};
+ const close=()=>{clean();m.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);};
+ m.querySelector('#nrPMx').onclick=close;
+ m.querySelector('#nrPMs').onclick=async()=>{try{const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:name});else window.open(url,'_blank');}catch(e){}};
+ const doPrint=()=>{if(!area)return;document.body.classList.add('nr-printing');m.style.display='none';
+  const back=()=>{m.style.display='flex';document.body.classList.remove('nr-printing');removeEventListener('afterprint',back);};addEventListener('afterprint',back);
+  setTimeout(()=>{try{print();}catch(e){back();}},150);setTimeout(back,60000);};
+ m.querySelector('#nrPMp').onclick=doPrint;
+ (async()=>{try{
+  const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
+  area=document.createElement('div');area.id='nrPrintArea';document.body.appendChild(area);
+  let land=false;
+  for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const v0=pg.getViewport({scale:1});if(p===1)land=v0.width>v0.height;
+   const sc=Math.min(2,2400/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;
+   await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
+   const im=new Image();im.src=c.toDataURL('image/jpeg',.92);area.appendChild(im);bar.style.width=Math.round(p/pdf.numPages*100)+'%';t.textContent='Preparando página '+p+' de '+pdf.numPages+'…';}
+  sty=document.createElement('style');const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm';
+  sty.textContent=`@media print{@page{size:A4 ${land?'landscape':'portrait'};margin:0}#nrPrintArea img{width:${W};height:${Hh};object-fit:contain}}`;document.head.appendChild(sty);
+  t.textContent=pdf.numPages+' página(s) listas. Se abre el cuadro de impresión de tu celular; si no aparece, tocá "Imprimir ahora".';
+  m.querySelector('#nrPMp').disabled=false;doPrint();
+ }catch(e){console.warn(e);t.textContent='No pude preparar la vista de impresión. Usá "Compartir" o "Abrir el PDF" y tocá imprimir desde ahí.';}})();}
+window.nrMobilePrint=mobilePrint;
+window.nrIfPrint=function(iframe,url){
+ if(!isMobile()){try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}return;}
+ fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));};
 })();
 </script>
 </body>
