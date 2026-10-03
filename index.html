@@ -894,46 +894,12 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 #view-datos .dv-toolbar select,#view-datos .dv-toolbar input{width:100%;min-width:0;box-sizing:border-box}
 #view-datos .dv-toolbar>button{flex:0 0 auto}
 
+.sidebar{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.nx-dock{display:flex;gap:6px;margin:0 2px 10px}
+.nx-nb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 4px;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--ink);cursor:pointer;min-height:0;min-width:0}
+.nx-nb i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx-nb.active,.iconbtn.active{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
-
-/* sidebar: todo visible sin barra de desplazamiento; alturas proporcionales al alto de pantalla */
-.sidebar{overflow:hidden!important;display:flex;flex-direction:column;padding-top:calc(clamp(6px,1.4vh,14px) + var(--safe-top));padding-bottom:clamp(6px,1.2vh,12px)}
-.sidebar .brand{margin:0 2px clamp(3px,.8vh,8px);padding:clamp(2px,.6vh,8px) 8px clamp(4px,1vh,10px)}
-.sidebar .brand img{width:clamp(22px,3.6vh,32px)!important;height:clamp(22px,3.6vh,32px)!important}
-.sidebar .skin-homage{margin:0 2px clamp(3px,.8vh,8px);padding:clamp(3px,.7vh,7px) 8px}
-.sidebar .skin-homage img{width:clamp(18px,3vh,26px);height:clamp(18px,3vh,26px);flex-basis:clamp(18px,3vh,26px)}
-.sidebar .nav{flex:0 1 auto;min-height:0;gap:clamp(0px,.3vh,3px);padding:0}
-.sidebar .nav button{min-height:0;padding:clamp(3px,.85vh,8px) 11px;font-size:clamp(11.5px,1.65vh,13.5px);border-radius:8px}
-.sidebar .nav button .icon{width:clamp(14px,2.1vh,18px);height:clamp(14px,2.1vh,18px);flex-basis:clamp(14px,2.1vh,18px)}
-.sidebar .navlbl{padding:clamp(4px,1vh,10px) 12px clamp(1px,.3vh,3px);font-size:clamp(9px,1.3vh,10.5px)}
-.sidebar #sbToggle{margin-top:clamp(3px,.8vh,8px)!important;padding:clamp(2px,.5vh,5px) 0;min-height:0}
-.sidebar .status{margin:clamp(3px,.8vh,8px) 2px 0;padding:clamp(4px,.9vh,9px) 9px;font-size:clamp(9.5px,1.4vh,11.5px);line-height:1.35;overflow:hidden;max-height:12vh}
-@media (max-height:600px){.sidebar .status,.sidebar .skin-homage{display:none}}
-
-/* ===== NORA UI REFRESH · MOBILE / WIDGETS / COLLAPSIBLE ===== */
-.topbar{padding:7px 0 8px;margin-bottom:10px;align-items:center}
-.topbar h1{font-size:17px}.topbar .muted{font-size:11px}.topbar-actions{gap:4px}.topbar-actions .iconbtn{width:32px;height:32px;padding:6px;border-radius:8px}
-body.nx-top-autohide .topbar{transition:transform .22s ease,opacity .22s ease}
-body.nx-top-autohide.nx-top-hidden .topbar{transform:translateY(calc(-100% - 8px));opacity:.15}
-body.nx-top-autohide.nx-top-hidden .topbar:hover{transform:translateY(0);opacity:1}
-.sidebar{overflow-y:auto;overflow-x:hidden}.navlbl{margin-top:2px}.nav button{white-space:nowrap;min-width:0}.brand{flex-shrink:0}
-.nx-grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}.nx-w{grid-column:span 4;position:relative;resize:both;overflow:auto;min-height:110px}.nx-w.s2{grid-column:span 8}.nx-w.s3{grid-column:1/-1}.nx-w.nx-wmin{min-height:0;height:auto;resize:none}.nx-w.nx-wmin .nx-wb{display:none}
-.nx-wh{min-height:24px;margin:-2px -2px 7px;padding:2px 2px 4px;border-bottom:1px solid var(--line);text-transform:none;letter-spacing:0}.nx-wdrag{display:flex;align-items:center;gap:5px;min-width:0;cursor:grab}.nx-wdrag svg{width:13px;height:13px;flex:0 0 13px;opacity:.55}.nx-wdrag b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nx-wtools{display:flex;gap:1px;margin-left:auto}.nx-wtools button,.nx-float-tools button{width:26px;height:26px;padding:5px;display:grid;place-items:center;border:0;background:transparent;color:var(--sub);border-radius:7px}.nx-wtools button:hover,.nx-float-tools button:hover{background:var(--panel2);color:var(--accent)}.nx-wtools svg,.nx-float-tools svg{width:14px;height:14px;display:block}.nx-widget-add{position:relative}.nx-add-trigger{display:inline-flex;align-items:center;gap:6px}.nx-add-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:120;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:230px;box-shadow:0 16px 35px #0003}.nx-add-title{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}.nx-widget-options{display:grid;grid-template-columns:1fr 1fr;gap:5px}.nx-widget-option{font-size:11px;text-align:left;padding:7px 8px}.nx-resize{position:absolute;right:2px;bottom:2px;width:12px;height:12px;cursor:nwse-resize;opacity:.35;background:linear-gradient(135deg,transparent 45%,var(--sub) 46% 54%,transparent 55%),linear-gradient(135deg,transparent 60%,var(--sub) 61% 69%,transparent 70%)}
-.nx-single-widget{position:fixed;display:none;z-index:61;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 18px 45px #0004;overflow:hidden;min-width:240px;min-height:130px}.nx-single-widget.on{display:block}.nx-single-widget .nx-wt{height:34px;display:flex;align-items:center;gap:8px;padding:0 8px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:grab}.nx-single-widget .nx-wt b{font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nx-single-widget .nx-wbody{height:calc(100% - 34px);overflow:auto;padding:10px}.nx-single-widget.min{height:34px!important;min-height:34px}.nx-single-widget.min .nx-wbody,.nx-single-widget.min .nx-resize{display:none}.nx-float-tools{display:flex;gap:2px}
-/* Every card can collapse from its header. */
-.card.nx-collapsible>.nx-card-body{overflow:hidden;transition:max-height .18s ease,opacity .18s ease}.card.nx-collapsed>.nx-card-body{max-height:0!important;opacity:0;pointer-events:none}.nx-collapse-btn{margin-left:auto!important;width:26px;height:26px!important;padding:5px!important;display:grid!important;place-items:center;border:1px solid var(--line)!important;background:var(--panel2)!important;border-radius:7px!important;color:var(--sub)!important}.nx-collapse-btn svg{width:14px;height:14px;transition:transform .18s}.card.nx-collapsed .nx-collapse-btn svg{transform:rotate(-90deg)}
-.mobile-more{display:none}
-@media(max-width:820px){
- .app{display:block}.content{padding:8px 10px calc(var(--bottomnav-h) + 24px + var(--safe-bot));overflow-x:hidden}.sidebar{display:none}
- .topbar{position:sticky;top:0;z-index:70;padding:6px 0 7px}.topbar-text{min-width:0}.topbar h1{font-size:15px}.topbar .muted{display:none}.topbar-actions{justify-content:flex-end;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:1px}.topbar-actions .iconbtn{width:30px;height:30px;flex:0 0 30px}
- .nx-grid{grid-template-columns:1fr}.nx-w,.nx-w.s2,.nx-w.s3{grid-column:1;resize:vertical;min-height:100px}.nx-wtools button{width:30px;height:30px}.nx-add-pop{position:fixed;left:10px;right:10px;top:auto;bottom:calc(var(--bottomnav-h) + 8px);width:auto}.nx-widget-options{grid-template-columns:1fr 1fr}.nx-single-widget{max-width:calc(100vw - 12px);max-height:calc(100vh - 70px)}
- .bottom-nav{display:flex;justify-content:space-between;gap:4px;padding:5px 6px calc(5px + var(--safe-bot));overflow:hidden}.bottom-nav button{min-width:0;flex:1;font-size:9px;padding:7px 2px}.bottom-nav button:nth-child(n+6){display:none}.bottom-nav:after{content:'⋯';display:flex;align-items:center;justify-content:center;min-width:34px;color:var(--sub);font-size:20px}
- .card{max-width:100%;overflow:hidden}.card h2{gap:6px}.nx-collapse-btn{width:30px!important;height:30px!important}
-}
-@media(max-width:480px){.topbar-actions .iconbtn{width:28px;height:28px;flex-basis:28px}.bottom-nav button{font-size:8.5px}.nx-widget-options{grid-template-columns:1fr}.content{padding-left:8px;padding-right:8px}}
-
-.nx-mobile-drawer{display:none;position:fixed;inset:0;background:#0006;z-index:500;backdrop-filter:blur(4px);padding:12px}.nx-mobile-drawer.on{display:block}.nx-mobile-panel{position:absolute;right:0;top:0;bottom:0;width:min(88vw,340px);background:var(--panel);border-left:1px solid var(--line);box-shadow:-15px 0 40px #0004;padding:14px;overflow:auto}.nx-mobile-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.nx-mobile-links{display:grid;gap:5px}.nx-mobile-link{text-align:left;padding:11px 12px!important}
-@media(min-width:821px){.nx-mobile-drawer{display:none!important}}
+body.sb-mini .nx-dock{flex-direction:column}body.sb-mini .nx-nb i{display:none}
 </style>
 </head>
 <body>
@@ -2070,7 +2036,7 @@ const SKINS={
   arcade16:{name:'Arcade 16-bit',desc:'Consola retro',colors:['#0e0e2c','#ff4d6d','#00e5ff']},
   nordic_min:{name:'Nordic Minimalist',desc:'Glacial refinado',colors:['#ebeff5','#5e81ac','#a3be8c']},
   pergamino:{name:'Vintage Pergamino',desc:'Papel antiguo',colors:['#f4ecd8','#8b5e34','#5a7a4a']},
-  solarized_dark:{name:'Solarized Ocean',desc:'Alto contraste azul/teal',colors:['#002b36','#268bd2','#2aa198']},
+  solarized_dark:{name:'Solarized Dark+',desc:'Alto contraste azul/teal',colors:['#002b36','#268bd2','#2aa198']},
   rosepine_moon:{name:'Rosé Pine Moon',desc:'Oscuro púrpura/rosa',colors:['#232136','#c4a7e7','#ebbcba']},
   onedark:{name:'Atom One Dark',desc:'Azul/gris suave',colors:['#282c34','#61afef','#98c379']},
   palenight:{name:'Palenight',desc:'Violeta profundo',colors:['#292d3e','#c792ea','#89ddff']},
@@ -2110,19 +2076,6 @@ const SKINS={
 };
 
 /* SKINS HOMENAJE · referencias visibles también en la sidebar */
-Object.assign(SKINS,{
-  terminator_future:{name:'Película · Terminator HUD',desc:'Tecnología futura · rojo · interfaz táctica',colors:['#080a0b','#ff3b30','#b7c0c7'],homage:'Homenaje visual a la estética de ciencia ficción de Terminator'},
-  back_future_vhs:{name:'Película · Regreso al Futuro VHS',desc:'Neón ochentoso · VHS · tablero temporal',colors:['#0b1020','#ffcc55','#58a6ff'],homage:'Homenaje retro a la estética temporal de los 80'},
-  matrix_reloaded:{name:'Película · Matrix Terminal',desc:'Verde fósforo · código · terminal',colors:['#020502','#00ff41','#0aa02d'],homage:'Homenaje a la estética de terminal cyberpunk'},
-  jurassic_control:{name:'Película · Jurassic Control',desc:'Ámbar · verde · sala de control',colors:['#0b110d','#e2b84f','#6fa36b'],homage:'Homenaje a interfaces de parques científicos'},
-  stranger_vhs2:{name:'Serie · Mystery VHS Lab',desc:'Rojo · azul · cinta analógica · misterio',colors:['#09070d','#ff304f','#4aa8ff'],homage:'Homenaje a la estética VHS de series de misterio'},
-  miami_vice:{name:'Serie · Miami Vice Neon',desc:'Cian · magenta · neón ochentoso',colors:['#120b28','#ff4fb3','#4ee7ff'],homage:'Homenaje a la estética televisiva neon-noir de los 80'},
-  twin_peaks_signal:{name:'Serie · Twin Peaks Signal',desc:'Rojo oscuro · bosque · señal analógica',colors:['#160c10','#b51f2d','#5e7f5a'],homage:'Homenaje a la atmósfera televisiva surrealista y analógica'},
-  xfiles_archive:{name:'Serie · X-Files Archive',desc:'Verde gris · expediente · CRT',colors:['#07100d','#9fd7a8','#758f85'],homage:'Homenaje a archivos y estética CRT de investigación'},
-  stranger_arcade:{name:'Serie · Stranger Arcade',desc:'Arcade · synth · rojo y azul',colors:['#0c0717','#ff304f','#6c63ff'],homage:'Homenaje al imaginario arcade y VHS de los 80'},
-  retro_vhs90:{name:'Retro · VHS 90s',desc:'Cinta · TV · colores noventeros',colors:['#17151c','#f0c95a','#66a3d9'],homage:'Estética retro de televisión y VHS de los 90'},
-  retro_arcade16:{name:'Retro · Arcade 16-bit',desc:'Pixel · CRT · arcade · consola',colors:['#0e0e2c','#ff4d6d','#00e5ff'],homage:'Homenaje a salas arcade y consolas de 16 bits'}
-});
 Object.assign(SKINS,{mario_8bit:{name:'Homenaje · Mario 8-bit',desc:'Arcade · bloques · pixel',colors:['#5b1b1b','#f2c94c','#2d74da'],homage:'Homenaje a los plataformas de 8 bits'},zelda_hyrule:{name:'Homenaje · Hyrule',desc:'Aventura · pergamino · bosque',colors:['#1b2d1d','#c9a44a','#6e8f54'],homage:'Homenaje a las aventuras de fantasía de Hyrule'},star_terminal:{name:'Homenaje · Galaxia Terminal',desc:'Sci-fi · terminal · estelar',colors:['#080b16','#7fd8ff','#e9d36a'],homage:'Homenaje a la ciencia ficción espacial clásica'},simpsons_vhs:{name:'Homenaje · VHS Amarillo',desc:'Retro · televisión · VHS',colors:['#f4d35e','#2f5aa8','#ef476f'],homage:'Homenaje a la animación televisiva de los 90'}});
 Object.assign(SKINS,{
   winamp_classic:{name:'Homenaje · Winamp',desc:'Reproductor clásico · verde · naranja',colors:['#101010','#78c800','#ffb000'],homage:'Homenaje a Winamp y su estética de reproductor clásico',mark:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Winamp%20Logo.svg'},
@@ -2325,7 +2278,7 @@ function applyCfg(){
   try{updateSkinHomage();}catch(e){}
 }
 window.applyCfg = applyCfg;
-function skinCategory(k){if(window.NXCAT&&NXCAT[k])return NXCAT[k];if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_|^miami_|^twin_peaks_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_|^matrix_|^back_future_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_|^mario_|^zelda_|^star_|^simpsons_|^retro_/.test(k))return 'Homenajes';return 'Generales';}
+function skinCategory(k){if(window.NXCAT&&NXCAT[k])return NXCAT[k];if(/^lost_|^xfiles_|^mrrobot_|^stranger_|^ring_/.test(k))return 'Series';if(/^btt|^alien_|^bladerunner_|^tron_|^jurassic_|^terminator_|^blade_/.test(k))return 'Películas';if(/^nes_|^snes_|^ps1_|^dreamcast_|^playstation2|^gamecube|^xbox_|^sega_/.test(k))return 'Consolas';if(/^mac_|^msdos|^amiga_|^windows_|^linux_/.test(k))return 'Computadores';if(/^iphone_|^android_|^oled_|^mobile_/.test(k))return 'Móvil';if(/^dungeon_|^film_|^mario_|^zelda_|^star_|^simpsons_/.test(k))return 'Conceptuales';return 'Generales';}
 const SKIN_FAV_KEY='nora_skin_favs_v1',SKIN_RECENT_KEY='nora_skin_recent_v1';
 function getSkinFavs(){try{return JSON.parse(localStorage.getItem(SKIN_FAV_KEY)||'[]');}catch(e){return[];}}
 function getSkinRecent(){try{return JSON.parse(localStorage.getItem(SKIN_RECENT_KEY)||'[]');}catch(e){return[];}}
@@ -2689,37 +2642,11 @@ function parseRecords(rows,sourceName){let hIdx=-1;for(let i=0;i<Math.min(rows.l
 
 /* CARGA */
 const dz=document.getElementById('dz'),fileInput=document.getElementById('file');
-async function updateLoadedFile(index){
-  const current=FILES[index]; if(!current)return;
-  const input=document.createElement('input'); input.type='file'; input.accept='.xlsx,.xls,.xlsm';
-  input.onchange=async()=>{
-    const file=input.files&&input.files[0]; if(!file)return;
-    const status=document.getElementById('dataCenterStatus');
-    if(status)status.textContent='Actualizando '+file.name+'…';
-    try{
-      const beforeName=current.name;
-      await handleFiles([file],false,{forceReplaceIndex:index});
-      if(file.name!==beforeName && FILES[index] && FILES[index].name===file.name){
-        // If the user chose a file with a different name, preserve the slot semantics by removing the old entry.
-        const oldIdx=FILES.findIndex((f,i)=>i!==index&&f.name===beforeName);
-        if(oldIdx>=0){FILES.splice(oldIdx,1);}
-        rebuildRecords(); refreshSelects(); renderFilesList(); syncDataCenterUI(); await saveState();
-      }
-      notify('Archivo actualizado: '+file.name,'ok');
-    }catch(e){
-      if(status)status.textContent='No se pudo actualizar '+beforeName+'.';
-      notify('No se pudo actualizar el archivo','err');
-      console.error(e);
-    }
-  };
-  input.click();
-}
-window.updateLoadedFile=updateLoadedFile;
 function syncDataCenterUI(){
   const count=document.getElementById('dataCenterCount'),st=document.getElementById('dataCenterStatus'),list=document.getElementById('dataCenterFiles'),actions=document.getElementById('dataCenterActions');
   if(count)count.textContent=`${FILES.length} archivo(s) · ${RECORDS.length} registro(s)`;
   if(st)st.textContent=FILES.length?`${RECORDS.length} registros disponibles para todo el sistema.`:'Sin datos cargados.';
-  if(list){list.innerHTML=FILES.map((f,i)=>{const n=f.records.filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${n} reg. <button type="button" title="Actualizar este archivo" aria-label="Actualizar ${esc(f.name)}" data-dc-update="${i}">↻</button> <button type="button" title="Quitar archivo" aria-label="Quitar ${esc(f.name)}" data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-update]').forEach(b=>b.onclick=()=>updateLoadedFile(+b.dataset.dcUpdate));list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(+b.dataset.dcRemove,1);rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
+  if(list){list.innerHTML=FILES.map((f,i)=>{const n=f.records.filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${n} reg. <button data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(+b.dataset.dcRemove,1);rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
   if(actions)actions.classList.toggle('hidden',!FILES.length);
 }
 function initDataCenterCommunication(){const input=document.getElementById('dcCommTemplate');if(!input)return;const key='nora_comm_template_v1';const def='{localidad} · {institucion} · {fecha} · N° {numero} · {apellido}, {nombre}';try{input.value=localStorage.getItem(key)||def;}catch(e){input.value=def;}const getText=()=>{const r=DV.allSorted&&DV.allSorted.length?DV.allSorted[0]:RECORDS[0];const vals={localidad:r?.localidad||window.S?.files?.[0]?.loc||'',institucion:r?.source||window.S?.files?.[0]?.title||'',fecha:new Date().toLocaleDateString('es-AR'),numero:r?.num||'',apellido:r?.apellido||'',nombre:r?.nombre||''};return input.value.replace(/\{(localidad|institucion|fecha|numero|apellido|nombre)\}/g,(_,k)=>vals[k]||'');};document.getElementById('dcCommSave')?.addEventListener('click',()=>{try{localStorage.setItem(key,input.value);}catch(e){}notify('Plantilla guardada','ok');});document.getElementById('dcCommWhatsApp')?.addEventListener('click',()=>{const text=getText();window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');});document.getElementById('dcCommEmail')?.addEventListener('click',()=>{const subject='Nora Suite';window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(getText());});}
@@ -3811,54 +3738,17 @@ timer:{n:'Temporizador',r(b){let s=1500,run=0;b.innerHTML='<div class="nx-big">2
 dolar:{n:'Cotización dólar',r(b){b.textContent='Cargando…';fetch('https://dolarapi.com/v1/dolares').then(r=>r.json()).then(a=>{b.innerHTML=a.filter(x=>['oficial','blue','bolsa'].includes(x.casa)).map(x=>`<div class="nx-li" style="cursor:default"><b>${x.nombre}</b> · compra $${x.compra} · venta $${x.venta}</div>`).join('')}).catch(()=>b.innerHTML='<div class="hint">Sin conexión</div>')}},
 atajos:{n:'Accesos rápidos',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{setView(x.dataset.v);$('#nxDrawerW')?.classList.remove('on')})}}};
 const WS=LS('nx_w_v1',null)||{home:['reloj','tareas','calendario','datos','notas','dolar'].map((t,i)=>({id:'h'+i,t,s:1})),float:['calc','timer','notas'].map((t,i)=>({id:'f'+i,t,s:1}))};
-function nxIcon(name){
- const I={
-  grip:'<svg viewBox="0 0 24 24"><path d="M8 5h.01M8 12h.01M8 19h.01M16 5h.01M16 12h.01M16 19h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
-  width:'<svg viewBox="0 0 24 24"><path d="M4 8v8M20 8v8M7 12h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 9l-3 3 3 3M17 9l3 3-3 3" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
-  min:'<svg viewBox="0 0 24 24"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
-  max:'<svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
-  close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
- };
- return I[name]||'';
-}
 function zone(box,key){
- tick.filter(x=>x.z===key).forEach(x=>clearInterval(x.h));
- tick=tick.filter(x=>x.z!==key);
- box.innerHTML='';
- const g=el('<div class="nx-grid"></div>'); box.appendChild(g);
- const L=WS[key]||[];
- L.forEach((w,ix)=>{
-  const d=W[w.t]; if(!d)return;
-  const n=el(`<article class="nx-w s${Math.max(1,Math.min(3,w.s||1))}" data-wid="${w.id}">
-    <div class="nx-wh">
-      <span class="nx-wdrag" title="Arrastrar widget">${nxIcon('grip')}<b>${d.n}</b></span>
-      <div class="nx-wtools">
-        <button type="button" data-a="s" title="Cambiar ancho" aria-label="Cambiar ancho">${nxIcon('width')}</button>
-        <button type="button" data-a="m" title="Minimizar" aria-label="Minimizar">${nxIcon(w.m?'max':'min')}</button>
-        <button type="button" data-a="x" title="Quitar" aria-label="Quitar">${nxIcon('close')}</button>
-      </div>
-    </div><div class="nx-wb"></div></article>`);
-  g.appendChild(n);
-  n.classList.toggle('nx-wmin',!!w.m);
-  const h=d.r(n.querySelector('.nx-wb'),w); if(h)tick.push({z:key,h});
-  n.querySelector('.nx-wh').onclick=e=>{
-   const btn=e.target.closest('button'); if(!btn)return;
-   const a=btn.dataset.a;
-   if(a==='x')L.splice(ix,1);
-   else if(a==='m')w.m=!w.m;
-   else if(a==='s')w.s=(w.s%3)+1;
-   SV('nx_w_v1',WS); zone(box,key);
-  };
- });
- const add=el(`<div class="nx-add nx-widget-add"><button type="button" class="secondary miniBtn nx-add-trigger" aria-expanded="false"><span class="nx-add-plus">+</span><span>Widget</span></button><div class="nx-add-pop" hidden><div class="nx-add-title">Agregar widget</div><div class="nx-widget-options">${Object.entries(W).map(([k,v])=>`<button type="button" class="secondary nx-widget-option" data-widget="${k}">${esc(v.n)}</button>`).join('')}</div></div></div>`);
- const trigger=add.querySelector('.nx-add-trigger'), pop=add.querySelector('.nx-add-pop');
- trigger.onclick=()=>{pop.hidden=!pop.hidden;trigger.setAttribute('aria-expanded',String(!pop.hidden));};
- add.querySelectorAll('[data-widget]').forEach(b=>b.onclick=()=>{L.push({id:key[0]+Date.now()+Math.random().toString(36).slice(2,6),t:b.dataset.widget,s:1});SV('nx_w_v1',WS);zone(box,key);});
- box.appendChild(add);
+ tick.filter(x=>x.z===key).forEach(x=>clearInterval(x.h));tick=tick.filter(x=>x.z!==key);box.innerHTML='';
+ const g=el('<div class="nx-grid"></div>');box.appendChild(g);const L=WS[key];
+ L.forEach((w,ix)=>{const d=W[w.t];if(!d)return;const n=el(`<div class="nx-w s${w.s}"><div class="nx-wh"><span>${d.n}</span><button data-a="l" title="Mover antes">‹</button><button data-a="r" title="Mover después">›</button><button data-a="s" title="Cambiar ancho">Ancho</button><button data-a="m" title="Minimizar widget">Min</button><button data-a="x" title="Quitar">Quitar</button></div><div class="nx-wb"></div></div>`);g.appendChild(n);n.classList.toggle('nx-wmin',!!w.m);
+  const h=d.r(n.querySelector('.nx-wb'),w);if(h)tick.push({z:key,h});
+  n.querySelector('.nx-wh').onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){L.splice(ix,1)}else if(a==='m'){w.m=!w.m}else if(a==='s'){w.s=w.s%3+1}else{const j=ix+(a==='l'?-1:1);if(j<0||j>=L.length)return;[L[ix],L[j]]=[L[j],L[ix]]}SV('nx_w_v1',WS);zone(box,key)}});
+ const sel=el(`<div class="nx-add"><select>${Object.entries(W).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('')}</select><button class="primary miniBtn">+ Agregar widget</button></div>`);
+ sel.querySelector('button').onclick=()=>{L.push({id:key[0]+Date.now(),t:sel.querySelector('select').value,s:1});SV('nx_w_v1',WS);zone(box,key)};box.appendChild(sel);
 }
-
 const home=$('#view-home'),hk=$('#hHeroKpis');
-if(home&&hk){ /* Widgets personales ya no se renderizan dentro de Inicio. */ }
+if(home&&hk){const c=el('<div class="card"><h2 style="margin-bottom:8px">Mis widgets <span class="tag">personalizables</span></h2><div id="nxHome"></div></div>');hk.after(c);zone($('#nxHome'),'home')}
 /* ---------- 4. VENTANAS: widgets + personalización (movibles, minimizables) ---------- */
 const WIN=LS('nx_win_v1',{});const sw=()=>SV('nx_win_v1',WIN);
 const SVG={min:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="5" y1="12" x2="19" y2="12"/></svg>',max:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',x:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>'};
@@ -3881,43 +3771,6 @@ let WWIN,PWIN;
 WWIN=mkWin('nxWinW','Widgets flotantes',Math.max(8,innerWidth-350),Math.max(60,innerHeight-420),b=>{zone(b,'float')});
 PWIN=mkWin('nxWinP','Personalización',Math.max(8,innerWidth-690),70,b=>panelP(b));
 if(!WWIN.body.firstChild)zone(WWIN.body,'float');
-/* Widgets flotantes: cada widget vive en su propia ventana, con tamaño redimensionable. */
-(function(){
- const oldWin=WWIN;
- if(oldWin){oldWin.S.open=false;oldWin.paint();}
- const FW={};
- const base=LS('nx_float_v2',{})||{};
- const save=()=>SV('nx_float_v2',base);
- const openFloat=(id,t)=>{
-  const w=el(`<section class="nx-win nx-single-widget" id="nxfw-${id}"><div class="nx-wt"><b>${esc(t)}</b><div class="nx-float-tools"><button data-a="min" title="Minimizar" aria-label="Minimizar">${nxIcon('min')}</button><button data-a="x" title="Cerrar" aria-label="Cerrar">${nxIcon('close')}</button></div></div><div class="nx-wbody"></div><i class="nx-resize" aria-hidden="true"></i></section>`);
-  document.body.appendChild(w);
-  const S=base[id]=Object.assign({x:80+Object.keys(FW).length*24,y:90+Object.keys(FW).length*24,w:300,h:210,min:false,open:true},base[id]||{});
-  const paint=()=>{w.style.left=Math.max(4,Math.min(S.x,innerWidth-90))+'px';w.style.top=Math.max(4,Math.min(S.y,innerHeight-44))+'px';w.style.width=Math.max(240,Math.min(S.w,innerWidth-8))+'px';w.style.height=Math.max(130,Math.min(S.h,innerHeight-8))+'px';w.classList.toggle('min',S.min);w.classList.toggle('on',S.open);w.querySelector('[data-a=min]').innerHTML=nxIcon(S.min?'max':'min');};
-  const body=w.querySelector('.nx-wbody'); const d=W[id]; if(d){const h=d.r(body,{id:'fw_'+id});if(h)tick.push({z:'float_'+id,h});}
-  const hd=w.querySelector('.nx-wt');
-  let drag=null;
-  hd.onpointerdown=e=>{if(e.target.closest('button'))return;drag={x:e.clientX-S.x,y:e.clientY-S.y};hd.setPointerCapture(e.pointerId)};
-  hd.onpointermove=e=>{if(drag){S.x=e.clientX-drag.x;S.y=e.clientY-drag.y;paint()}};
-  hd.onpointerup=()=>{if(drag){drag=null;save()}};
-  w.querySelector('.nx-resize').onpointerdown=e=>{e.preventDefault();const ox=e.clientX,oy=e.clientY,ow=S.w,oh=S.h;const mv=m=>{S.w=ow+(m.clientX-ox);S.h=oh+(m.clientY-oy);paint()};const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save()};addEventListener('pointermove',mv);addEventListener('pointerup',up)};
-  w.querySelector('[data-a=min]').onclick=()=>{S.min=!S.min;save();paint()};
-  w.querySelector('[data-a=x]').onclick=()=>{S.open=false;save();paint()};
-  w.onpointerdown=()=>{document.querySelectorAll('.nx-single-widget').forEach(o=>o.style.zIndex=60);w.style.zIndex=61};
-  FW[id]={w,S,paint};paint();
- };
- window.NoraOpenWidget=openFloat;
- window.NoraOpenWidgetManager=()=>{};
- // Replace the old shared widget list with a launcher only. Each selected widget opens in its own window.
- WWIN.body.innerHTML='';
- const launch=el(`<div class="nx-widget-add"></div>`); WWIN.body.appendChild(launch);
- if(launch){
-  launch.innerHTML=`<button type="button" class="primary miniBtn nx-add-trigger">＋ Agregar widget</button><div class="nx-add-pop nx-manager-pop"><div class="nx-add-title">Elegí un widget</div><div class="nx-widget-options">${Object.entries(W).map(([k,v])=>`<button type="button" class="secondary nx-widget-option" data-widget="${k}">${esc(v.n)}</button>`).join('')}</div></div>`;
-  const pop=launch.querySelector('.nx-add-pop');launch.querySelector('button').onclick=()=>{pop.hidden=!pop.hidden};launch.querySelectorAll('[data-widget]').forEach(b=>b.onclick=()=>openFloat(b.dataset.widget,b.textContent.trim()));
- }
- // Keep legacy controls usable but do not put new float widgets back in the shared window.
- window.NoraFloatWidgets=FW;
-})();
-
 const FONTS={'':'Predeterminada','Georgia,serif':'Serif clásica','"Trebuchet MS",Verdana,sans-serif':'Humanista','"Segoe UI",Tahoma,sans-serif':'Segoe','ui-rounded,"Nunito","Varela Round",sans-serif':'Redondeada','Consolas,monospace':'Monoespaciada','"Courier New",monospace':'Máquina de escribir'};
 function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${l}</label>${c}</div>`,rg=(k,a,b)=>`<input type="range" data-k="${k}" min="${a}" max="${b}" value="${P[k]}">`;
  d.innerHTML=``+row('Zoom interfaz %',rg('scale',80,130))+row('Ancho barra lateral',rg('sbw',150,320))+row('Tipografía',`<select data-k="font">${Object.entries(FONTS).map(([k,v])=>`<option value='${k}' ${P.font===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Sombras',`<select data-k="sh">${[['','Normal'],['none','Ninguna'],['soft','Suaves'],['strong','Marcadas']].map(([k,v])=>`<option value="${k}" ${P.sh===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Opacidad paneles %',rg('pop',40,100))+row('Imagen de fondo',`<input type="text" data-k="bg" placeholder="URL de imagen" value="${P.bg.startsWith('data:')?'':P.bg}">`)+row('',`<input type="file" accept="image/*" id="nxFile" style="font-size:11px">`)+row('Oscurecer fondo %',rg('dim',0,80))+row('Altura filas Explorador',rg('rp',0,10))+row('Tamaño letra tabla',rg('fs',10,15))+`<div class="nx-add"><label><input type="checkbox" data-k="zebra" ${P.zebra?'checked':''}> Zebra</label><label><input type="checkbox" data-k="freeze" ${P.freeze?'checked':''}> Fijar 1ª col.</label><button class="ghost miniBtn" id="nxReset" style="margin-left:auto">Restablecer</button></div>`;
@@ -3927,61 +3780,14 @@ function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${
 
 if(typeof window.setView==='function'&&!window.setView._nx){const _sv=window.setView;window.setView=function(v,k){if(!v)return;return _sv.call(this,v,k)};window.setView._nx=1}
 /* accesos: bloque propio (fuera de .nav para no heredar su manejo de clics) */
+const home0=$('.skin-homage'),side=$('.sidebar');
+if(side){const dock=el(`<div class="nx-dock"><button type="button" class="nx-nb" id="nxNavW" title="Widgets flotantes"><span data-icon="layers"></span><i>Widgets</i></button><button type="button" class="nx-nb" id="nxNavP" title="Personalización"><span data-icon="palette"></span><i>Personalizar</i></button></div>`);
+ home0?home0.after(dock):side.prepend(dock);
+ $('#nxNavW').onclick=e=>{e.stopPropagation();WWIN.toggle()};$('#nxNavP').onclick=e=>{e.stopPropagation();PWIN.toggle()};}
 const ta=$('.topbar-actions');
 if(ta){[['nxTopW','Widgets flotantes','layers',WWIN],['nxTopP','Personalización','palette',PWIN]].forEach(([id,t,ic,w])=>{const b=el(`<button type="button" class="iconbtn" id="${id}" title="${t}" aria-label="${t}" data-icon="${ic}"></button>`);b.onclick=e=>{e.stopPropagation();w.toggle()};ta.appendChild(b)});}
 try{paintIcons()}catch(e){}sync();
-
-/* ---------- IMÁGENES DE SKINS: ilustración propia generada con los colores reales de cada skin ---------- */
-(function(){
- const R=document.documentElement,prev=R.getAttribute('data-skin');
- const rd=()=>{const cs=getComputedStyle(R),g=n=>cs.getPropertyValue(n).trim();return{bg:g('--bg'),pn:g('--panel'),p2:g('--panel2'),ink:g('--ink'),ln:g('--line'),ac:g('--accent'),a2:g('--accent2')}};
- const M=[
-  [/matrix|crt|terminal|cmd|msdos|hacker|mrrobot|linux|pipboy|amber|c64|ghost/,(c)=>`<rect x="205" y="150" width="170" height="120" rx="6" fill="#000" opacity=".82"/><g fill="${c.ac}"><rect x="217" y="166" width="70" height="7"/><rect x="217" y="184" width="120" height="7" opacity=".7"/><rect x="217" y="202" width="90" height="7" opacity=".5"/><rect x="217" y="224" width="12" height="14"/></g>`],
-  [/gameboy|nes|snes|ps1|dreamcast|playstation|gamecube|xbox|sega|arcade|mario|zelda|dungeon|emul/,(c)=>`<g><rect x="215" y="170" width="150" height="80" rx="38" fill="${c.ink}" opacity=".88"/><rect x="238" y="198" width="30" height="8" fill="${c.pn}"/><rect x="249" y="187" width="8" height="30" fill="${c.pn}"/><circle cx="326" cy="197" r="8" fill="${c.ac}"/><circle cx="344" cy="212" r="8" fill="${c.a2}"/></g>`],
-  [/iphone|android|oled|mobile|material_you/,(c)=>`<rect x="262" y="140" width="76" height="140" rx="14" fill="${c.ink}" opacity=".9"/><rect x="268" y="152" width="64" height="116" rx="8" fill="${c.pn}"/><rect x="274" y="160" width="52" height="18" rx="4" fill="${c.ac}"/><rect x="274" y="184" width="52" height="10" rx="3" fill="${c.ln}"/><rect x="274" y="200" width="36" height="10" rx="3" fill="${c.ln}"/>`],
-  [/film|btt|stranger|ring|blade|alien|jurassic|terminator|lost|xfiles|simpsons|vhs|noir|cine/,(c)=>`<g><rect x="205" y="160" width="170" height="100" rx="4" fill="${c.ink}" opacity=".9"/>${[0,1,2,3,4,5].map(i=>`<rect x="${213+i*27}" y="166" width="14" height="9" fill="${c.pn}"/><rect x="${213+i*27}" y="245" width="14" height="9" fill="${c.pn}"/>`).join('')}<rect x="218" y="182" width="66" height="50" fill="${c.ac}" opacity=".8"/><rect x="296" y="182" width="66" height="50" fill="${c.a2}" opacity=".7"/></g>`],
-  [/tron|synth|vapor|retro80|cyberpunk|space|star|galax/,(c)=>`<g stroke="${c.ac}" stroke-width="2" fill="none"><path d="M205 270H375M225 235H355M245 205H335M265 180H315"/><path d="M290 175V270M255 175L215 270M325 175L365 270"/></g><circle cx="340" cy="165" r="18" fill="${c.a2}"/>`],
-  [/mac|amiga|windows|retro90|winamp|xp/,(c)=>`<g><rect x="205" y="150" width="170" height="115" fill="${c.pn}" stroke="${c.ink}" stroke-width="3"/><rect x="205" y="150" width="170" height="22" fill="${c.ac}"/><rect x="215" y="184" width="100" height="8" fill="${c.ink}" opacity=".6"/><rect x="215" y="202" width="140" height="8" fill="${c.ink}" opacity=".35"/><rect x="215" y="220" width="70" height="8" fill="${c.ink}" opacity=".35"/></g>`],
-  [/boca/,(c)=>`<rect x="205" y="170" width="170" height="26" fill="${c.ac}"/><rect x="205" y="196" width="170" height="40" fill="${c.a2}" opacity=".55"/>`],
-  [/adidas/,(c)=>`<g fill="${c.ink}"><polygon points="235,260 290,170 305,170 250,260"/><polygon points="272,260 327,170 342,170 287,260"/><polygon points="309,260 364,170 379,170 324,260"/></g>`]
- ];
- const mk=(k,s,c)=>{
-  const nm=k+' '+(s.name||''),m=M.find(x=>x[0].test(nm.toLowerCase())),over=m?m[1](c):`<g><circle cx="240" cy="215" r="28" fill="${c.ac}"/><circle cx="300" cy="215" r="28" fill="${c.a2}"/><circle cx="360" cy="215" r="28" fill="${c.ink}" opacity=".75"/></g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300"><rect width="400" height="300" fill="${c.bg}"/><rect x="18" y="18" width="364" height="264" rx="10" fill="${c.pn}" stroke="${c.ln}" stroke-width="2"/><rect x="18" y="18" width="76" height="264" rx="10" fill="${c.p2}"/><rect x="30" y="36" width="52" height="9" rx="3" fill="${c.ac}"/>${[0,1,2,3,4].map(i=>`<rect x="30" y="${62+i*20}" width="${i%2?40:50}" height="7" rx="3" fill="${c.ink}" opacity=".3"/>`).join('')}<rect x="108" y="34" width="150" height="12" rx="4" fill="${c.ink}" opacity=".75"/><rect x="108" y="54" width="220" height="7" rx="3" fill="${c.ink}" opacity=".3"/><rect x="108" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="196" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="284" y="74" width="80" height="50" rx="6" fill="${c.p2}" stroke="${c.ln}"/><rect x="116" y="84" width="30" height="8" rx="3" fill="${c.ac}"/><rect x="204" y="84" width="30" height="8" rx="3" fill="${c.a2}"/><rect x="292" y="84" width="30" height="8" rx="3" fill="${c.ink}" opacity=".5"/><rect x="108" y="140" width="96" height="9" rx="4" fill="${c.ac}" opacity=".85"/>${over}</svg>`};
- Object.entries(SKINS).forEach(([k,s])=>{
-  const has=s.photo&&s.photo.startsWith('data:');
-  if(has)return;
-  if(k)R.setAttribute('data-skin',k);else R.removeAttribute('data-skin');
-  const c=rd();
-  if(!c.bg||!c.ac||/color-mix|var\(/.test(c.bg+c.pn+c.p2+c.ink+c.ln+c.ac+c.a2)){const col=s.colors||['#eef1f5','#1f4e8c','#2f7a4f'];c.bg=c.bg&&!/color-mix|var\(/.test(c.bg)?c.bg:col[0];c.pn=/color-mix|var\(/.test(c.pn)||!c.pn?c.bg:c.pn;c.p2=/color-mix|var\(/.test(c.p2)||!c.p2?c.pn:c.p2;c.ink=/color-mix|var\(/.test(c.ink)||!c.ink?'#888':c.ink;c.ln=/color-mix|var\(/.test(c.ln)||!c.ln?'rgba(128,128,128,.3)':c.ln;c.ac=/color-mix|var\(/.test(c.ac)||!c.ac?col[1]:c.ac;c.a2=/color-mix|var\(/.test(c.a2)||!c.a2?col[2]||col[1]:c.a2}
-  if(k&&s.colors&&s.colors.length>=2&&(c.ac==='#1f4e8c'||c.ac==='#1f4e8c'.toUpperCase())){const col=s.colors,L=h=>{const n=parseInt((h||'#888888').replace(/^#(.)(.)(.)$/,'#$1$1$2$2$3$3').slice(1,7),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255},dark=L(col[0])<.5;c.bg=col[0];c.pn=col[0];c.p2=dark?'rgba(255,255,255,.11)':'rgba(0,0,0,.07)';c.ink=dark?'#eeeeee':'#222222';c.ln=dark?'rgba(255,255,255,.2)':'rgba(0,0,0,.15)';c.ac=col[1];c.a2=col[2]||col[1];}
-  s.photo='data:image/svg+xml,'+encodeURIComponent(mk(k,s,c));
-  if(s.mark&&!s.mark.startsWith('data:'))s.mark=s.photo;
- });
- if(prev)R.setAttribute('data-skin',prev);else R.removeAttribute('data-skin');
-})();
 applyP();try{renderSkinGrid()}catch(e){}
-})();
-</script>
-
-<script>
-(function(){
- const LSKEY='nora_ui_v2';
- function iconSvg(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';}
- function setupCollapsibles(){document.querySelectorAll('.card').forEach(card=>{
-  if(card.dataset.nxCollapseBound||!card.querySelector('h2'))return; card.dataset.nxCollapseBound='1';card.classList.add('nx-collapsible');
-  const h=card.querySelector('h2');const body=document.createElement('div');body.className='nx-card-body';
-  [...card.children].filter(x=>x!==h).forEach(x=>body.appendChild(x));card.appendChild(body);
-  const b=document.createElement('button');b.type='button';b.className='nx-collapse-btn';b.title='Contraer / expandir';b.setAttribute('aria-label','Contraer / expandir');b.innerHTML=iconSvg();h.appendChild(b);
-  const key='nora_card_v2_'+(card.id||Math.random().toString(36).slice(2));
-  if(localStorage.getItem(key)==='1')card.classList.add('nx-collapsed'); else card.classList.remove('nx-collapsed');
-  b.onclick=e=>{e.stopPropagation();card.classList.toggle('nx-collapsed');localStorage.setItem(key,card.classList.contains('nx-collapsed')?'1':'0');};
-  requestAnimationFrame(()=>{body.style.maxHeight=body.scrollHeight+'px'});
- });}
- function setupTopbar(){const ta=document.querySelector('.topbar-actions');if(!ta||document.getElementById('nxTopAuto'))return;const b=document.createElement('button');b.type='button';b.id='nxTopAuto';b.className='iconbtn';b.title='Ocultar barra superior automáticamente';b.setAttribute('aria-label',b.title);b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';ta.appendChild(b);let on=localStorage.getItem('nora_top_auto')==='1';document.body.classList.toggle('nx-top-autohide',on);b.classList.toggle('active',on);b.onclick=()=>{on=!on;localStorage.setItem('nora_top_auto',on?'1':'0');document.body.classList.toggle('nx-top-autohide',on);b.classList.toggle('active',on)};let last=0;window.addEventListener('scroll',()=>{if(!on)return;const y=scrollY;document.body.classList.toggle('nx-top-hidden',y>last&&y>70);last=y},{passive:true});}
- function setupMobileMore(){if(window.innerWidth>820||document.getElementById('nxMobileDrawer'))return;const d=document.createElement('div');d.id='nxMobileDrawer';d.className='nx-mobile-drawer';d.innerHTML='<div class="nx-mobile-panel"><div class="nx-mobile-head"><b>Menú</b><button type="button" class="iconbtn nx-mobile-close">×</button></div><div class="nx-mobile-links"></div></div>';document.body.appendChild(d);const links=d.querySelector('.nx-mobile-links');document.querySelectorAll('#sideNav button[data-view]').forEach(src=>{const b=src.cloneNode(true);b.className='secondary nx-mobile-link';b.onclick=()=>{setView(b.dataset.view);d.classList.remove('on')};links.appendChild(b)});const more=document.createElement('button');more.type='button';more.className='secondary';more.textContent='Más';more.onclick=()=>d.classList.add('on');const nav=document.getElementById('bottomNav');if(nav&&!nav.querySelector('.nx-mobile-more')){more.className='nx-mobile-more';nav.appendChild(more)};d.querySelector('.nx-mobile-close').onclick=()=>d.classList.remove('on');d.onclick=e=>{if(e.target===d)d.classList.remove('on')};}
- setupCollapsibles();setupTopbar();setupMobileMore();
- new MutationObserver(()=>{setupCollapsibles()}).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 </body>
