@@ -8,6 +8,7 @@
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="icon-512.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -859,12 +860,10 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 .nx-bar{display:inline-flex;gap:3px;margin-left:auto;align-items:center}
 .nx-bar button{padding:2px 7px;font-size:11px}
 #nxBg{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;pointer-events:none}
-/* widgets */
+/* widgets: ventanas independientes, redimensionables */
 .nx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;align-items:start}
 .nx-w{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;min-width:0;box-shadow:var(--nx-sh)}
-.nx-w.s2{grid-column:span 2}.nx-w.s3{grid-column:span 3}
-.nx-wh{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-.nx-wh span:first-child{flex:1}.nx-wh button{padding:0 5px;font-size:11px;background:none;border:0;color:var(--sub);cursor:pointer;min-height:0}
+.nx-wh{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px}
 .nx-big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
 .nx-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;font-size:11px}
 .nx-cal b{color:var(--sub);font-size:9px}.nx-cal i{font-style:normal;padding:2px 0;border-radius:5px}.nx-cal i.t{background:var(--accent);color:var(--accent-ink,#fff)}
@@ -872,21 +871,36 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 .nx-calc{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.nx-calc button{padding:6px 0;font-size:13px}.nx-calc input{grid-column:1/-1;text-align:right;font-size:16px}
 .nx-li{font-size:12px;padding:3px 0;border-bottom:1px dashed var(--line);cursor:pointer}
 .nx-add{display:flex;gap:6px;margin:8px 0 0;align-items:center;font-size:12px}
-.nx-pr{display:grid;grid-template-columns:110px 1fr;gap:6px;align-items:center;font-size:12px;margin:5px 0}
-.nx-pr input[type=text],.nx-pr select{width:100%;font-size:12px;padding:3px 5px}
-
-.nx-win{position:fixed;z-index:60;display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.35);overflow:hidden;flex-direction:column;max-width:calc(100vw - 16px)}
-.nx-win.on{display:flex}
-.nx-wt{display:flex;align-items:center;gap:2px;padding:6px 6px 6px 12px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:move;user-select:none;touch-action:none;font-size:12px}
-.nx-wt b{flex:1;font-size:12px}
-.nx-wt button{width:26px;height:26px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:var(--sub);cursor:pointer;border-radius:6px;min-height:0}
-.nx-wt button:hover{background:var(--line);color:var(--ink)}
-.nx-wbody{padding:8px;overflow:auto;max-height:min(62vh,560px)}
-.nx-win.min .nx-wbody{display:none}.nx-win.min .nx-wt{border-bottom:0}
-.nx-win .nx-grid{grid-template-columns:1fr}.nx-win .nx-w.s2,.nx-win .nx-w.s3{grid-column:auto}
-.nx-wh button{font-size:10px!important;text-transform:none;letter-spacing:0}
-.nx-w.nx-wmin .nx-wb{display:none}.nx-w.nx-wmin .nx-wh{margin-bottom:0}
-.nx-bar button{white-space:nowrap}
+.nx-widget-window{position:fixed;z-index:70;display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 42px rgba(0,0,0,.28);overflow:hidden;flex-direction:column;min-width:280px;min-height:170px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px)}
+.nx-widget-window.on{display:flex}
+.nx-widget-window .nx-wt{display:flex;align-items:center;gap:4px;padding:5px 7px 5px 12px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:move;user-select:none;touch-action:none;font-size:12px;flex:0 0 auto}
+.nx-widget-window .nx-wt b{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nx-w-actions{display:flex;gap:1px}
+.nx-icon-action{width:28px!important;height:28px!important;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;background:transparent!important;border:0!important;color:var(--sub);border-radius:7px;cursor:pointer;min-height:0!important}
+.nx-icon-action:hover{background:var(--line)!important;color:var(--ink)}
+.nx-widget-window .nx-wbody{padding:10px;overflow:auto;flex:1;min-height:0}
+.nx-widget-window.min{height:auto!important;min-height:0}
+.nx-widget-window.min .nx-wbody,.nx-widget-window.min .nx-resize-handle{display:none}
+.nx-resize-handle{position:absolute;right:3px;bottom:3px;width:18px;height:18px;display:grid;place-items:center;color:var(--sub);cursor:nwse-resize;touch-action:none;opacity:.55}
+.nx-resize-handle:hover{opacity:1;color:var(--accent)}
+.nx-widget-launcher{position:fixed;right:20px;bottom:20px;z-index:180}
+.nx-launch-main{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;box-shadow:0 8px 24px #0002;padding:0}
+.nx-launch-main:hover{background:var(--panel2);color:var(--accent)}
+.nx-launch-main svg{width:19px;height:19px}
+.nx-launch-menu{position:absolute;right:0;bottom:52px;width:250px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 16px 40px #0003;display:none}
+.nx-widget-launcher.open .nx-launch-menu{display:block;animation:fadeIn .15s ease-out}
+.nx-launch-title{font-size:11px;font-weight:800;color:var(--sub);margin:0 2px 8px}
+.nx-launch-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.nx-launch-grid button{padding:9px 8px;text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:9px;font-size:11px;color:var(--ink)}
+.nx-launch-grid button:hover{border-color:var(--accent);color:var(--accent)}
+/* ventana de personalización: conserva el sistema existente */
+.nx-win:not(.nx-widget-window){position:fixed;z-index:60;display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.35);overflow:hidden;flex-direction:column;max-width:calc(100vw - 16px)}
+.nx-win:not(.nx-widget-window).on{display:flex}
+.nx-win:not(.nx-widget-window) .nx-wt{display:flex;align-items:center;gap:2px;padding:6px 6px 6px 12px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:move;user-select:none;touch-action:none;font-size:12px}
+.nx-win:not(.nx-widget-window) .nx-wt b{flex:1;font-size:12px}
+.nx-win:not(.nx-widget-window) .nx-wt button{width:26px;height:26px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:var(--sub);cursor:pointer;border-radius:6px;min-height:0}
+.nx-win:not(.nx-widget-window) .nx-wbody{padding:8px;overflow:auto;max-height:min(62vh,560px)}
+.nx-win:not(.nx-widget-window).min .nx-wbody{display:none}
 /* explorador: barra de filtros sin superposición */
 #view-datos .dv-toolbar{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:flex-end}
 #view-datos .dv-search-main{flex:2 1 260px;min-width:0}
@@ -909,6 +923,52 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
 .sidebar #sbToggle{margin-top:clamp(3px,.8vh,8px)!important;padding:clamp(2px,.5vh,5px) 0;min-height:0}
 .sidebar .status{margin:clamp(3px,.8vh,8px) 2px 0;padding:clamp(4px,.9vh,9px) 9px;font-size:clamp(9.5px,1.4vh,11.5px);line-height:1.35;overflow:hidden;max-height:12vh}
 @media (max-height:600px){.sidebar .status,.sidebar .skin-homage{display:none}}
+
+/* ===== REVISIÓN RESPONSIVE 2026 ===== */
+@media(max-width:820px){
+  .content{padding:10px 10px calc(var(--bottomnav-h) + 26px + var(--safe-bot));}
+  .topbar{position:sticky;top:0;z-index:40;flex-direction:row;align-items:center;gap:8px;margin:0 -10px 10px;padding:7px 10px;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border-bottom:1px solid color-mix(in srgb,var(--line) 75%,transparent)}
+  .topbar-text{min-width:0}
+  .topbar h1{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .muted{display:none}
+  .topbar-actions{width:auto;flex:0 0 auto;display:flex;flex-wrap:nowrap;gap:4px;overflow:hidden}
+  .topbar-actions .iconbtn{width:34px;height:34px;padding:7px;border-radius:9px;flex:0 0 34px}
+  .topbar-actions #btnBack,.topbar-actions #btnForward,.topbar-actions #btnDensity{display:none}
+  .card{padding:12px;margin-bottom:9px}
+  .row .field,.row .field.grow{flex:1 1 100%}
+  .bottom-nav{height:auto;min-height:56px;padding:4px 4px calc(4px + var(--safe-bot));}
+  .bottom-nav button{min-width:50px;padding:6px 2px;font-size:9px}
+  .bottom-nav button .icon{width:19px;height:19px}
+  .nx-widget-launcher{right:12px;bottom:calc(var(--bottomnav-h) + 12px + var(--safe-bot))}
+  .nx-launch-menu{right:0;bottom:50px;width:min(280px,calc(100vw - 24px))}
+  .nx-widget-window{max-width:calc(100vw - 12px);min-width:calc(100vw - 24px)!important;left:6px!important}
+  .nx-widget-window:not(.min){width:calc(100vw - 12px)!important;height:auto;min-height:190px;max-height:calc(100vh - var(--bottomnav-h) - 24px)}
+  .nx-widget-window .nx-wbody{font-size:12px}
+  .nx-resize-handle{display:none}
+}
+@media(min-width:821px) and (max-height:720px){
+  .sidebar{padding-top:8px!important;padding-bottom:6px!important}
+  .sidebar .brand{padding-bottom:6px!important;margin-bottom:3px!important}
+  .sidebar .nav button{padding-top:4px!important;padding-bottom:4px!important}
+  .sidebar .navlbl{padding-top:4px!important;padding-bottom:1px!important}
+  .sidebar .status{display:none}
+}
+@media(max-width:480px){
+  .topbar-actions #btnHelp{display:none}
+  .topbar-actions .iconbtn{width:32px;height:32px;flex-basis:32px}
+}
+body.nx-top-auto .topbar{transform:translateY(calc(-100% + 10px));transition:transform .22s ease}
+body.nx-top-auto .topbar:hover,body.nx-top-auto .topbar:focus-within{transform:translateY(0)}
+
+/* Icono de ocultación automática de la barra */
+#btnAutoTop .icon{transform:rotate(90deg)}
+#btnAutoTop.active .icon{transform:rotate(-90deg)}
+/* Contenedores contraíbles */
+.nx-collapse-btn{margin-left:auto!important;width:27px;height:27px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;background:transparent;border:0;color:var(--sub);border-radius:7px}
+.nx-collapse-btn:hover{background:var(--panel2);color:var(--ink)}
+.nx-collapse-btn svg{width:15px;height:15px;transition:transform .18s}
+.nx-card-collapsed>.nx-collapse-content{display:none!important}
+.nx-card-collapsed .nx-collapse-btn svg{transform:rotate(-90deg)}
 </style>
 </head>
 <body>
@@ -955,7 +1015,7 @@ body.nx-focus #view-datos>.data-tool-card{display:none}
     <button class="iconbtn" id="btnOmni" title="Buscar (Ctrl+K)" data-icon="search"></button>
     <button class="iconbtn" id="btnDensity" title="Densidad" data-icon="density"></button>
     <button class="iconbtn" id="btnTheme" title="Tema" data-icon="moon"></button>
-    <button class="iconbtn" id="btnHelp" title="Atajos (?)" data-icon="info"></button>
+    <button class="iconbtn" id="btnHelp" title="Atajos (?)" data-icon="info"></button>\n    <button class="iconbtn" id="btnAutoTop" title="Ocultar barra al desplazarse" aria-label="Ocultar barra al desplazarse" data-icon="chevright"></button>
   </div>
 </div>
 
@@ -2308,6 +2368,41 @@ function skinRealImage(k,s){
   return u+(imgs[skinCategory(k)]||imgs.Generales);
 }
 
+
+/* Catálogo ampliado: homenajes de cine/series y retro, sin duplicar nombres existentes. */
+(function addExtraSkins(){
+  const extras={
+    cinema_noir:{name:'Homenaje · Cine Noir',desc:'Blanco y negro · thriller · proyector',cat:'Películas',c:['#090909','#d7d7d7','#777777']},
+    sci_fi_80:{name:'Homenaje · Sci-Fi 80s',desc:'Neón · ciencia ficción · CRT',cat:'Películas',c:['#07111d','#5ee7ff','#ff4fd8']},
+    space_odyssey:{name:'Homenaje · Odisea espacial',desc:'Minimal · negro · rojo técnico',cat:'Películas',c:['#08090b','#e8e8e8','#c51d2e']},
+    cyber_noir:{name:'Homenaje · Cyber Noir',desc:'Lluvia · ciudad · neón',cat:'Películas',c:['#05080d','#22d3ee','#ef476f']},
+    retro_horror:{name:'Homenaje · Horror VHS',desc:'VHS · rojo · cinta analógica',cat:'Películas',c:['#120b0b','#e34b4b','#d9d9d9']},
+    detective_70:{name:'Homenaje · Detective 70s',desc:'Papel · ámbar · policial',cat:'Películas',c:['#251d14','#e4b66a','#c65f3a']},
+    mystery_vhs:{name:'Homenaje · Misterio VHS',desc:'Azul oscuro · tracking · tensión',cat:'Series',c:['#080d18','#6fa8ff','#d85cff']},
+    sitcom_90:{name:'Homenaje · Sitcom 90s',desc:'TV · colores cálidos · retro',cat:'Series',c:['#22170f','#f2a65a','#6fcf97']},
+    detective_tv:{name:'Homenaje · TV Detective',desc:'Azul noche · archivo · investigación',cat:'Series',c:['#0a1018','#78a9d8','#d5a85c']},
+    vhs_red:{name:'Homenaje · VHS Rojo',desc:'Cinta · rojo oscuro · tracking',cat:'Series',c:['#14090b','#ef4444','#f0b0b0']},
+    dos_green:{name:'Retro · DOS Verde',desc:'Terminal · fósforo · 80/90s',cat:'Computadores',c:['#050805','#63ff63','#183c18']},
+    arcade_red:{name:'Retro · Arcade Rojo',desc:'CRT · ficha · recreativa',cat:'Consolas',c:['#160b12','#ff4d6d','#4d8dff']},
+    arcade_blue:{name:'Retro · Arcade Azul',desc:'CRT · pixel · recreativa',cat:'Consolas',c:['#091225','#59a8ff','#ffd166']},
+    handheld_gray:{name:'Retro · Handheld Gris',desc:'LCD · plástico · portátil',cat:'Consolas',c:['#b9bcc2','#34363a','#8ed081']},
+    cassette_80:{name:'Retro · Cassette 80s',desc:'Cinta · metal · naranja',cat:'Arte',c:['#171717','#e8e8e8','#ff8c42']},
+    film_lab:{name:'Retro · Laboratorio de cine',desc:'Celuloide · rojo · crema',cat:'Arte',c:['#1b1510','#f2d5a7','#b54b3a']},
+    vhs_blue:{name:'Retro · VHS Azul',desc:'Tracking · azul · televisión',cat:'Arte',c:['#08121f','#3fa7d6','#e7ecef']},
+    pixel_terminal:{name:'Retro · Pixel Terminal',desc:'Pixel · terminal · fósforo',cat:'Computadores',c:['#0a0d0b','#9cff57','#d6ffb8']}
+  };
+  Object.entries(extras).forEach(([k,v])=>{
+    if(SKINS[k]||Object.values(SKINS).some(x=>x?.name===v.name))return;
+    SKINS[k]={name:v.name,desc:v.desc,colors:v.c,homage:v.name.replace(/^Homenaje · |^Retro · /,'')};
+    if(window.NXCAT)NXCAT[k]=v.cat;
+    const escCss=k.replace(/[^a-z0-9_]/g,'');
+    const lum=(h)=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255};
+    const st=document.createElement('style');
+    st.textContent=`:root[data-skin=${escCss}]{--bg:${v.c[0]};--panel:${v.c[0]};--panel2:${v.c[0]};--ink:#f1f3f5;--sub:#9aa3ad;--line:${v.c[1]}55;--accent:${v.c[1]};--accent-ink:${lum(v.c[1])>.62?'#111':'#fff'};--accent2:${v.c[2]};--radius:7px}:root[data-skin=${escCss}] body{background:${v.c[0]};}`;
+    document.head.appendChild(st);
+  });
+})();
+
 function renderSkinGrid(){
   const grid=document.getElementById('skinGrid');if(!grid)return;
   const search=document.getElementById('skinSearch'),collection=document.getElementById('skinCollection'),results=document.getElementById('skinResults'),hero=document.getElementById('skinCurrentHero'),quick=document.getElementById('skinQuick');
@@ -2315,7 +2410,14 @@ function renderSkinGrid(){
   const recents=(()=>{try{return JSON.parse(localStorage.getItem('nora_skin_recent_v1')||'[]');}catch(e){return [];}})();
   const q=(search?.value||'').trim().toLowerCase();
   const active=collection?.value||'Todos';
-  const all=Object.entries(SKINS);
+  const seen=new Set(),all=Object.entries(SKINS).filter(([k,v])=>{
+    const sig=[v?.name||'',v?.desc||'',...(v?.colors||[])].join('|').toLowerCase().replace(/[^a-z0-9|]/g,'');
+    if(seen.has(sig))return false;seen.add(sig);return true;
+  }).sort((a,b)=>{
+    const order=['Generales','Películas','Series','Consolas','Computadores','Móvil','Conceptuales','Arte','Homenajes'];
+    const ca=skinCategory(a[0]),cb=skinCategory(b[0]),ia=order.indexOf(ca),ib=order.indexOf(cb);
+    return (ia-ib)||String(a[1]?.name||'').localeCompare(String(b[1]?.name||''));
+  });
   const match=all.filter(([k,s])=>{
     if(active==='Favoritos'&&!favs.has(k))return false;
     if(active==='Recientes'&&!recents.includes(k))return false;
@@ -3736,50 +3838,128 @@ const save=()=>{SV('nx_p_v1',P);applyP()};
 })();
 /* ---------- 3. WIDGETS ---------- */
 const days=['L','M','X','J','V','S','D'];let tick=[];
+const SVGW={
+ min:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+ restore:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>',
+ x:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ resize:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17L17 7M11 17h6v-6"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+};
 const W={
-reloj:{n:'Reloj',r(b){const f=()=>{const d=new Date();b.innerHTML=`<div class="nx-big">${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`};f();return setInterval(f,1000)}},
-calendario:{n:'Calendario',r(b){let d=new Date();const f=()=>{const y=d.getFullYear(),m=d.getMonth(),o=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),t=new Date();let h=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><button class="ghost miniBtn" data-m="-1">‹</button><b>${d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</b><button class="ghost miniBtn" data-m="1">›</button></div><div class="nx-cal">${days.map(x=>`<b>${x}</b>`).join('')}${'<i></i>'.repeat(o)}`;for(let i=1;i<=n;i++)h+=`<i class="${i===t.getDate()&&m===t.getMonth()&&y===t.getFullYear()?'t':''}">${i}</i>`;b.innerHTML=h+'</div>';b.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{d=new Date(y,m+ +x.dataset.m,1);f()})};f()}},
+ reloj:{n:'Reloj',r(b){const f=()=>{const d=new Date();b.innerHTML=`<div class="nx-big">${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`};f();return setInterval(f,1000)}},
+ calendario:{n:'Calendario',r(b){let d=new Date();const f=()=>{const y=d.getFullYear(),m=d.getMonth(),o=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),t=new Date();let h=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><button class="ghost miniBtn" data-m="-1">‹</button><b>${d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</b><button class="ghost miniBtn" data-m="1">›</button></div><div class="nx-cal">${days.map(x=>`<b>${x}</b>`).join('')}${'<i></i>'.repeat(o)}`;for(let i=1;i<=n;i++)h+=`<i class="${i===t.getDate()&&m===t.getMonth()&&y===t.getFullYear()?'t':''}">${i}</i>`;b.innerHTML=h+'</div>';b.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{d=new Date(y,m+ +x.dataset.m,1);f()})};f()}},
 notas:{n:'Notas',r(b,w){b.innerHTML='<textarea placeholder="Escribí algo…"></textarea>';const t=b.firstChild;t.value=localStorage.getItem('nx_note_'+w.id)||'';t.oninput=()=>localStorage.setItem('nx_note_'+w.id,t.value)}},
 tareas:{n:'Tareas pendientes',r(b){const f=()=>{const l=(typeof TASKS!=='undefined'?TASKS:[]).filter(t=>!t.done).slice(0,6);b.innerHTML=(l.length?l.map(t=>`<div class="nx-li">${esc(t.title||'Tarea')}</div>`).join(''):'<div class="hint">Sin tareas pendientes</div>')+'<button class="ghost miniBtn" style="margin-top:6px">Abrir tareas</button>';b.querySelectorAll('.nx-li,button').forEach(x=>x.onclick=()=>setView('tasks'))};f();return setInterval(f,5000)}},
-datos:{n:'Buscar en Explorador',r(b){b.innerHTML=`<div class="hint">${typeof RECORDS!=='undefined'?RECORDS.length:0} registros cargados</div><input type="text" placeholder="Buscar y ir al Explorador…" style="width:100%;margin-top:6px">`;b.querySelector('input').onkeydown=e=>{if(e.key==='Enter'){setView('datos');setTimeout(()=>{const s=$('#dvSearch');s.value=e.target.value;s.dispatchEvent(new Event('input',{bubbles:true}))},120)}}}},
+datos:{n:'Buscar en Explorador',r(b){b.innerHTML=`<div class="hint">${typeof RECORDS!=='undefined'?RECORDS.length:0} registros cargados</div><input type="text" placeholder="Buscar e ir al Explorador…" style="width:100%;margin-top:6px">`;b.querySelector('input').onkeydown=e=>{if(e.key==='Enter'){setView('datos');setTimeout(()=>{const s=$('#dvSearch');s.value=e.target.value;s.dispatchEvent(new Event('input',{bubbles:true}))},120)}}}},
 calc:{n:'Calculadora',r(b){const k='7 8 9 / 4 5 6 * 1 2 3 - 0 . = +'.split(' ');b.innerHTML=`<div class="nx-calc"><input type="text" value="" inputmode="decimal">${k.map(x=>`<button class="secondary">${x}</button>`).join('')}<button class="ghost" style="grid-column:1/-1">C</button></div>`;const i=b.querySelector('input');const go=()=>{try{if(/^[\d+\-*/.() ]+$/.test(i.value))i.value=String(Function('"use strict";return('+i.value+')')())}catch(e){i.value='Error'}};b.querySelectorAll('button').forEach(x=>x.onclick=()=>{const v=x.textContent;v==='C'?i.value='':v==='='?go():i.value+=v});i.onkeydown=e=>{if(e.key==='Enter')go()}}},
 timer:{n:'Temporizador',r(b){let s=1500,run=0;b.innerHTML='<div class="nx-big">25:00</div><div class="nx-add"><input type="number" value="25" min="1" style="width:56px"> min <button class="primary miniBtn">Iniciar</button><button class="ghost miniBtn">Reiniciar</button></div>';const t=b.querySelector('.nx-big'),[i,go,rs]=b.querySelectorAll('input,button'),f=()=>t.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');go.onclick=()=>{run=!run;go.textContent=run?'Pausar':'Iniciar'};rs.onclick=()=>{s=i.value*60;run=0;go.textContent='Iniciar';f()};return setInterval(()=>{if(run&&s>0){s--;f();if(!s){run=0;go.textContent='Iniciar';notify('Tiempo cumplido','ok')}}},1000)}},
 dolar:{n:'Cotización dólar',r(b){b.textContent='Cargando…';fetch('https://dolarapi.com/v1/dolares').then(r=>r.json()).then(a=>{b.innerHTML=a.filter(x=>['oficial','blue','bolsa'].includes(x.casa)).map(x=>`<div class="nx-li" style="cursor:default"><b>${x.nombre}</b> · compra $${x.compra} · venta $${x.venta}</div>`).join('')}).catch(()=>b.innerHTML='<div class="hint">Sin conexión</div>')}},
-atajos:{n:'Accesos rápidos',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{setView(x.dataset.v);$('#nxDrawerW')?.classList.remove('on')})}}};
-const WS=LS('nx_w_v1',null)||{home:['reloj','tareas','calendario','datos','notas','dolar'].map((t,i)=>({id:'h'+i,t,s:1})),float:['calc','timer','notas'].map((t,i)=>({id:'f'+i,t,s:1}))};
-function zone(box,key){
- tick.filter(x=>x.z===key).forEach(x=>clearInterval(x.h));tick=tick.filter(x=>x.z!==key);box.innerHTML='';
- const g=el('<div class="nx-grid"></div>');box.appendChild(g);const L=WS[key];
- L.forEach((w,ix)=>{const d=W[w.t];if(!d)return;const n=el(`<div class="nx-w s${w.s}"><div class="nx-wh"><span>${d.n}</span><button data-a="l" title="Mover antes">‹</button><button data-a="r" title="Mover después">›</button><button data-a="s" title="Cambiar ancho">Ancho</button><button data-a="m" title="Minimizar widget">Min</button><button data-a="x" title="Quitar">Quitar</button></div><div class="nx-wb"></div></div>`);g.appendChild(n);n.classList.toggle('nx-wmin',!!w.m);
-  const h=d.r(n.querySelector('.nx-wb'),w);if(h)tick.push({z:key,h});
-  n.querySelector('.nx-wh').onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){L.splice(ix,1)}else if(a==='m'){w.m=!w.m}else if(a==='s'){w.s=w.s%3+1}else{const j=ix+(a==='l'?-1:1);if(j<0||j>=L.length)return;[L[ix],L[j]]=[L[j],L[ix]]}SV('nx_w_v1',WS);zone(box,key)}});
- const sel=el(`<div class="nx-add"><select>${Object.entries(W).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('')}</select><button class="primary miniBtn">+ Agregar widget</button></div>`);
- sel.querySelector('button').onclick=()=>{L.push({id:key[0]+Date.now(),t:sel.querySelector('select').value,s:1});SV('nx_w_v1',WS);zone(box,key)};box.appendChild(sel);
+atajos:{n:'Accesos rápidos',r(b){b.innerHTML=[['datos','Explorador'],['dash','Dashboard'],['pdf','PDF'],['sorteos','Sorteos'],['listados','Listados'],['tasks','Tareas']].map(([v,n])=>`<button class="secondary miniBtn" data-v="${v}" style="margin:2px">${n}</button>`).join('');b.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>setView(x.dataset.v))}}
+};
+
+/* ---------- 4. WIDGETS INDIVIDUALES ---------- */
+const WKEY='nx_widgets_v2';
+const WIN=LS(WKEY,{});
+const saveWins=()=>SV(WKEY,WIN);
+let winSeq=0, zSeq=70;
+
+function widgetIconButton(action,title,svg){
+ return `<button class="nx-icon-action" data-wa="${action}" title="${title}" aria-label="${title}">${svg}</button>`;
 }
-const home=$('#view-home'),hk=$('#hHeroKpis');
-if(home&&hk){const c=el('<div class="card"><h2 style="margin-bottom:8px">Mis widgets <span class="tag">personalizables</span></h2><div id="nxHome"></div></div>');hk.after(c);zone($('#nxHome'),'home')}
-/* ---------- 4. VENTANAS: widgets + personalización (movibles, minimizables) ---------- */
-const WIN=LS('nx_win_v1',{});const sw=()=>SV('nx_win_v1',WIN);
-const SVG={min:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="5" y1="12" x2="19" y2="12"/></svg>',max:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',x:'<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>'};
-function mkWin(id,title,dx,dy,onOpen){
- const S=WIN[id]=Object.assign({x:dx,y:dy,min:false,open:false,w:330},WIN[id]||{});
- const w=el(`<div class="nx-win" id="${id}"><div class="nx-wt"><b>${title}</b><button data-a="min" title="Minimizar">${SVG.min}</button><button data-a="x" title="Cerrar">${SVG.x}</button></div><div class="nx-wbody"></div></div>`);
+function clampWidget(S,w){
+ const maxW=Math.max(280,innerWidth-16);
+ const maxH=Math.max(180,innerHeight-70);
+ S.w=Math.max(280,Math.min(Number(S.w)||360,maxW));
+ S.h=Math.max(170,Math.min(Number(S.h)||240,maxH));
+ S.x=Math.max(8,Math.min(Number(S.x)||8,innerWidth-S.w-8));
+ S.y=Math.max(8,Math.min(Number(S.y)||8,innerHeight-S.h-8));
+ w.style.left=S.x+'px';w.style.top=S.y+'px';w.style.width=S.w+'px';w.style.height=S.h+'px';
+}
+function mountWidget(id,type,opts={}){
+ const d=W[type];if(!d)return null;
+ const S=WIN[id]||{type,x:opts.x||Math.max(10,innerWidth-390),y:opts.y||90,w:opts.w||360,h:opts.h||230,min:false,open:true};
+ S.type=type;WIN[id]=S;
+ const w=el(`<section class="nx-win nx-widget-window" id="${id}" aria-label="${esc(d.n)}">
+   <header class="nx-wt">
+     <b>${esc(d.n)}</b>
+     <span class="nx-w-actions">
+       ${widgetIconButton('min','Minimizar',SVGW.min)}
+       ${widgetIconButton('x','Quitar',SVGW.x)}
+     </span>
+   </header>
+   <div class="nx-wbody"></div>
+   <div class="nx-resize-handle" title="Cambiar tamaño">${SVGW.resize}</div>
+ </section>`);
  document.body.appendChild(w);
- const clamp=()=>{S.x=Math.max(0,Math.min(S.x,innerWidth-80));S.y=Math.max(0,Math.min(S.y,innerHeight-34))};
- const paint=()=>{clamp();w.style.left=S.x+'px';w.style.top=S.y+'px';w.style.width=Math.min(S.w,innerWidth-16)+'px';w.classList.toggle('on',S.open);w.classList.toggle('min',S.min);w.querySelector('[data-a=min]').innerHTML=S.min?SVG.max:SVG.min;w.querySelector('[data-a=min]').title=S.min?'Restaurar':'Minimizar'};
+ const body=w.querySelector('.nx-wbody');
+ const paint=()=>{clampWidget(S,w);w.classList.toggle('on',S.open!==false);w.classList.toggle('min',!!S.min);w.querySelector('[data-wa=min]').innerHTML=S.min?SVGW.restore:SVGW.min;w.querySelector('[data-wa=min]').title=S.min?'Restaurar':'Minimizar';w.querySelector('[data-wa=min]').setAttribute('aria-label',S.min?'Restaurar':'Minimizar');};
+ const close=()=>{S.open=false;saveWins();paint();};
+ w.querySelector('.nx-wt').onclick=e=>{
+   const a=e.target.closest('[data-wa]')?.dataset.wa;
+   if(a==='x'){close();return}
+   if(a==='min'){S.min=!S.min;saveWins();paint();return}
+ };
+ w.addEventListener('pointerdown',()=>{w.style.zIndex=++zSeq});
  const hd=w.querySelector('.nx-wt');
- hd.onclick=e=>{const a=e.target.closest('button')?.dataset.a;if(a==='x')S.open=false;else if(a==='min')S.min=!S.min;else return;sw();paint();sync()};
- hd.ondblclick=e=>{if(e.target.closest('button'))return;S.min=!S.min;sw();paint()};
- hd.onpointerdown=e=>{if(e.target.closest('button'))return;const ox=e.clientX-S.x,oy=e.clientY-S.y;hd.setPointerCapture(e.pointerId);hd.onpointermove=m=>{S.x=m.clientX-ox;S.y=m.clientY-oy;paint()};hd.onpointerup=()=>{hd.onpointermove=hd.onpointerup=null;sw()}};
- w.addEventListener('pointerdown',()=>{document.querySelectorAll('.nx-win').forEach(o=>o.style.zIndex=60);w.style.zIndex=61});
- const api={el:w,body:w.querySelector('.nx-wbody'),toggle(){S.open=!S.open;if(S.open){S.min=false;onOpen&&onOpen(api.body)}sw();paint();sync()},paint,S};
- if(S.open)onOpen&&onOpen(api.body);paint();addEventListener('resize',paint);return api;
+ hd.onpointerdown=e=>{
+   if(e.target.closest('[data-wa]'))return;
+   const ox=e.clientX-S.x,oy=e.clientY-S.y;
+   hd.setPointerCapture(e.pointerId);
+   const move=m=>{S.x=m.clientX-ox;S.y=m.clientY-oy;clampWidget(S,w)};
+   const up=()=>{hd.onpointermove=null;hd.onpointerup=null;saveWins()};
+   hd.onpointermove=move;hd.onpointerup=up;
+ };
+ const rh=w.querySelector('.nx-resize-handle');
+ rh.onpointerdown=e=>{
+   e.preventDefault();e.stopPropagation();
+   const ow=S.w,oh=S.h,ox=e.clientX,oy=e.clientY;
+   rh.setPointerCapture(e.pointerId);
+   rh.onpointermove=m=>{S.w=ow+(m.clientX-ox);S.h=oh+(m.clientY-oy);clampWidget(S,w)};
+   rh.onpointerup=()=>{rh.onpointermove=null;rh.onpointerup=null;saveWins()};
+ };
+ let cleanup=d.r(body,S);
+ if(cleanup)tick.push({z:id,h:cleanup});
+ paint();addEventListener('resize',paint);
+ return {el:w,body,S,paint};
 }
-const sync=()=>{[['nxNavW',WWIN],['nxNavP',PWIN],['nxTopW',WWIN],['nxTopP',PWIN]].forEach(([i,w])=>{const b=document.getElementById(i);b&&b.classList.toggle('active',!!w&&w.S.open)})};
-let WWIN,PWIN;
-WWIN=mkWin('nxWinW','Widgets flotantes',Math.max(8,innerWidth-350),Math.max(60,innerHeight-420),b=>{zone(b,'float')});
-PWIN=mkWin('nxWinP','Personalización',Math.max(8,innerWidth-690),70,b=>panelP(b));
-if(!WWIN.body.firstChild)zone(WWIN.body,'float');
+function removeClosedWidgets(){
+ Object.keys(WIN).forEach(id=>{if(WIN[id]?.open===false){document.getElementById(id)?.remove();delete WIN[id]}});
+ saveWins();
+}
+function openWidget(type){
+ const id='nxWidget_'+type+'_'+Date.now()+'_'+(++winSeq);
+ const n=Object.keys(WIN).length;
+ const api=mountWidget(id,type,{x:24+(n%4)*28,y:90+(n%4)*28,w:360,h:230});
+ api?.el?.scrollIntoView?.({block:'nearest'});
+ saveWins();
+}
+function restoreWidgets(){
+ Object.entries(WIN).forEach(([id,S])=>{if(S&&S.open!==false&&W[S.type])mountWidget(id,S.type,S)});
+}
+function widgetLauncher(){
+ if(document.getElementById('nxWidgetLauncher'))return;
+ const b=el(`<div class="nx-widget-launcher" id="nxWidgetLauncher">
+   <button class="nx-launch-main" title="Agregar widget" aria-label="Agregar widget">${SVGW.plus}</button>
+   <div class="nx-launch-menu">
+     <div class="nx-launch-title">Agregar widget</div>
+     <div class="nx-launch-grid">${Object.entries(W).map(([k,v])=>`<button data-widget-add="${k}">${esc(v.n)}</button>`).join('')}</div>
+   </div>
+ </div>`);
+ document.body.appendChild(b);
+ b.querySelector('.nx-launch-main').onclick=()=>b.classList.toggle('open');
+ b.querySelectorAll('[data-widget-add]').forEach(x=>x.onclick=()=>{openWidget(x.dataset.widgetAdd);b.classList.remove('open')});
+ document.addEventListener('pointerdown',e=>{if(!b.contains(e.target))b.classList.remove('open')});
+}
+widgetLauncher();restoreWidgets();
+
+/* Integración con los botones existentes de Widgets / Personalización. */
+function syncWidgetButtons(){
+ document.querySelectorAll('#nxNavW,#nxTopW').forEach(b=>b?.classList.toggle('active',Object.values(WIN).some(x=>x?.open)));
+}
+document.querySelectorAll('#nxNavW,#nxTopW').forEach(b=>b?.addEventListener('click',()=>document.getElementById('nxWidgetLauncher')?.classList.toggle('open')));
+document.querySelectorAll('#nxNavP,#nxTopP').forEach(b=>b?.addEventListener('click',()=>PWIN?.toggle?.()));
+setInterval(()=>{removeClosedWidgets();syncWidgetButtons()},1000);
+
 const FONTS={'':'Predeterminada','Georgia,serif':'Serif clásica','"Trebuchet MS",Verdana,sans-serif':'Humanista','"Segoe UI",Tahoma,sans-serif':'Segoe','ui-rounded,"Nunito","Varela Round",sans-serif':'Redondeada','Consolas,monospace':'Monoespaciada','"Courier New",monospace':'Máquina de escribir'};
 function panelP(d){d=d||PWIN.body;const row=(l,c)=>`<div class="nx-pr"><label>${l}</label>${c}</div>`,rg=(k,a,b)=>`<input type="range" data-k="${k}" min="${a}" max="${b}" value="${P[k]}">`;
  d.innerHTML=``+row('Zoom interfaz %',rg('scale',80,130))+row('Ancho barra lateral',rg('sbw',150,320))+row('Tipografía',`<select data-k="font">${Object.entries(FONTS).map(([k,v])=>`<option value='${k}' ${P.font===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Sombras',`<select data-k="sh">${[['','Normal'],['none','Ninguna'],['soft','Suaves'],['strong','Marcadas']].map(([k,v])=>`<option value="${k}" ${P.sh===k?'selected':''}>${v}</option>`).join('')}</select>`)+row('Opacidad paneles %',rg('pop',40,100))+row('Imagen de fondo',`<input type="text" data-k="bg" placeholder="URL de imagen" value="${P.bg.startsWith('data:')?'':P.bg}">`)+row('',`<input type="file" accept="image/*" id="nxFile" style="font-size:11px">`)+row('Oscurecer fondo %',rg('dim',0,80))+row('Altura filas Explorador',rg('rp',0,10))+row('Tamaño letra tabla',rg('fs',10,15))+`<div class="nx-add"><label><input type="checkbox" data-k="zebra" ${P.zebra?'checked':''}> Zebra</label><label><input type="checkbox" data-k="freeze" ${P.freeze?'checked':''}> Fijar 1ª col.</label><button class="ghost miniBtn" id="nxReset" style="margin-left:auto">Restablecer</button></div>`;
@@ -3823,6 +4003,47 @@ try{paintIcons()}catch(e){}sync();
  if(prev)R.setAttribute('data-skin',prev);else R.removeAttribute('data-skin');
 })();
 applyP();try{renderSkinGrid()}catch(e){}
+})();
+/* Barra superior: el usuario puede activar/desactivar ocultación automática. */
+(function(){
+  const key='nora_top_auto_v1';
+  const btn=()=>document.getElementById('btnAutoTop');
+  const apply=()=>{
+    const on=localStorage.getItem(key)==='1';
+    document.body.classList.toggle('nx-top-auto',on);
+    const b=btn(); if(b){b.classList.toggle('active',on);b.title=on?'Mostrar barra superior fija':'Ocultar barra al desplazarse';}
+  };
+  document.addEventListener('click',e=>{if(e.target.closest('#btnAutoTop')){localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');apply();}});
+  let last=0;
+  addEventListener('scroll',()=>{if(!document.body.classList.contains('nx-top-auto'))return;const y=scrollY;if(y>last+8)document.body.classList.add('nx-top-away');else if(y<last-8)document.body.classList.remove('nx-top-away');last=y},{passive:true});
+  const st=document.createElement('style');st.textContent='body.nx-top-auto.nx-top-away .topbar{transform:translateY(calc(-100% + 10px))}';document.head.appendChild(st);
+  setTimeout(apply,0);
+})();
+
+/* Cualquier tarjeta con título puede contraerse/expandirse y conserva su estado. */
+(function(){
+  const KEY='nora_collapsed_cards_v1';
+  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}};
+  const save=x=>{try{localStorage.setItem(KEY,JSON.stringify(x))}catch(e){}};
+  const state=load();
+  const svg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  function bind(card){
+    if(!card||card.dataset.collapseBound||card.dataset.noCollapse==='1')return;
+    const head=card.querySelector(':scope > h2');
+    if(!head)return;
+    card.dataset.collapseBound='1';
+    [...card.children].forEach((child,idx)=>{if(idx>0)child.classList.add('nx-collapse-content')});
+    const id=card.id||('card_'+Math.random().toString(36).slice(2,9));
+    card.id=id;
+    const b=document.createElement('button');
+    b.className='nx-collapse-btn';b.type='button';b.innerHTML=svg;b.title='Contraer';b.setAttribute('aria-label','Contraer sección');
+    head.appendChild(b);
+    if(state[id]){card.classList.add('nx-card-collapsed');b.title='Expandir';b.setAttribute('aria-label','Expandir sección')}
+    b.onclick=e=>{e.preventDefault();e.stopPropagation();const on=card.classList.toggle('nx-card-collapsed');state[id]=on;save(state);b.title=on?'Expandir':'Contraer';b.setAttribute('aria-label',b.title+' sección')};
+  }
+  const scan=()=>document.querySelectorAll('.card').forEach(bind);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scan);else scan();
+  new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 </body>
