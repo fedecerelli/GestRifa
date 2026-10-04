@@ -4701,8 +4701,19 @@ function sum(){const d=$('nrDcSum');if(!d||typeof FILES==='undefined')return;con
 const _hf=window.handleFiles;window.handleFiles=async function(){const r=await _hf.apply(this,arguments);safe('sum',sum);return r;};
 setTimeout(()=>safe('sum',sum),1500);
 
+/* Inicio: un solo CTA de carga (el mismo selector del Centro de datos) */
+const _ns=window.nextStep;
+window.nextStep=function(){
+ const hasS=!!(window.S&&window.S.files&&window.S.files.length);
+ if(!hasS&&!(typeof RECORDS!=='undefined'&&RECORDS.length))return {t:'Empecemos cargando tus Excel',d:'Un solo lugar: elegí todos los archivos juntos. Los "L -" van también a Sorteos y el resto a Cobranza.',b:'Cargar Excel',go:pickPlain};
+ if(!hasS)return {t:'Cobranza con '+RECORDS.length.toLocaleString('es-AR')+' registros',d:'Revisá el dashboard o generá el informe. Para sumar sorteos, cargá los Excel "L -" en el Centro de datos.',b:'Ir al explorador',go:()=>setView('datos')};
+ return _ns.apply(this,arguments);};
+safe('mgo',()=>{const g=$('mGo');if(g){g.onclick=pickPlain;g.lastChild.textContent='Cargar Excel';}const e=document.querySelector('#mEmpty .hint');if(e)e.textContent='Todavía no hay archivos de sorteo. Cargá tus Excel (los "L -" quedan acá solos).';});
+safe('ver',()=>{const s=$('sideStatus');if(s&&!s.querySelector('.nr-ver')){const v=document.createElement('div');v.className='nr-ver hint';v.style.cssText='margin-top:6px;opacity:.7;font-size:11px';v.textContent='Nora v2.2';s.after(v);}});
+setTimeout(()=>safe('rh',()=>typeof renderHome==='function'&&renderHome()),800);
+
 /* ---------- 2) Impresión desde el celular ---------- */
-const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(matchMedia('(pointer:coarse)').matches&&innerWidth<1024);
+const isMobile=()=>/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac|Linux/i.test(navigator.platform||navigator.userAgent))||matchMedia('(pointer:coarse)').matches;
 window.nrIsMobile=isMobile;
 let pdfjs=null;
 async function loadPdfJs(){
@@ -4713,14 +4724,13 @@ async function loadPdfJs(){
  catch(e){lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
  return pdfjs=lib;}
 const css=document.createElement('style');css.textContent=`
-#nrPrintArea{display:none}
 #nrPM{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 #nrPM .b{width:100%;max-width:440px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
 #nrPM h3{margin:0 0 4px;font-size:16px}#nrPM p{margin:0 0 12px;color:var(--sub);font-size:13px;line-height:1.4}
 #nrPM .bar{height:6px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-bottom:12px}#nrPM .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
 #nrPM .g{display:grid;gap:8px}#nrPM button,#nrPM a.nb{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}
 #nrPM .pr{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
-@media print{body.nr-printing>*:not(#nrPrintArea){display:none!important}body.nr-printing #nrPrintArea{display:block!important}#nrPrintArea img{display:block;break-after:page;page-break-after:always;margin:0}#nrPrintArea img:last-child{break-after:auto;page-break-after:auto}}`;
+`;
 document.head.appendChild(css);
 function mobilePrint(blob,name){
  name=name||'documento.pdf';
@@ -4729,28 +4739,27 @@ function mobilePrint(blob,name){
  m.innerHTML=`<div class="b"><h3>Imprimir PDF</h3><p id="nrPMt">Preparando las páginas del PDF…</p><div class="bar"><i id="nrPMb"></i></div>
  <div class="g"><button class="pr" id="nrPMp" disabled>🖨️ Imprimir ahora</button><button id="nrPMs">📤 Compartir / enviar a imprimir</button><a class="nb" href="${url}" target="_blank" rel="noopener">📄 Abrir el PDF</a><a class="nb" href="${url}" download="${name.replace(/"/g,'')}">⬇️ Descargar</a><button id="nrPMx">Cerrar</button></div></div>`;
  document.body.appendChild(m);
- const t=m.querySelector('#nrPMt'),bar=m.querySelector('#nrPMb');let area=null,sty=null;
- const clean=()=>{document.body.classList.remove('nr-printing');area&&area.remove();sty&&sty.remove();area=sty=null;};
- const close=()=>{clean();m.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);};
+ const t=m.querySelector('#nrPMt'),bar=m.querySelector('#nrPMb'),pb=m.querySelector('#nrPMp');let pages=[],land=false;
+ const close=()=>{m.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);};
  m.querySelector('#nrPMx').onclick=close;
  m.querySelector('#nrPMs').onclick=async()=>{try{const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:name});else window.open(url,'_blank');}catch(e){}};
- const doPrint=()=>{if(!area)return;document.body.classList.add('nr-printing');m.style.display='none';
-  const back=()=>{m.style.display='flex';document.body.classList.remove('nr-printing');removeEventListener('afterprint',back);};addEventListener('afterprint',back);
-  setTimeout(()=>{try{print();}catch(e){back();}},150);setTimeout(back,60000);};
- m.querySelector('#nrPMp').onclick=doPrint;
+ /* El botón abre una pestaña NUEVA que contiene solo las hojas del PDF: lo único que puede imprimir es el PDF. */
+ pb.onclick=()=>{
+  const w=window.open('','_blank');
+  if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
+  const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">🖨️ Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>`<img src="${p}" alt="">`).join('')}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
   const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
-  area=document.createElement('div');area.id='nrPrintArea';document.body.appendChild(area);
-  let land=false;
   for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const v0=pg.getViewport({scale:1});if(p===1)land=v0.width>v0.height;
-   const sc=Math.min(2,2400/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;
-   await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
-   const im=new Image();im.src=c.toDataURL('image/jpeg',.92);area.appendChild(im);bar.style.width=Math.round(p/pdf.numPages*100)+'%';t.textContent='Preparando página '+p+' de '+pdf.numPages+'…';}
-  sty=document.createElement('style');const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm';
-  sty.textContent=`@media print{@page{size:A4 ${land?'landscape':'portrait'};margin:0}#nrPrintArea img{width:${W};height:${Hh};object-fit:contain}}`;document.head.appendChild(sty);
-  t.textContent=pdf.numPages+' página(s) listas. Se abre el cuadro de impresión de tu celular; si no aparece, tocá "Imprimir ahora".';
-  m.querySelector('#nrPMp').disabled=false;doPrint();
- }catch(e){console.warn(e);t.textContent='No pude preparar la vista de impresión. Usá "Compartir" o "Abrir el PDF" y tocá imprimir desde ahí.';}})();}
+   const sc=Math.min(2,2200/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;
+   await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;pages.push(c.toDataURL('image/jpeg',.9));
+   bar.style.width=Math.round(p/pdf.numPages*100)+'%';t.textContent='Preparando página '+p+' de '+pdf.numPages+'…';}
+  t.textContent=pdf.numPages+' página(s) listas. Tocá "Imprimir ahora": se abre una hoja con solo el PDF y el cuadro de impresión.';pb.disabled=false;
+ }catch(e){console.warn(e);t.textContent='No pude preparar las páginas. Usá "Compartir" o "Abrir el PDF" y tocá imprimir desde ahí.';}})();}
 window.nrMobilePrint=mobilePrint;
 window.nrIfPrint=function(iframe,url){
  if(!isMobile()){try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}return;}
