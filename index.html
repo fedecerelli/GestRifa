@@ -2805,7 +2805,7 @@ document.getElementById('btnBack').onclick=()=>{if(navIndex>0){navIndex--;setVie
 document.getElementById('btnForward').onclick=()=>{if(navIndex<navHistory.length-1){navIndex++;setView(navHistory[navIndex],true);updateNavBtns();}};
 window.setView=setView;
 document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
-if(!document.getElementById('cMonth').value)document.getElementById('cMonth').value=new Date().toISOString().slice(0,7);setView('home',true);navHistory=['home'];navIndex=0;initDataManager();syncDataCenterUI();renderDataManager();
+if(!document.getElementById('cMonth').value)document.getElementById('cMonth').value=new Date().toISOString().slice(0,7);setView('home',true);navHistory=['home'];navIndex=0;
 
 (function swipe(){let ts=null;const content=document.getElementById('mainContent');content.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(t.target.closest('input,select,textarea,button,canvas,.scrollx,.omni-overlay,.dv-wrap,.rec-overlay'))return;ts={x:t.clientX,y:t.clientY,t:Date.now()};},{passive:true});content.addEventListener('touchend',e=>{if(!ts)return;const dx=e.changedTouches[0].clientX-ts.x;const dy=e.changedTouches[0].clientY-ts.y;const dt=Date.now()-ts.t;ts=null;if(dt>700)return;if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;const cur=VIEW_ORDER.findIndex(v=>document.getElementById('view-'+v).classList.contains('active'));const next=dx<0?Math.min(cur+1,VIEW_ORDER.length-1):Math.max(cur-1,0);if(next!==cur)setView(VIEW_ORDER[next]);},{passive:true});})();
 let lastScrollY=0;
@@ -2864,6 +2864,8 @@ async function loadState(){try{const db=await openDB();const req=db.transaction(
 async function clearState(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete('main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}scheduleAutoBackup();}
 
 let RECORDS=[];let FILES=[];
+// La carga centralizada se inicializa DESPUÉS de crear FILES. Nunca acceder antes: evita el TDZ 'Cannot access FILES before initialization'.
+setTimeout(()=>{try{initDataManager();syncDataCenterUI();renderDataManager();}catch(e){console.warn('Carga de Datos init',e);}},0);
 const charts={};
 const STOPWORDS=new Set(['de','del','la','las','los','y','e','o','u','a','en','por','para','con','sin','al','el','un','una']);
 function cap(s){if(!s)return '';s=(s+'').toLowerCase().trim();if(!s)return '';return s.split(/\s+/).map((w,i)=>{if(i>0&&STOPWORDS.has(w))return w;if(/^\d+$/.test(w))return w;return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');}
@@ -3788,6 +3790,18 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
       const mir=raw?JSON.parse(raw):null;
       const ms=mir&&mir.state&&mir.state.main?mir.state.main:null;
       if(ms&&Array.isArray(ms.files)&&ms.files.length)st=ms;
+    }catch(e){}
+  }
+  if(!st||!Array.isArray(st.files)||!st.files.length){
+    // No se crea ni se guarda un estado vacío. Primero intentamos el respaldo espejo del sistema original.
+    try{
+      const raw=localStorage.getItem(MIRROR_KEY);
+      const mir=raw?JSON.parse(raw):null;
+      const ms=mir&&mir.state&&mir.state.main?mir.state.main:null;
+      if(ms&&Array.isArray(ms.files)&&ms.files.length){
+        st=ms;
+        try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(st,'main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}
+      }
     }catch(e){}
   }
   if(!st||!Array.isArray(st.files)||!st.files.length){
