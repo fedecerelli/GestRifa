@@ -985,6 +985,15 @@ body.nx-hide-floats .nx-float{display:none}
 #ctlDrop .b-ic svg{width:28px;height:28px}
 @media(max-width:900px){.control-kpis-extra{grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
+
+<style id="control-final-fixes">
+.sidebar .control-nav-item .control-nav-ic{display:inline-flex!important;width:20px!important;height:20px!important;align-items:center;justify-content:center;color:currentColor}
+.sidebar .control-nav-item .control-sidebar-svg{width:18px!important;height:18px!important;display:block!important}
+.bottom-nav .control-bottom-item{display:flex;align-items:center;justify-content:center;gap:4px}
+.bottom-nav .control-bottom-item .control-sidebar-svg{width:16px;height:16px}
+#ctlFile{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+#ctlDrop.drag-over{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--panel2))!important;transform:scale(1.005)}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1003,7 +1012,7 @@ body.nx-hide-floats .nx-float{display:none}
     <button data-view="pdf" data-icon="filetext"><span class="nav-ic"></span>Generador PDF</button>
     <button data-view="print" data-icon="printer"><span class="nav-ic"></span>Impresión</button>
     <div class="navlbl">Herramientas</div>
-    <button data-view="control" data-icon="clipboard"><span class="nav-ic"></span>Control</button>
+    <button data-view="control" class="control-nav-item"><span class="nav-ic control-nav-ic"><svg class="icon no-m control-sidebar-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="m9 13 2 2 4-4"/></svg></span><span class="nav-label">Control</span></button>
     <button data-view="sorteos" data-icon="target"><span class="nav-ic"></span>Sorteos</button>
     <button data-view="listados" data-icon="list"><span class="nav-ic"></span>Listados</button>
     <button data-view="tasks" data-icon="check"><span class="nav-ic"></span>Tareas<span class="nbadge" id="taskBadge" style="display:none">0</span></button>
@@ -1743,7 +1752,7 @@ body.nx-hide-floats .nx-float{display:none}
   <button data-view="datos" data-icon="table">Datos</button>
   <button data-view="tasks" data-icon="check">Tareas</button>
   <button data-view="print" data-icon="printer">Impr</button>
-  <button data-view="control" data-icon="clipboard">Control</button>
+  <button data-view="control" class="control-bottom-item"><svg class="icon no-m control-sidebar-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="m9 13 2 2 4-4"/></svg><span>Control</span></button>
   <button data-view="sorteos" data-icon="target">Sorteos</button>
   <button data-view="settings" data-icon="settings">Ajustes</button>
 </nav>
@@ -5278,6 +5287,7 @@ function mobilePrint(blob,name){
 
   /* recuperar último procesamiento */
   try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
+  window.noraControlLoadFile=loadControlFile;
   paintCfg();bindCfg();renderControl();
 
   /* integrar navegación existente */
@@ -5296,12 +5306,48 @@ function mobilePrint(blob,name){
   setTimeout(()=>{try{paintIcons(document.getElementById('view-control'));}catch(e){}},50);
 })();
 
-/* Fallback de carga: garantiza que el selector de Excel de Control siga funcionando aunque otra integración modifique listeners. */
-setTimeout(()=>{
-  const btn=document.getElementById('ctlLoadBtn'),inp=document.getElementById('ctlFile'),drop=document.getElementById('ctlDrop');
-  if(btn&&inp&&!btn.dataset.boundFallback){btn.dataset.boundFallback='1';btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();inp.click();});}
-  if(drop&&inp&&!drop.dataset.boundFallback){drop.dataset.boundFallback='1';drop.addEventListener('click',e=>{if(e.target!==inp){e.preventDefault();inp.click();}});}
-},120);
+/* ===== CONTROL · CARGA ROBUSTA DE EXCEL ===== */
+(function(){
+  'use strict';
+  function byId(id){return document.getElementById(id)}
+  function pick(){const i=byId('ctlFile');if(!i)return;try{i.value='';}catch(e){};i.click();}
+  function load(f){
+    if(!f)return;
+    if(typeof window.noraControlLoadFile==='function'){window.noraControlLoadFile(f);return;}
+    if(typeof XLSX==='undefined'){
+      const st=byId('ctlStatus');if(st){st.className='status-line err';st.textContent='No está disponible el motor Excel XLSX. Recargá la página con conexión a Internet.';}
+      if(typeof notify==='function')notify('No está disponible el motor Excel XLSX','err');
+      return;
+    }
+  }
+  function bind(){
+    const btn=byId('ctlLoadBtn'),inp=byId('ctlFile'),drop=byId('ctlDrop');
+    if(!btn||!inp||!drop)return false;
+    if(!btn.dataset.robustBound){
+      btn.dataset.robustBound='1';
+      btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();pick();},true);
+    }
+    if(!inp.dataset.robustBound){
+      inp.dataset.robustBound='1';
+      inp.addEventListener('change',function(e){const f=e.target.files&&e.target.files[0];if(f)load(f);},true);
+    }
+    if(!drop.dataset.robustBound){
+      drop.dataset.robustBound='1';
+      ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();drop.classList.add('drag-over','ready');},true));
+      ['dragleave','dragend'].forEach(ev=>drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('drag-over','ready');},true));
+      drop.addEventListener('drop',function(e){
+        e.preventDefault();e.stopPropagation();drop.classList.remove('drag-over','ready');
+        const files=e.dataTransfer&&e.dataTransfer.files;
+        if(files&&files.length)load(files[0]);
+      },true);
+      drop.addEventListener('click',function(e){if(e.target.closest('button,a,input'))return;e.preventDefault();e.stopPropagation();pick();},true);
+    }
+    return true;
+  }
+  let tries=0;const timer=setInterval(()=>{tries++;if(bind()||tries>40)clearInterval(timer)},150);
+  document.addEventListener('DOMContentLoaded',bind,{once:true});
+  window.noraControlPickExcel=pick;
+})();
 </script>
 
 </body></html>`);
