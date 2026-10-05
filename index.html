@@ -2753,8 +2753,8 @@ function renderProfiles(){
 document.getElementById('btnSaveProfile').onclick=()=>{const name=document.getElementById('profileName').value.trim();if(!name){notify('Poné un nombre','err');return;}const list=getProfiles();list.push({name,cfg:JSON.parse(JSON.stringify(CFG)),ts:Date.now()});saveProfiles(list);renderProfiles();document.getElementById('profileName').value='';notify('Perfil guardado','ok');};
 
 /* NAV */
-const TITLES={home:['Inicio','Centro de datos y resumen general.'],sorteos:['Sorteos','Quinielas, ganadores, PDF/JPG.'],pdf:['Generador de Informes PDF','Generá informes usando los datos ya cargados.'],dash:['Dashboard','Indicadores, tendencias y hallazgos.'],print:['Impresión por lotes','Seleccioná el reporte y controlá el progreso.'],datos:['Explorador','Más que una planilla.'],tasks:['Tareas','Gestor avanzado con Kanban, calendario y plantillas.'],listados:['Listados','Perfiles reutilizables.'],settings:['Configuración','Estilo, diseño, datos, perfiles y respaldos.']};
-const VIEW_ORDER=['home','dash','datos','pdf','print','sorteos','listados','tasks','settings'];
+const TITLES={home:['Inicio','Centro de datos y resumen general.'],control:['Control','Control mensual, resumen y boletas que no llegaron.'],sorteos:['Sorteos','Quinielas, ganadores, PDF/JPG.'],pdf:['Generador de Informes PDF','Generá informes usando los datos ya cargados.'],dash:['Dashboard','Indicadores, tendencias y hallazgos.'],print:['Impresión por lotes','Seleccioná el reporte y controlá el progreso.'],datos:['Explorador','Más que una planilla.'],tasks:['Tareas','Gestor avanzado con Kanban, calendario y plantillas.'],listados:['Listados','Perfiles reutilizables.'],settings:['Configuración','Estilo, diseño, datos, perfiles y respaldos.']};
+const VIEW_ORDER=['home','dash','datos','pdf','print','control','sorteos','listados','tasks','settings'];
 let navHistory=[],navIndex=-1;
 function setView(v,skipHistory){
   document.querySelectorAll('.nav button, .bottom-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
@@ -2886,6 +2886,7 @@ async function handleFiles(files,silent,opts){
     if(lf.length){try{await window.__sorteoLoadFiles(lf,true);}catch(e){if(window.AppLog?.error)AppLog.error('No se pudo sincronizar sorteo: '+(e.message||e));}}
   }
   rebuildRecords();renderFilesList();syncDataCenterUI();updateStatusLine(added,replaced,allErrors);
+  if(controlFiles.length){try{await saveState();}catch(e){}}
   if(!RECORDS.length){
     if(statusEl){statusEl.className=controlFiles.length&&!allErrors.length?'status-line ok':'status-line err';statusEl.textContent=controlFiles.length&&!allErrors.length?'Planilla(s) Control detectada(s) y procesada(s) desde el Centro de datos.':(allErrors.length?'No se pudieron cargar los archivos seleccionados.':'Sin registros de cobranza.');}
   }else{
@@ -2908,7 +2909,7 @@ function populateBulkPdfSelectors(){
   const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc'),type=document.getElementById('bulkPdfType');
   if(!src||!mes||!loc)return;
   const prev={src:src.value,mes:mes.value,loc:loc.value,type:type?type.value:'both'};
-  const sourceFiles=FILES.slice();
+  const sourceFiles=FILES.filter(f=>(f.kind||f.sourceType||'data')!=='control');
   src.innerHTML='<option value="">Todos los archivos</option>'+sourceFiles.map(f=>{const kind=classifyFileName(f.name)==='sorteo'?' · SORTEO':classifyFileName(f.name)==='cobranza'?' · COBRANZA':'';return `<option value="${esc(f.name)}">${esc(f.name)}${kind}</option>`;}).join('');
   if([...src.options].some(o=>o.value===prev.src))src.value=prev.src;
   if(type&&[...type.options].some(o=>o.value===prev.type))type.value=prev.type;
@@ -4613,7 +4614,7 @@ html[data-rm] *,html[data-rm] *::before,html[data-rm] *::after{animation:none!im
  *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--sub) 45%,transparent) transparent}
 }
 @media(min-width:1600px){.content{max-width:1520px}}
-#dataCenterCard{display:none!important}</style>
+#dataCenterCard{display:block!important}</style>
 <script id="nora-b0">
 /* ===== NORA v2 ===== */
 (()=>{
@@ -5011,7 +5012,7 @@ function mobilePrint(blob,name){
       el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
     });
     $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
-    $c('ctlLoadBtn').onclick=()=>{try{setView('home');}catch(e){}setTimeout(()=>{const i=$c('dataCenterFile');if(i)i.click();const c=$c('dataCenterCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},120);};
+    $c('ctlLoadBtn').onclick=()=>{try{window.setView('home');}catch(e){}setTimeout(()=>{const c=$c('dataCenterCard');if(c)c.style.display='block';if(c)c.scrollIntoView({behavior:'smooth',block:'start'});const i=$c('dataCenterFile');if(i){try{i.value='';}catch(e){}i.click();}},180);};
     $c('ctlDrop').onclick=()=>{try{setView('home');}catch(e){}setTimeout(()=>{const c=$c('dataCenterCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},120);};
     $c('ctlDrop').addEventListener('dragover',e=>{e.preventDefault();$c('ctlDrop').classList.add('ready');});
     $c('ctlDrop').addEventListener('dragleave',()=> $c('ctlDrop').classList.remove('ready'));
@@ -5827,9 +5828,9 @@ safe('side',()=>{const old=$('sbToggle'),tb=document.querySelector('.topbar');if
  const sync=()=>{const mini=document.body.classList.contains('sb-mini');b.setAttribute('aria-label',mini?'Expandir menú lateral':'Contraer menú lateral');b.title=b.getAttribute('aria-label');b.setAttribute('aria-expanded',String(!mini));};
  b.onclick=()=>{old.click();sync();};sync();new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});});
 
-/* ---------- Textos: ya no existe el "Centro de datos" ---------- */
-safe('texts',()=>{TITLES.home=['Inicio','Tu resumen del mes y lo que sigue.'];TITLES.pdf=['Cobranzas','Generá los informes PDF y mandalos a imprimir.'];TITLES.print=['Cobranzas','Elegí un PDF generado y controlá la impresión por lotes.'];
- const de=$('dashEmpty');if(de)de.textContent='El Dashboard usa los Excel que cargues desde Inicio (cobranza y archivos de sorteo "L -").';
+/* ---------- Textos: Centro de datos centralizado ---------- */
+safe('texts',()=>{TITLES.home=['Inicio','Centro de datos y resumen general.'];TITLES.control=['Control','Control mensual, resumen y boletas que no llegaron.'];TITLES.pdf=['Cobranzas','Generá los informes PDF y mandalos a imprimir.'];TITLES.print=['Cobranzas','Elegí un PDF generado y controlá la impresión por lotes.'];
+ const de=$('dashEmpty');if(de)de.textContent='El Dashboard usa los Excel cargados desde Inicio → Centro de datos.';
  const pn=$('pdfDataNoticeText');if(pn)pn.textContent='Los informes usan los Excel ya cargados.';
  const dc=$('dataCenterCard');if(dc){dc.classList.remove('hidden');dc.removeAttribute('aria-hidden');dc.style.display='';}
  document.querySelectorAll('[data-go=pdf]').forEach(b=>{if(/Informe PDF/.test(b.textContent)&&b.lastChild)b.lastChild.nodeValue='Cobranzas';});
