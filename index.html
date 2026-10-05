@@ -4774,7 +4774,7 @@ const safe=(n,f)=>{try{return f()}catch(e){console.warn('[nora-v2.3]',n,e)}};
 const PANELS='.card,.sidebar,.topbar,#nxWinP,.nx-win,.nr-qs,.nr-pv';
 const SMALL='.hero-kpi,.hrow,.file-pill,.report-item,.tb-g,.tb-search,.nr-w';
 const BTN='button:where(:not(.nr-q,.nr-star,.nr-chip,.skin-list-item))';
-const INP='input:where(:not([type=checkbox],[type=radio],[type=range],[type=file],[type=color])),select,textarea';
+const INP=':is(input:where(:not([type=checkbox],[type=radio],[type=range],[type=file],[type=color])),select,textarea)';
 const vars=(k,body)=>`:root[data-skin=${k}],:root[data-skin=${k}][data-theme=dark],:root[data-skin=${k}][data-theme=light]{${body}}\n`;
 
 /* ---------- 1) ARCILLA · claymorphism ---------- */
@@ -4808,7 +4808,7 @@ ${S} .nav button.active{background:var(--accent)!important;color:var(--accent-in
 ${S} :is(.tag,.pill){background:#fff1cf;color:var(--ink);border:0!important;border-radius:999px!important;box-shadow:inset 0 -3px 6px rgba(${C},.15),inset 0 3px 6px rgba(255,255,255,.6),0 4px 8px rgba(${C},.12)}
 ${S} .pill.ok{background:#d6f5db}${S} .pill.pend{background:#ffe2c2}
 ${S} :focus-visible{outline:3px solid #3a2a9e!important;outline-offset:3px}
-${S}[data-hc] :is(${PANELS},${SMALL},${BTN},${INP}){border:2px solid var(--ink)!important}
+${S}[data-hc] :is(${PANELS},${SMALL},${BTN},input,select,textarea){border:2px solid var(--ink)!important}
 `;}
 
 /* ---------- 2) SUAVE · neumorphism (Soft UI) ---------- */
@@ -4840,7 +4840,7 @@ ${S} .pill.ok{color:#0b6644;font-weight:700}
 ${S} table :is(th,td){border:0!important}
 ${S} table.mini tr:hover td{background:rgba(163,177,198,.18)}
 ${S} :focus-visible{outline:3px solid var(--accent)!important;outline-offset:3px}
-${S}[data-hc] :is(${PANELS},${SMALL},${BTN},${INP}){border:2px solid var(--ink)!important}
+${S}[data-hc] :is(${PANELS},${SMALL},${BTN},input,select,textarea){border:2px solid var(--ink)!important}
 @media(prefers-reduced-motion:reduce){${S} *{transition:none!important}}
 `;}
 
@@ -5092,17 +5092,16 @@ html html select{background-image:linear-gradient(45deg,transparent 50%,currentC
 html html :is(input,textarea,button):not(.nr-keep){background-image:none}
 html html :is(select,input,textarea){box-shadow:none;text-shadow:none}
 input[type=range]{accent-color:var(--accent)}input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
+input:is([type=search],[type=email],[type=password],[type=tel],[type=url],[type=time],[type=week]){background-color:var(--panel2);color:var(--ink);border:1px solid var(--line);font:inherit;padding:9px 11px;width:100%;box-sizing:border-box}
 /* iconos en lugar de emojis */
 .nr-i{width:1.1em;height:1.1em;flex:none;vertical-align:-.17em;stroke:currentColor;fill:none}.nr-i.fill{fill:currentColor}.nr-ico{display:inline-flex;align-items:center;margin:0 .15em}
 .batch-item.done::after{content:''!important;width:16px;height:16px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5L20 7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5L20 7'/%3E%3C/svg%3E") center/contain no-repeat}
 /* 7-9) fuera: insignia de homenaje y datos rápidos de la barra lateral */
 #skinHomageBadge,.skin-homage,.sidebar .status,#sideStatus{display:none!important}
 /* 8) barra lateral: solo hamburguesa */
-.sb-burger{width:40px;height:40px;flex:none;display:inline-grid;place-items:center;padding:0;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--ink);cursor:pointer}
+.sb-burger{width:40px;height:40px;flex:none;display:inline-grid;place-items:center;padding:0;margin-right:6px;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--ink);cursor:pointer;align-self:center}
+.topbar>.sb-burger~.topbar-text{margin-right:auto}
 .sb-burger:hover{color:var(--accent)}.sb-burger .nr-i{width:22px;height:22px}
-.sidebar .brand{display:flex;align-items:center;gap:8px}
-body.sb-mini .sidebar .brand{flex-direction:column;gap:6px;padding-bottom:12px}
-body.sb-mini .sidebar .brand img{max-width:40px;height:auto!important}
 /* 11) Cobranzas */
 .nr-cobtabs{display:flex;gap:6px;padding:5px;margin:0 0 14px;background:var(--panel2);border:1px solid var(--line);width:fit-content;max-width:100%}
 .nr-cobtabs button{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:0!important;background:transparent!important;color:var(--sub);font-weight:700;box-shadow:none!important}
@@ -5180,10 +5179,10 @@ function schedIc(el){iq.add(el);if(it)return;it=setTimeout(()=>{it=0;const q=[..
 new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1||n.nodeType===3)schedIc(n);}))).observe(document.body,{childList:true,subtree:true});
 safe('ic0',()=>iconize(document.body));
 
-/* ---------- Barra lateral: hamburguesa ---------- */
-safe('side',()=>{const old=$('sbToggle'),br=document.querySelector('.sidebar .brand');if(!old||!br)return;old.style.display='none';
- const b=mk('button','sb-burger',ico('menu'),{type:'button',id:'sbBurger'});br.prepend(b);
- const sync=()=>{const mini=document.body.classList.contains('sb-mini');b.setAttribute('aria-label',mini?'Expandir barra lateral':'Contraer barra lateral');b.title=b.getAttribute('aria-label');b.setAttribute('aria-expanded',String(!mini));};
+/* ---------- Barra lateral: hamburguesa en la barra superior (izquierda del título) ---------- */
+safe('side',()=>{const old=$('sbToggle'),tb=document.querySelector('.topbar');if(!old||!tb)return;old.style.display='none';
+ const b=mk('button','sb-burger',ico('menu'),{type:'button',id:'sbBurger'});tb.prepend(b);
+ const sync=()=>{const mini=document.body.classList.contains('sb-mini');b.setAttribute('aria-label',mini?'Expandir menú lateral':'Contraer menú lateral');b.title=b.getAttribute('aria-label');b.setAttribute('aria-expanded',String(!mini));};
  b.onclick=()=>{old.click();sync();};sync();new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});});
 
 /* ---------- Textos: ya no existe el "Centro de datos" ---------- */
@@ -5202,10 +5201,11 @@ window.setView=function(v){const r=_sv.apply(this,arguments);safe('cobnav',()=>{
 function cobBadge(){const n=typeof REPORTS!=='undefined'?REPORTS.length:0;document.querySelectorAll('.nr-cobtabs .cnt').forEach(c=>{c.textContent=n;c.style.display=n?'':'none';});}
 safe('cob',()=>{
  const nav=document.querySelector('.nav button[data-view=print]');if(nav)nav.remove();
- const pb=document.querySelector('.nav button[data-view=pdf]');if(pb){pb.innerHTML='<span class="nav-ic"></span>Cobranzas';pb.dataset.icon='filetext';}
+ const pb=document.querySelector('.nav button[data-view=pdf]');if(pb){pb.textContent='Cobranzas';pb.dataset.icon='filetext';delete pb.dataset.iconDone;}
  const lbl=[...document.querySelectorAll('.nav .navlbl')].find(x=>x.textContent.trim()==='Cobranza');
  if(lbl&&pb){const tl=[...document.querySelectorAll('.nav .navlbl')].find(x=>x.textContent.trim()==='Herramientas');if(tl)tl.after(pb);lbl.remove();}
- const bn=document.querySelector('.bottom-nav button[data-view=print]');if(bn)bn.remove();const bp=document.querySelector('.bottom-nav button[data-view=pdf]');if(bp){bp.textContent='Cobranza';delete bp.dataset.iconDone;}
+ const bn=document.querySelector('.bottom-nav button[data-view=print]');if(bn)bn.remove();const bp=document.querySelector('.bottom-nav button[data-view=pdf]');if(bp){bp.textContent='Cobranza';bp.dataset.icon='filetext';delete bp.dataset.iconDone;}
+ paintIcons(document);
  ['pdf','print'].forEach(v=>{const sec=$('view-'+v);if(!sec||sec.querySelector('.nr-cobtabs'))return;
   const bar=mk('div','nr-cobtabs','',{role:'tablist','aria-label':'Cobranzas'});
   bar.innerHTML=`<button type="button" role="tab" data-v="pdf" aria-selected="${v==='pdf'}"><b>1</b>Generar</button><button type="button" role="tab" data-v="print" aria-selected="${v==='print'}"><b>2</b>Imprimir<span class="cnt" style="display:none">0</span></button>`;
@@ -5255,7 +5255,7 @@ let TB=(()=>{let t=LS.get(TBK,null);if(t)return Object.assign(JSON.parse(JSON.st
  return b;})();
 const saveTB=()=>LS.set(TBK,TB);
 const FIX={title:['.topbar-text','Título de la sección'],back:['#btnBack','Atrás'],fwd:['#btnForward','Adelante'],search:['.tb-search','Buscador (Ctrl K)'],update:['#btnForceUpdate','Recargar datos vinculados'],console:['#btnConsole','Consola de logs'],addw:['#nxAddW','Agregar widget'],topw:['#nxTopW','Widgets'],theme:['#btnTheme','Tema claro / oscuro'],density:['#btnDensity','Densidad'],palette:['#nxTopP','Personalización y skins'],help:['#btnHelp','Ayuda y atajos']};
-const NM=Object.assign({edit:'Botón "Personalizar barra" (también: clic derecho sobre la barra o Alt+B)',clock:'Hora, temporizador y cronómetro',date:'Fecha y calendario del mes',weather:'Clima',tasks:'Tareas pendientes',note:'Nota rápida',calc:'Calculadora',data:'Archivos cargados',conn:'Estado de conexión'},Object.fromEntries(Object.entries(FIX).map(([k,v])=>[k,v[1]])));
+const NM=Object.assign({burger:'Botón de menú lateral (hamburguesa)',edit:'Botón "Personalizar barra" (también: clic derecho sobre la barra o Alt+B)',clock:'Hora, temporizador y cronómetro',date:'Fecha y calendario del mes',weather:'Clima',tasks:'Tareas pendientes',note:'Nota rápida',calc:'Calculadora',data:'Archivos cargados',conn:'Estado de conexión'},Object.fromEntries(Object.entries(FIX).map(([k,v])=>[k,v[1]])));
 const EL={};let ta=null,tbar=null;
 let popEl=null,popBtn=null;
 function closePop(){if(popEl){popEl.remove();popEl=null;}if(popBtn){popBtn.setAttribute('aria-expanded','false');popBtn=null;}}
@@ -5353,7 +5353,7 @@ function layout(){if(!ta)return;
  const all=Object.keys(EL).filter(k=>k!=='title');TB.order=[...TB.order.filter(i=>EL[i]),...all.filter(i=>!TB.order.includes(i))];
  TB.order.forEach((id,i)=>{const e=EL[id];e.style.order=i;e.style.display=TB.hide[id]?'none':'';});
  const om=$('btnOmni');if(om){om.style.order=TB.order.indexOf('search');om.style.display=TB.hide.search?'none':'';}
- if(EL.title)EL.title.style.display=TB.hide.title?'none':'';
+ if(EL.title)EL.title.style.display=TB.hide.title?'none':'';const bu=$('sbBurger');if(bu)bu.style.display=TB.hide.burger?'none':'';
  tbar.classList.toggle('tb-s',TB.size==='s');tbar.classList.toggle('tb-l',TB.size==='l');tbar.classList.toggle('tb-nolbl',!TB.labels);
  ta.style.justifyContent={start:'flex-start',center:'center',end:'flex-end'}[TB.align]||'flex-end';ta.style.flex='1 1 auto';
  tick();tbDate();tbTasks();tbConn();tbData();wxPaint();}
@@ -5374,6 +5374,7 @@ function openDlg(){closeDlg();closePop();const bg=mk('div','nr-dlg-bg','',{id:'n
  const name=id=>{if(id.startsWith('sc:')){const s=TB.sc.find(x=>'sc:'+x.id===id);return s?`${ico(s.icon)} Acceso: ${esc(s.label)}`:id;}return NM[id]||id;};
  const render=()=>{d.innerHTML=`<h3 id="nrTbT">Personalizar barra superior</h3><div class="hint">Todo se puede mostrar, ocultar u ordenar. Si ocultás este botón, abrís este panel con clic derecho sobre la barra o con Alt+B.</div>
  <h4>Elementos</h4>
+ <div class="row"><label class="nm"><input type="checkbox" data-v="burger" ${TB.hide.burger?'':'checked'}> ${NM.burger}</label></div>
  <div class="row"><label class="nm"><input type="checkbox" data-v="title" ${TB.hide.title?'':'checked'}> ${NM.title}</label></div>
  ${TB.order.map((id,i)=>`<div class="row"><label class="nm"><input type="checkbox" data-v="${id}" ${TB.hide[id]?'':'checked'}> ${name(id)}</label><button type="button" data-up="${i}" aria-label="Subir" ${i?'':'disabled'}>${ico('chevup')}</button><button type="button" data-dn="${i}" aria-label="Bajar" ${i<TB.order.length-1?'':'disabled'}>${ico('chevdown')}</button>${id.startsWith('sc:')?`<button type="button" data-rm="${id.slice(3)}" aria-label="Quitar acceso">${ico('trash')}</button>`:''}</div>`).join('')}
  <h4>Aspecto</h4><div class="grid2c"><label>Tamaño<select data-o="size"><option value="s" ${TB.size==='s'?'selected':''}>Compacta</option><option value="m" ${TB.size==='m'?'selected':''}>Normal</option><option value="l" ${TB.size==='l'?'selected':''}>Amplia</option></select></label><label>Alineación de los botones<select data-o="align"><option value="start" ${TB.align==='start'?'selected':''}>Izquierda</option><option value="center" ${TB.align==='center'?'selected':''}>Centro</option><option value="end" ${TB.align==='end'?'selected':''}>Derecha</option></select></label></div>
