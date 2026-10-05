@@ -977,6 +977,14 @@ body.nx-hide-floats .nx-float{display:none}
 @media(max-width:650px){.control-view .control-hero{grid-template-columns:1fr}.control-view .control-actions{justify-content:flex-start}.control-view .control-kpis{grid-template-columns:repeat(2,minmax(120px,1fr))}.control-view .control-options{grid-template-columns:1fr}.control-view .control-table{font-size:10.5px}.control-view .control-table th,.control-view .control-table td{padding:7px 8px}.control-view .control-brand h2{font-size:16px}}
 
 </style>
+<style>
+/* Control v2 */
+.control-icon svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+.control-kpis-extra{grid-template-columns:repeat(5,minmax(130px,1fr));}
+#ctlAdvancedGrid .card,#ctlReportsGrid .card{min-width:0}
+#ctlDrop .b-ic svg{width:28px;height:28px}
+@media(max-width:900px){.control-kpis-extra{grid-template-columns:repeat(2,minmax(0,1fr));}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1327,7 +1335,7 @@ body.nx-hide-floats .nx-float{display:none}
   <div class="card">
     <div class="control-hero">
       <div class="control-brand">
-        <div class="control-icon">✓</div>
+        <div class="control-icon"><span data-icon="clipboard"></span></div>
         <div>
           <h2>Control <span class="tag">Planilla de Control</span></h2>
           <p>Procesá la hoja <b>Control</b> y comparala automáticamente con <b>Base de Datos Original</b>.</p>
@@ -1335,19 +1343,22 @@ body.nx-hide-floats .nx-float{display:none}
       </div>
       <div class="control-actions">
         <button class="secondary miniBtn" id="ctlLoadBtn"><span class="b-ic" data-icon="upload"></span>Cargar Excel</button>
+        <button class="ghost miniBtn" id="ctlRecalcBtn"><span class="b-ic" data-icon="refresh"></span>Recalcular</button>
         <button class="ghost miniBtn" id="ctlClearBtn"><span class="b-ic" data-icon="trash"></span>Limpiar</button>
         <button class="primary miniBtn" id="ctlSummaryPdf"><span class="b-ic" data-icon="filetext"></span>Resumen PDF</button>
+        <button class="secondary miniBtn" id="ctlFullPdf"><span class="b-ic" data-icon="filetext"></span>Informe completo</button>
         <button class="secondary miniBtn" id="ctlMissingPdf"><span class="b-ic" data-icon="filetext"></span>No llegaron PDF</button>
-        <input id="ctlFile" type="file" accept=".xlsx,.xls" class="hidden">
+        <button class="ghost miniBtn" id="ctlExportXlsx"><span class="b-ic" data-icon="download"></span>Exportar XLSX</button>
+        <input id="ctlFile" type="file" accept=".xlsx,.xls,.xlsm" class="hidden">
       </div>
     </div>
   </div>
 
   <div class="card">
     <div id="ctlDrop" class="control-drop">
-      <div style="font-size:25px;margin-bottom:5px">⇧</div>
+      <div style="font-size:25px;margin-bottom:5px"><span data-icon="upload"></span></div>
       <b>Arrastrá la Planilla Control acá</b>
-      <div class="hint">Se requieren las hojas “Control” y “Base de Datos Original”. También podés hacer clic para seleccionarla.</div>
+      <div class="hint">Acepta .xlsx, .xls y .xlsm. Debe contener “Control” y “Base de Datos Original”. También podés hacer clic para elegirla.</div>
     </div>
     <div id="ctlFileInfo"></div>
     <div id="ctlStatus" class="status-line">Sin planilla de control cargada.</div>
@@ -1376,38 +1387,28 @@ body.nx-hide-floats .nx-float{display:none}
     </div>
   </div>
 
+  <div class="control-grid hidden" id="ctlAdvancedGrid">
+    <div class="card">
+      <div class="control-section-title"><div><h3>Resumen por cobrador</h3><small>Solo aparece cuando la columna Cobrador tiene datos</small></div></div>
+      <div class="control-table-wrap"><table class="control-table" id="ctlCollectorTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="control-section-title"><div><h3>Condiciones y calidad del control</h3><small>Estado de los registros y duplicados</small></div></div>
+      <div class="control-table-wrap"><table class="control-table" id="ctlQualityTable"></table></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="ctlInsightsCard">
+    <div class="control-section-title"><div><h3>Indicadores adicionales</h3><small>Lectura rápida para detectar diferencias y pendientes</small></div></div>
+    <div class="control-kpis control-kpis-extra" id="ctlInsights"></div>
+  </div>
+
   <div class="card hidden" id="ctlMissingCard">
     <div class="control-section-title">
       <div><h3>Boletas que no llegaron al control</h3><small>Comparación por número contra “Control”</small></div>
       <span class="control-badge warn" id="ctlMissingCount">0</span>
     </div>
     <div id="ctlMissingPreview"></div>
-  </div>
-
-  <div class="card">
-    <div class="control-section-title">
-      <div><h3>Personalización de las planillas</h3><small>Se guarda automáticamente para próximos controles</small></div>
-      <button class="ghost miniBtn" id="ctlResetCfg">Restaurar</button>
-    </div>
-    <div class="control-options">
-      <div class="field grow"><label>Título del resumen</label><input id="ctlTitle" type="text"></div>
-      <div class="field"><label>Orientación</label><select id="ctlOrient"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></div>
-      <div class="field"><label>Tipografía</label><select id="ctlFont"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></div>
-      <div class="field"><label>Tamaño</label><select id="ctlSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select></div>
-      <div class="field"><label>Márgenes</label><select id="ctlMargin"><option value="small">Angostos</option><option value="normal">Normales</option><option value="large">Amplios</option></select></div>
-      <div class="field"><label>Filas</label><select id="ctlRowH"><option value="small">Compactas</option><option value="normal">Normales</option><option value="large">Amplias</option></select></div>
-      <div class="field"><label>Subtítulo</label><input id="ctlSubtitle" type="text"></div>
-      <div class="field"><label>Pie de página</label><input id="ctlFooter" type="text"></div>
-    </div>
-    <div class="control-checks" style="margin-top:11px">
-      <label><input type="checkbox" id="ctlShowLocalities" checked> Resumen por localidad</label>
-      <label><input type="checkbox" id="ctlShowPercent" checked> Porcentajes</label>
-      <label><input type="checkbox" id="ctlZebra" checked> Filas alternadas</label>
-      <label><input type="checkbox" id="ctlShowLogo"> Logo</label>
-    </div>
-    <div class="control-note" style="margin-top:12px">
-      El estilo usa los colores activos de Nora y queda integrado al sistema de PDF existente. La comparación de faltantes se hace por número y soporta duplicados: si un número aparece dos veces en la Base y una sola vez en Control, queda una ocurrencia pendiente.
-    </div>
   </div>
 </section>
 
@@ -1570,6 +1571,35 @@ body.nx-hide-floats .nx-float{display:none}
             </div>
           </div>
           <div class="preview-canvas-wrap" style="margin-top:16px"><canvas id="pdfPrev"></canvas></div>
+        </div>
+        <div class="card" id="controlPdfDesignCard"><h2><span class="h-ic" data-icon="clipboard"></span>Planillas de Control <span class="tag">Control</span></h2>
+          <p class="hint">La misma personalización se aplica al <b>Resumen</b>, <b>Informe completo</b> y <b>Boletas que no llegaron al control</b>.</p>
+          <div class="row">
+            <div class="field grow"><label>Título del resumen</label><input id="ctlTitle" type="text"></div>
+            <div class="field grow"><label>Subtítulo</label><input id="ctlSubtitle" type="text"></div>
+            <div class="field"><label>Orientación</label><select id="ctlOrient"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div class="field"><label>Tipografía</label><select id="ctlFont"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></div>
+            <div class="field"><label>Tamaño</label><select id="ctlSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select></div>
+            <div class="field"><label>Márgenes</label><select id="ctlMargin"><option value="small">Angostos</option><option value="normal">Normales</option><option value="large">Amplios</option></select></div>
+            <div class="field"><label>Alto de fila</label><select id="ctlRowH"><option value="small">Compactas</option><option value="normal">Normales</option><option value="large">Amplias</option></select></div>
+            <div class="field grow"><label>Pie de página</label><input id="ctlFooter" type="text"></div>
+          </div>
+          <div class="control-checks" style="margin-top:11px">
+            <label><input type="checkbox" id="ctlShowLocalities" checked> Resumen por localidad</label>
+            <label><input type="checkbox" id="ctlShowPercent" checked> Porcentajes</label>
+            <label><input type="checkbox" id="ctlZebra" checked> Filas alternadas</label>
+            <label><input type="checkbox" id="ctlShowLogo"> Logo</label>
+            <label><input type="checkbox" id="ctlShowCollectors" checked> Cobradores</label>
+            <label><input type="checkbox" id="ctlShowQuality" checked> Calidad del control</label>
+          </div>
+          <div class="row" style="margin-top:10px;align-items:center">
+            <input id="ctlLogoFile" type="file" accept="image/png,image/jpeg" class="hidden">
+            <button class="ghost miniBtn" id="ctlLogoBtn" type="button"><span class="b-ic" data-icon="image"></span>Cargar logo de Control</button>
+            <button class="ghost miniBtn" id="ctlResetCfg" type="button"><span class="b-ic" data-icon="refresh"></span>Restaurar Control</button>
+            <span class="hint" id="ctlLogoName">Sin logo propio</span>
+          </div>
         </div>
         <div class="card"><h2><span class="h-ic" data-icon="filetext"></span>Informe de faltantes</h2>
           <div class="row">
@@ -4895,7 +4925,7 @@ function mobilePrint(blob,name){
     subtitle:'Control mensual de boletas y cuotas',
     footer:'Nora · Control de cobranza',
     orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
-    showLocalities:true,showPercent:true,zebra:true,showLogo:false,logo:''
+    showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:''
   };
   let CFGC=Object.assign({},DEF);
   try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
@@ -4919,11 +4949,13 @@ function mobilePrint(blob,name){
     return x||wb.SheetNames.find(s=>nrm(s).toLowerCase().replace(/\s+/g,' ')===wanted.toLowerCase().replace(/\s+/g,' '));
   };
   const saveCfg=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFGC));}catch(e){}};
+  function fileDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
   function paintCfg(){
     ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
     });
-    ['showLocalities','showPercent','zebra','showLogo'].forEach(k=>{
+    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
+    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
     });
   }
@@ -4933,7 +4965,8 @@ function mobilePrint(blob,name){
       if(el)el.addEventListener('input',()=>{CFGC[k]=el.value;saveCfg();});
       if(el)el?.addEventListener('change',()=>{CFGC[k]=el.value;saveCfg();});
     });
-    ['showLocalities','showPercent','zebra','showLogo'].forEach(k=>{
+    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
+    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
       el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
     });
@@ -4947,11 +4980,17 @@ function mobilePrint(blob,name){
     $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
     $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
     $c('ctlMissingPdf').onclick=()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlRecalcBtn').onclick=()=>{if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
+    $c('ctlFullPdf').onclick=()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlExportXlsx').onclick=()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlLogoBtn').onclick=()=>$c('ctlLogoFile').click();
+    $c('ctlLogoFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{CFGC.logo=await fileDataUrl(f);CFGC.logoName=f.name;CFGC.showLogo=true;saveCfg();paintCfg();notify('Logo de Control guardado','ok');}catch(err){notify('No se pudo cargar el logo','err');}};
   }
 
   async function loadControlFile(file){
     try{
-      if(!/\.xlsx?$/i.test(file.name)){notify('Seleccioná un Excel .xlsx o .xls','err');return;}
+      if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){notify('Seleccioná un Excel .xlsx, .xls o .xlsm','err');return;}
+      if(typeof XLSX==='undefined'){throw new Error('No se pudo cargar el motor de Excel (XLSX). Recargá la página y probá nuevamente.');}
       $c('ctlStatus').className='status-line';
       $c('ctlStatus').textContent='Leyendo '+file.name+'…';
       const buf=await file.arrayBuffer();
@@ -4962,7 +5001,7 @@ function mobilePrint(blob,name){
       const controlRows=XLSX.utils.sheet_to_json(wb.Sheets[shControl],{header:1,defval:null,raw:true});
       const baseRows=XLSX.utils.sheet_to_json(wb.Sheets[shBase],{header:1,defval:null,raw:true});
       CONTROL=buildControlModel(file.name,controlRows,baseRows);
-      try{localStorage.setItem(KEY+'_data',JSON.stringify(CONTROL));}catch(e){}
+      try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}
       renderControl();
       $c('ctlStatus').className='status-line ok';
       $c('ctlStatus').textContent=`Planilla procesada: ${CONTROL.fileName} · ${money(CONTROL.base.length)} vendidas · ${money(CONTROL.control.length)} controladas · ${money(CONTROL.missing.length)} faltantes.`;
@@ -5005,6 +5044,8 @@ function mobilePrint(blob,name){
       base.push({num,apellido:nrm(r[bidx.ape]),nombre:nrm(r[bidx.nom]),calle:nrm(r[bidx.calle]),nro:nrm(r[bidx.nro]),piso:nrm(r[bidx.piso]),dpto:nrm(r[bidx.dpto]),pago:numVal(r[bidx.pago]),mes:nrm(r[bidx.mes]),situacion:nrm(r[bidx.sit]),localidad:nrm(r[bidx.loc]),duplicado:numVal(r[bidx.dup])});
     }
     const controlCount=new Map();
+    const uniqueSet=new Set(), conditionMap={}, cobradorMap={}, paymentDist={};
+    control.forEach(r=>{uniqueSet.add(r.num);conditionMap[r.condicion||'Sin informar']=(conditionMap[r.condicion||'Sin informar']||0)+1;const cob=r.cobrador||'Sin cobrador';if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};cobradorMap[cob].count++;cobradorMap[cob].paid+=r.pag;cobradorMap[cob].bajas+=r.baja;paymentDist[r.pag]=(paymentDist[r.pag]||0)+1;});
     control.forEach(r=>controlCount.set(r.num,(controlCount.get(r.num)||0)+1));
     const used=new Map(),missing=[];
     base.forEach(r=>{
@@ -5013,6 +5054,11 @@ function mobilePrint(blob,name){
     });
     const baja=control.filter(r=>r.baja===1);
     const counted=control.filter(r=>/contad/i.test(r.condicion)).length;
+    const duplicateFreq={};control.forEach(r=>duplicateFreq[r.num]=(duplicateFreq[r.num]||0)+1);
+    const duplicateNumbers=Object.values(duplicateFreq).filter(v=>v>1).length;
+    const duplicateRows=Object.values(duplicateFreq).filter(v=>v>1).reduce((a,v)=>a+v,0);
+    const firstPayment=control.filter(r=>r.pag===1).length;
+    const fullPayment=control.filter(r=>r.pag>=10).length;
     const controlledNonBaja=control.filter(r=>r.baja!==1).length;
     const completed=controlledNonBaja+missing.length;
     const totalPaid=control.reduce((a,r)=>a+r.pag,0);
@@ -5031,6 +5077,7 @@ function mobilePrint(blob,name){
       }
     });
     dist[10]+=missing.length;
+    const baseByNum=new Map();base.forEach(r=>{if(!baseByNum.has(r.num))baseByNum.set(r.num,r);});
     const localMap={};
     base.forEach(r=>{
       const l=r.localidad||'Sin localidad';
@@ -5038,13 +5085,13 @@ function mobilePrint(blob,name){
       localMap[l].sold++;
     });
     control.forEach(r=>{
-      const b=base.find(x=>x.num===r.num);const l=b?.localidad||'Sin localidad';
+      const b=baseByNum.get(r.num);const l=b?.localidad||'Sin localidad';
       if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
       localMap[l].controlled++;localMap[l].paid+=r.pag;if(r.baja===1)localMap[l].bajas++;
     });
     missing.forEach(r=>{const l=r.localidad||'Sin localidad';if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};localMap[l].missing++;});
     let period=base.map(r=>r.mes).find(Boolean)||'';
-    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)}};
+    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,firstPayment,fullPayment,uniqueControl:uniqueSet.size,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},_rawSource:{controlRows,baseRows}};
   }
   function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
 
@@ -5052,6 +5099,8 @@ function mobilePrint(blob,name){
     const has=!!CONTROL;
     $c('ctlDataCard').classList.toggle('hidden',!has);
     $c('ctlReportsGrid').classList.toggle('hidden',!has);
+    $c('ctlAdvancedGrid').classList.toggle('hidden',!has);
+    $c('ctlInsightsCard').classList.toggle('hidden',!has);
     $c('ctlMissingCard').classList.toggle('hidden',!has);
     if(!has){
       $c('ctlFileInfo').innerHTML='';
@@ -5096,6 +5145,27 @@ function mobilePrint(blob,name){
       arr.map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${money(v.sold)}</td><td class="num">${money(v.controlled)}</td><td class="num">${money(v.missing)}</td><td class="num">${money(v.bajas)}</td></tr>`).join('')+
       `<tr class="total"><td>Total</td><td class="num">${money(c.base.length)}</td><td class="num">${money(c.control.length)}</td><td class="num">${money(c.missing.length)}</td><td class="num">${money(c.baja.length)}</td></tr></tbody>`;
   }
+  function renderCollectors(){
+    const box=$c('ctlCollectorTable'),wrap=box.closest('.card');
+    if(!CFGC.showCollectors){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
+    const m=CONTROL.cobradorMap||{},arr=Object.entries(m).sort((a,b)=>b[1].count-a[1].count||a[0].localeCompare(b[0],'es'));
+    const real=arr.filter(([name])=>name!=='Sin cobrador');
+    if(!real.length){wrap.classList.add('hidden');return;}
+    wrap.classList.remove('hidden');
+    const total=CONTROL.control.length;box.innerHTML='<thead><tr><th>Cobrador</th><th class="num">Boletas</th><th class="num">Cuotas</th><th class="num">Bajas</th><th class="num">Promedio</th><th class="num">%</th></tr></thead><tbody>'+arr.map(([name,v])=>`<tr><td>${esc(name)}</td><td class="num">${money(v.count)}</td><td class="num">${money(v.paid)}</td><td class="num">${money(v.bajas)}</td><td class="num">${v.count?(v.paid/v.count).toFixed(2):'0'}</td><td class="num">${CFGC.showPercent?pct(v.count,total):'—'}</td></tr>`).join('')+`<tr class="total"><td>Total</td><td class="num">${money(total)}</td><td class="num">${money(CONTROL.totalPaid)}</td><td class="num">${money(CONTROL.baja.length)}</td><td class="num">${total?(CONTROL.totalPaid/total).toFixed(2):'0'}</td><td class="num">100%</td></tr></tbody>`;
+  }
+  function renderQuality(){
+    const box=$c('ctlQualityTable'),wrap=box.closest('.card');
+    if(!CFGC.showQuality){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
+    const cond=Object.entries(CONTROL.conditionMap||{}).sort((a,b)=>b[1]-a[1]);
+    const dup=CONTROL.duplicateNumbers||0, repeated=CONTROL.duplicateRows||0;
+    box.innerHTML='<thead><tr><th>Indicador</th><th class="num">Cantidad</th><th class="num">%</th></tr></thead><tbody>'+cond.map(([k,v])=>`<tr><td>Condición: ${esc(k||'Sin informar')}</td><td class="num">${money(v)}</td><td class="num">${CFGC.showPercent?pct(v,CONTROL.control.length):'—'}</td></tr>`).join('')+`<tr><td>Números repetidos en Control</td><td class="num">${money(dup)}</td><td class="num">${CFGC.showPercent?pct(dup,CONTROL.control.length):'—'}</td></tr><tr><td>Filas que participan de duplicados</td><td class="num">${money(repeated)}</td><td class="num">${CFGC.showPercent?pct(repeated,CONTROL.control.length):'—'}</td></tr><tr><td>Registros con 1ª cuota</td><td class="num">${money(CONTROL.firstPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.firstPayment,CONTROL.control.length):'—'}</td></tr><tr><td>Boletas con 10 cuotas</td><td class="num">${money(CONTROL.fullPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.fullPayment,CONTROL.control.length):'—'}</td></tr></tbody>`;
+  }
+  function renderInsights(){
+    const c=CONTROL,box=$c('ctlInsights');
+    const vals=[['Cobertura del control',pct(c.control.length,c.base.length),'ok'],['Pendientes',pct(c.missing.length,c.base.length),'warn'],['Tasa de bajas',pct(c.baja.length,c.control.length),'danger'],['Promedio de cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0',''],['Números únicos controlados',money(c.uniqueControl),'']];
+    box.innerHTML=vals.map(x=>`<div class="control-kpi ${x[2]||''}"><div class="v">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');
+  }
   function renderMissing(){
     const c=CONTROL;
     $c('ctlMissingCount').textContent=money(c.missing.length);
@@ -5119,7 +5189,7 @@ function mobilePrint(blob,name){
     doc.setFont(CFGC.font,'normal');doc.setFontSize(8.5);doc.setTextColor(105,112,122);
     doc.text(subtitle||'',M,43);
     doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
-    if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,'PNG',W-M-30,8,30,15);}catch(e){}}
+    if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,String(CFGC.logo).startsWith('data:image/jpeg')?'JPEG':'PNG',W-M-30,8,30,15);}catch(e){}}
   }
   function drawFooter(doc){
     const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),pages=doc.internal.getNumberOfPages();
@@ -5179,6 +5249,31 @@ function mobilePrint(blob,name){
     drawFooter(doc);
     await savePdfBlob(doc.output('blob'),`Boletas no llegaron al Control - ${safeCtl(c.period||'control')}.pdf`);
   }
+  async function generateControlFullPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,'Informe completo de Control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen ejecutivo',M,58);
+    const exec=[['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan llegar al control',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0']];
+    doc.autoTable({startY:63,head:[['Indicador','Valor']],body:exec,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
+    let y=doc.lastAutoTable.finalY+9;
+    const addTable=(title,head,body)=>{if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text(title,M,y);y+=5;doc.autoTable({startY:y,head:[head],body,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});y=doc.lastAutoTable.finalY+9;};
+    addTable('Distribución de cuotas',['Cuotas','Cantidad','Total cuotas','%'],Array.from({length:10},(_,i)=>10-i).map(q=>[q,c.dist[q]||0,(q*(c.dist[q]||0)),CFGC.showPercent?pct(c.dist[q]||0,c.base.length):'—']));
+    if(CFGC.showLocalities)addTable('Resumen por localidad',['Localidad','Vendidas','Controladas','Faltan','Bajas'],Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]));
+    if(CFGC.showCollectors&&Object.keys(c.cobradorMap||{}).length)addTable('Resumen por cobrador',['Cobrador','Boletas','Cuotas','Bajas'],Object.entries(c.cobradorMap).sort((a,b)=>b[1].count-a[1].count).map(([l,v])=>[l,v.count,v.paid,v.bajas]));
+    if(CFGC.showQuality)addTable('Calidad del control',['Indicador','Cantidad'],[['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers],['Filas en duplicados',c.duplicateRows],['Con 1ª cuota',c.firstPayment],['Con 10 cuotas',c.fullPayment],['Contados',c.counted]]);
+    if(c.missing.length)addTable('Boletas que no llegaron',['N°','Apellido','Nombre','Calle','Nro','Localidad'],c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad]));
+    drawFooter(doc);await savePdfBlob(doc.output('blob'),`Informe completo Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  async function exportControlXlsx(){
+    const c=CONTROL,wb=XLSX.utils.book_new();
+    const resumen=[['Indicador','Valor'],['Período',c.period],['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Contados',c.counted],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):0],['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.localMap).map(([l,v])=>({Localidad:l,Vendidas:v.sold,Controladas:v.controlled,Faltan:v.missing,Bajas:v.bajas,Cuotas:v.paid}))), 'Localidades');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.cobradorMap||{}).map(([l,v])=>({Cobrador:l,Boletas:v.count,Cuotas:v.paid,Bajas:v.bajas,Promedio:v.count?v.paid/v.count:0}))), 'Cobradores');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.missing.map(r=>({'N°':r.num,Apellido:r.apellido,Nombre:r.nombre,Calle:r.calle,Nro:r.nro,Localidad:r.localidad}))), 'No llegaron');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.control.map(r=>({'N°':r.num,Pag:r.pag,Baja:r.baja,Cobrador:r.cobrador,Condicion:r.condicion,Duplicado:r.duplicado}))), 'Control detalle');
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveXlsxBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Analisis Control - ${safeCtl(c.period||'control')}.xlsx`);notify('Análisis XLSX exportado','ok');
+  }
   function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
 
   /* recuperar último procesamiento */
@@ -5200,6 +5295,13 @@ function mobilePrint(blob,name){
   /* actualiza el orden del buscador y accesos */
   setTimeout(()=>{try{paintIcons(document.getElementById('view-control'));}catch(e){}},50);
 })();
+
+/* Fallback de carga: garantiza que el selector de Excel de Control siga funcionando aunque otra integración modifique listeners. */
+setTimeout(()=>{
+  const btn=document.getElementById('ctlLoadBtn'),inp=document.getElementById('ctlFile'),drop=document.getElementById('ctlDrop');
+  if(btn&&inp&&!btn.dataset.boundFallback){btn.dataset.boundFallback='1';btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();inp.click();});}
+  if(drop&&inp&&!drop.dataset.boundFallback){drop.dataset.boundFallback='1';drop.addEventListener('click',e=>{if(e.target!==inp){e.preventDefault();inp.click();}});}
+},120);
 </script>
 
 </body></html>`);
