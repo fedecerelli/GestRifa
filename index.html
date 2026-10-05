@@ -5640,6 +5640,8 @@ window.nrIfPrint=function(iframe,url){
     drawFooter(doc);
     await savePdfBlob(doc.output('blob'),reportFilename('Resumen Control'));
   }
+  function formatControlMissingNum(n){const raw=String(n??'').trim();const num=Number(raw);return Number.isFinite(num)&&num>=0&&Number.isInteger(num)?String(num).padStart(3,'0'):raw;}
+  function sortControlMissing(rows){return [...rows].sort((a,b)=>{const na=Number(a.num),nb=Number(b.num);if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;return String(a.num??'').localeCompare(String(b.num??''),'es',{numeric:true});});}
   async function generateControlMissingPdf(){
     const c=CONTROL,{jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
@@ -5647,7 +5649,7 @@ window.nrIfPrint=function(iframe,url){
     drawHeader(doc,'Boletas que no llegaron al control',reportSubtitle());
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
     doc.text('Cantidad: '+money(c.missing.length),M,58);
-    const body=c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
+    const body=sortControlMissing(c.missing).map(r=>[formatControlMissingNum(r.num),r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
     if(!body.length){doc.setFont(CFGC.font,'normal');doc.setFontSize(10);doc.text('Todas las boletas de la Base de Datos Original llegaron al Control.',M,70);drawFooter(doc);await savePdfBlob(doc.output('blob'),reportFilename('Boletas no llegaron'));return;}
     doc.autoTable({startY:64,head:[['N°','Apellido','Nombre','Calle','Nro','Localidad','Estado']],body,theme:'grid',
       styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2,overflow:'linebreak'},
@@ -5668,7 +5670,7 @@ window.nrIfPrint=function(iframe,url){
     if(CFGC.showLocalities)addTable('Resumen por localidad',['Localidad','Vendidas','Controladas','Faltan','Bajas'],Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]));
     if(CFGC.showCollectors&&Object.keys(c.cobradorMap||{}).length)addTable('Resumen por cobrador',['Cobrador','Boletas','Cuotas','Bajas'],Object.entries(c.cobradorMap).sort((a,b)=>b[1].count-a[1].count).map(([l,v])=>[l,v.count,v.paid,v.bajas]));
     if(CFGC.showQuality)addTable('Calidad del control',['Indicador','Cantidad'],[['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers],['Filas en duplicados',c.duplicateRows],['Con 1ª cuota',c.firstPayment],['Con 10 cuotas',c.fullPayment],['Contados',c.counted]]);
-    if(c.missing.length)addTable('Boletas que no llegaron',['N°','Apellido','Nombre','Calle','Nro','Localidad'],c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad]));
+    if(c.missing.length)addTable('Boletas que no llegaron',['N°','Apellido','Nombre','Calle','Nro','Localidad'],sortControlMissing(c.missing).map(r=>[formatControlMissingNum(r.num),r.apellido,r.nombre,r.calle,r.nro,r.localidad]));
     drawFooter(doc);await savePdfBlob(doc.output('blob'),reportFilename('Informe completo Control'));
   }
   async function exportControlXlsx(){
