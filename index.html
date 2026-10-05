@@ -2794,6 +2794,7 @@ function setView(v,skipHistory){
   if(v==='settings')setTimeout(()=>{previewPdfStyle();previewLstStyle();previewGapsStyle();try{renderStyle();}catch(e){}},50);
   if(v==='home')setTimeout(renderHome,30);if(v==='carga')setTimeout(renderDataManager,30);
   if(v==='datos')setTimeout(renderDataViewer,50);
+  if(v==='control')setTimeout(()=>{try{if(typeof window.noraControlSync==='function')window.noraControlSync(false);}catch(e){}},30);
   if(v==='tasks')setTimeout(renderTasks,30);
   if(v==='listados')setTimeout(renderListados,50);
   if(v==='print')setTimeout(renderReports,30);
@@ -2899,10 +2900,10 @@ function parseRecords(rows,sourceName){let hIdx=-1;for(let i=0;i<Math.min(rows.l
 const dz=document.getElementById('dz'),fileInput=document.getElementById('file');
 function syncDataCenterUI(){
   const count=document.getElementById('dataCenterCount'),st=document.getElementById('dataCenterStatus'),list=document.getElementById('dataCenterFiles'),actions=document.getElementById('dataCenterActions');
-  const controlCount=FILES.filter(f=>fileHasDestination(f,'control')||f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name)).length;
+  const controlCount=FILES.filter(f=>f.kind==='control'||f.sourceType==='control').length;
   if(count)count.textContent=`${FILES.length} archivo(s) · ${RECORDS.length} registro(s) · ${controlCount} Control`;
   if(st)st.textContent=FILES.length?`${RECORDS.length} registros disponibles para todo el sistema${controlCount?' · '+controlCount+' planilla(s) Control detectada(s)':''}.`:'Sin datos cargados.';
-  if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(+b.dataset.dcRemove,1);rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
+  if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{const __rm=FILES[+b.dataset.dcRemove]?.name;FILES.splice(+b.dataset.dcRemove,1);if(__rm&&window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
   if(actions)actions.classList.toggle('hidden',!FILES.length);
 }
 function initDataCenterCommunication(){const input=document.getElementById('dcCommTemplate');if(!input)return;const key='nora_comm_template_v1';const def='{localidad} · {institucion} · {fecha} · N° {numero} · {apellido}, {nombre}';try{input.value=localStorage.getItem(key)||def;}catch(e){input.value=def;}const getText=()=>{const r=DV.allSorted&&DV.allSorted.length?DV.allSorted[0]:RECORDS[0];const vals={localidad:r?.localidad||window.S?.files?.[0]?.loc||'',institucion:r?.source||window.S?.files?.[0]?.title||'',fecha:new Date().toLocaleDateString('es-AR'),numero:r?.num||'',apellido:r?.apellido||'',nombre:r?.nombre||''};return input.value.replace(/\{(localidad|institucion|fecha|numero|apellido|nombre)\}/g,(_,k)=>vals[k]||'');};document.getElementById('dcCommSave')?.addEventListener('click',()=>{try{localStorage.setItem(key,input.value);}catch(e){}notify('Plantilla guardada','ok');});document.getElementById('dcCommWhatsApp')?.addEventListener('click',()=>{const text=getText();window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');});document.getElementById('dcCommEmail')?.addEventListener('click',()=>{const subject='Nora Suite';window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(getText());});}
@@ -2964,6 +2965,7 @@ async function handleFiles(files,silent,opts){
       }
     }catch(err){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:err.message||String(err)}]});}
   }
+  if(!controlFiles.length&&typeof window.noraControlSync==='function'){const __cf=FILES.find(f=>f.raw&&fileHasDestination(f,'control')&&files.some(x=>x.name===f.name));if(__cf){try{await window.noraControlSync(true);}catch(e){}}}
   if(!opts?.fromSorteo && typeof window.__sorteoLoadFiles==='function'){
     const lf=files.filter(f=>isSorteoFileName(f.name));
     if(lf.length){try{await window.__sorteoLoadFiles(lf,true);}catch(e){if(window.AppLog?.error)AppLog.error('No se pudo sincronizar sorteo: '+(e.message||e));}}
@@ -2993,7 +2995,7 @@ function renderDataManager(){
   if(!FILES.length){list.innerHTML='<div class="dm-empty"><span class="b-ic" data-icon="upload"></span><br><b>No hay archivos cargados</b><br>Cargá uno o varios Excel arriba para comenzar.</div>';paintIcons();return;}
   list.innerHTML=FILES.map((f,i)=>{
     f.destinations=normalizeDestinationsForFile(f,f.destinations);
-    const isCtl=fileHasDestination(f,'control')||f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name);
+    const isCtl=f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name);
     const isSort=isSorteoFileName(f.name);
     const isU=/^U\s*-/.test(normalizeFileNameForRole(f.name));
     const n=(f.records||[]).filter(r=>!r._excluded).length,dest=getFileDestinations(f);
@@ -3003,15 +3005,13 @@ function renderDataManager(){
     const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f||ch.disabled)return;
     let d=getFileDestinations(f);if(ch.checked&&!d.includes(id))d.push(id);if(!ch.checked)d=d.filter(x=>x!==id);
     f.destinations=normalizeDestinationsForFile(f,d);await saveState();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
+    if(id==='control'){if(ch.checked){if(typeof window.noraControlSync==='function')await window.noraControlSync(true);}else if(window.noraControlCurrentName&&window.noraControlCurrentName()===f.name&&!FILES.some(x=>x!==f&&x.raw&&fileHasDestination(x,'control'))){window.noraControlClear&&window.noraControlClear();}}
     if(document.getElementById('view-datos')?.classList.contains('active'))renderDataViewer();
-    if(id==='control'&&typeof window.noraControlSyncFromDataCenter==='function'){
-      try{await window.noraControlSyncFromDataCenter();}catch(e){console.error(e);notify('No se pudo sincronizar Control: '+(e.message||e),'err',{duration:8000});}
-    }
     if(document.getElementById('view-dash')?.classList.contains('active'))updateDashboard();
   });
   list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=isSorteoFileName(f.name)?['sorteos']:['dashboard'];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
-  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Eliminar '+FILES[i].name+' de Carga de Datos?'))return;FILES.splice(i,1);rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Eliminar '+FILES[i].name+' de Carga de Datos?'))return;const __rm=FILES[i].name;FILES.splice(i,1);if(window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   paintIcons();
 }
 function initDataManager(){
@@ -3865,9 +3865,6 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
   try{await tryReconnectBackup();}catch(e){}
   try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}
 })();
-
-/* ===== CONTROL · sincronización definitiva con Carga de Datos ===== */
-(function(){let lastSig='',tries=0;async function sync(){try{if(typeof FILES==='undefined'||!Array.isArray(FILES)||typeof window.noraControlLoadFile!=='function')return;const cs=FILES.filter(f=>f&&fileHasDestination(f,'control'));if(!cs.length){if(CONTROL&&lastSig){CONTROL=null;try{localStorage.removeItem('nora_control_v1_data');}catch(e){}try{if(window.noraControlRender)window.noraControlRender();}catch(e){}}lastSig='';return;}const f=cs[0],sig=f.name+'|'+(f.raw?.byteLength||0);if(sig===lastSig&&CONTROL)return;if(!f.raw)return;let b=f.raw;if(b instanceof Uint8Array)b=b.buffer;if(!(b instanceof ArrayBuffer))b=new Uint8Array(b).buffer;await window.noraControlLoadFile(new File([b],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));lastSig=sig;try{renderDataManager();syncDataCenterUI();}catch(e){}}catch(e){console.warn('Sincronización Control',e);}}window.noraControlSyncFromDataCenter=sync;const t=setInterval(async()=>{await sync();if(++tries>100)clearInterval(t);},250);window.addEventListener('load',()=>setTimeout(sync,300));})();
 
 window.addEventListener('beforeunload',()=>{try{if(backupFileHandle)writeAutoBackup('cierre');}catch(e){}});
 
@@ -5161,9 +5158,8 @@ function mobilePrint(blob,name){
   if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}<script>(function(){function bind(){const map={ctlSummaryPdf:'summary',ctlFullPdf:'full',ctlMissingPdf:'missing',ctlExportXlsx:'xlsx',ctlClearBtn:'clear',ctlRecalcBtn:'recalc'};Object.entries(map).forEach(([id,a])=>{const b=document.getElementById(id),fn=window.noraControlActions&&window.noraControlActions[a];if(!b||!fn||b.dataset.finalControlBound==='1')return;b.dataset.finalControlBound='1';b.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();try{fn();}catch(err){console.error(err);if(typeof notify==='function')notify('No se pudo ejecutar la acción','err');}},true);});const l=document.getElementById('ctlLoadBtn');if(l&&!l.dataset.finalControlBound){l.dataset.finalControlBound='1';l.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();if(typeof window.setView==='function')window.setView('carga');},true);}}const t=setInterval(()=>{bind();if(document.readyState==='complete')clearInterval(t);},200);document.addEventListener('DOMContentLoaded',bind,{once:true});})();</script>
-</body></html>`);
-w.document.close();
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}</body></html>`);
+  w.document.close();
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
   const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
@@ -5178,6 +5174,439 @@ window.nrIfPrint=function(iframe,url){
  if(!isMobile()){try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}return;}
  fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));};
 })();
+/* ================= CONTROL — Planilla Control ================= */
+(function(){
+  'use strict';
+  const KEY='nora_control_v1';
+  const DEF={
+    title:'Resumen del control',
+    subtitle:'Control mensual de boletas y cuotas',
+    footer:'Nora · Control de cobranza',
+    orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
+    showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:''
+  };
+  let CFGC=Object.assign({},DEF);
+  try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
+  let CONTROL=null;
+
+  const $c=id=>document.getElementById(id);
+  const nrm=v=>String(v==null?'':v).trim();
+  const keyNum=v=>{
+    if(v==null||v==='')return '';
+    if(typeof v==='number'&&Number.isFinite(v))return String(Math.trunc(v));
+    let x=nrm(v).replace(/\s+/g,'');
+    if(/^\d+\.0+$/.test(x))x=x.split('.')[0];
+    return x;
+  };
+  const numVal=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+  const money=n=>new Intl.NumberFormat('es-AR').format(Math.round(n||0));
+  const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'0,0%';
+  const capCtl=v=>nrm(v).toLocaleUpperCase('es-AR');
+  const sheetName=(wb,wanted)=>{
+    const x=wb.SheetNames.find(s=>nrm(s).toLowerCase()===wanted.toLowerCase());
+    return x||wb.SheetNames.find(s=>nrm(s).toLowerCase().replace(/\s+/g,' ')===wanted.toLowerCase().replace(/\s+/g,' '));
+  };
+  const saveCfg=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFGC));}catch(e){}};
+  function fileDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
+  function paintCfg(){
+    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
+    });
+    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
+    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
+    });
+  }
+  function bindCfg(){
+    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
+      if(el)el.addEventListener('input',()=>{CFGC[k]=el.value;saveCfg();});
+      if(el)el?.addEventListener('change',()=>{CFGC[k]=el.value;saveCfg();});
+    });
+    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
+    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
+      el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
+    });
+    $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
+    $c('ctlLoadBtn').onclick=()=>{try{window.setView('carga');}catch(e){}};
+    /* La carga de archivos NO existe en Control. Todo entra por Carga de Datos. */
+    $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
+    $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlMissingPdf').onclick=()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlRecalcBtn').onclick=async()=>{if(typeof syncFromFiles==='function'&&await syncFromFiles(true)){notify('Control recalculado','ok');return;}if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
+    $c('ctlFullPdf').onclick=()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlExportXlsx').onclick=()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlLogoBtn').onclick=()=>$c('ctlLogoFile').click();
+    $c('ctlLogoFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{CFGC.logo=await fileDataUrl(f);CFGC.logoName=f.name;CFGC.showLogo=true;saveCfg();paintCfg();notify('Logo de Control guardado','ok');}catch(err){notify('No se pudo cargar el logo','err');}};
+  }
+
+  async function loadControlFile(file){
+    try{
+      if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){notify('Seleccioná un Excel .xlsx, .xls o .xlsm','err');return;}
+      if(typeof XLSX==='undefined'){throw new Error('No se pudo cargar el motor de Excel (XLSX). Recargá la página y probá nuevamente.');}
+      $c('ctlStatus').className='status-line';
+      $c('ctlStatus').textContent='Leyendo '+file.name+'…';
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      const shControl=sheetName(wb,'Control');
+      const shBase=sheetName(wb,'Base de Datos Original');
+      if(!shControl||!shBase)throw new Error('El Excel debe tener las hojas “Control” y “Base de Datos Original”.');
+      const controlRows=XLSX.utils.sheet_to_json(wb.Sheets[shControl],{header:1,defval:null,raw:true});
+      const baseRows=XLSX.utils.sheet_to_json(wb.Sheets[shBase],{header:1,defval:null,raw:true});
+      CONTROL=buildControlModel(file.name,controlRows,baseRows);
+      try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}
+      renderControl();
+      $c('ctlStatus').className='status-line ok';
+      $c('ctlStatus').textContent=`Planilla procesada: ${CONTROL.fileName} · ${money(CONTROL.base.length)} vendidas · ${money(CONTROL.control.length)} controladas · ${money(CONTROL.missing.length)} faltantes.`;
+      notify('Planilla Control procesada','ok');
+    }catch(e){
+      console.error(e);
+      $c('ctlStatus').className='status-line err';
+      $c('ctlStatus').textContent='Error: '+(e.message||e);
+      notify('No se pudo procesar la Planilla Control','err');
+    }
+  }
+
+  function findHeader(rows,needles){
+    const max=Math.min(rows.length,30);
+    for(let i=0;i<max;i++){
+      const r=rows[i]||[];
+      const text=r.map(nrm).join('|').toLowerCase();
+      if(needles.every(x=>text.includes(x.toLowerCase())))return i;
+    }
+    return -1;
+  }
+  function buildControlModel(fileName,controlRows,baseRows){
+    const ch=findHeader(controlRows,['n°','pag','bajas'])>=0?findHeader(controlRows,['n°','pag','bajas']):5;
+    const bh=findHeader(baseRows,['n°','apellido','nombre','calle'])>=0?findHeader(baseRows,['n°','apellido','nombre','calle']):6;
+    const mapHeaders=(rows,h)=>{const m={};(rows[h]||[]).forEach((v,i)=>{m[nrm(v).toLowerCase().replace(/[°.:]/g,'').replace(/\s+/g,' ')]=i;});return m;};
+    const cm=mapHeaders(controlRows,ch),bm=mapHeaders(baseRows,bh);
+    const ci=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(cm[k]!=null)return cm[k];}return def};
+    const bi=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(bm[k]!=null)return bm[k];}return def};
+    const cidx={num:ci(['n°','n'],'0'),pag:ci(['pag','pago'],1),baja:ci(['bajas','baja'],2),cobrador:ci(['cobrador'],3),dup:ci(['duplicados','duplicado'],4),cond:ci(['condicion','condición','situacion','situación'],5)};
+    const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes'],8),compl:bi(['compl','completo'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],12)};
+    const control=[];
+    for(let i=ch+1;i<controlRows.length;i++){
+      const r=controlRows[i]||[], num=keyNum(r[cidx.num]);
+      if(!num)continue;
+      control.push({num,pag:Math.max(0,Math.round(numVal(r[cidx.pag]))),baja:/(^1$|si|sí|true)/i.test(nrm(r[cidx.baja]))?1:0,cobrador:nrm(r[cidx.cobrador]),duplicado:numVal(r[cidx.dup]),condicion:nrm(r[cidx.cond])});
+    }
+    const base=[];
+    for(let i=bh+1;i<baseRows.length;i++){
+      const r=baseRows[i]||[], num=keyNum(r[bidx.num]);if(!num)continue;
+      base.push({num,apellido:nrm(r[bidx.ape]),nombre:nrm(r[bidx.nom]),calle:nrm(r[bidx.calle]),nro:nrm(r[bidx.nro]),piso:nrm(r[bidx.piso]),dpto:nrm(r[bidx.dpto]),pago:numVal(r[bidx.pago]),mes:nrm(r[bidx.mes]),situacion:nrm(r[bidx.sit]),localidad:nrm(r[bidx.loc]),duplicado:numVal(r[bidx.dup])});
+    }
+    const controlCount=new Map();
+    const uniqueSet=new Set(), conditionMap={}, cobradorMap={}, paymentDist={};
+    control.forEach(r=>{uniqueSet.add(r.num);conditionMap[r.condicion||'Sin informar']=(conditionMap[r.condicion||'Sin informar']||0)+1;const cob=r.cobrador||'Sin cobrador';if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};cobradorMap[cob].count++;cobradorMap[cob].paid+=r.pag;cobradorMap[cob].bajas+=r.baja;paymentDist[r.pag]=(paymentDist[r.pag]||0)+1;});
+    control.forEach(r=>controlCount.set(r.num,(controlCount.get(r.num)||0)+1));
+    const used=new Map(),missing=[];
+    base.forEach(r=>{
+      const u=used.get(r.num)||0,c=controlCount.get(r.num)||0;
+      if(u<c)used.set(r.num,u+1); else missing.push(r);
+    });
+    const baja=control.filter(r=>r.baja===1);
+    const counted=control.filter(r=>/contad/i.test(r.condicion)).length;
+    const duplicateFreq={};control.forEach(r=>duplicateFreq[r.num]=(duplicateFreq[r.num]||0)+1);
+    const duplicateNumbers=Object.values(duplicateFreq).filter(v=>v>1).length;
+    const duplicateRows=Object.values(duplicateFreq).filter(v=>v>1).reduce((a,v)=>a+v,0);
+    const firstPayment=control.filter(r=>r.pag===1).length;
+    const fullPayment=control.filter(r=>r.pag>=10).length;
+    const controlledNonBaja=control.filter(r=>r.baja!==1).length;
+    const completed=controlledNonBaja+missing.length;
+    const totalPaid=control.reduce((a,r)=>a+r.pag,0);
+    const paidWithoutFirst=control.reduce((a,r)=>a+Math.max(0,r.pag-1),0);
+    /* La plantilla original considera como completadas (10 cuotas) todas
+       las boletas sin baja y suma también las que no llegaron al control.
+       Las bajas se distribuyen por las cuotas efectivamente registradas. */
+    const dist={};
+    for(let q=1;q<=10;q++)dist[q]=0;
+    control.forEach(r=>{
+      if(r.baja===1){
+        const q=Math.max(1,Math.min(9,r.pag||1));
+        dist[q]=(dist[q]||0)+1;
+      }else{
+        dist[10]=(dist[10]||0)+1;
+      }
+    });
+    dist[10]+=missing.length;
+    const baseByNum=new Map();base.forEach(r=>{if(!baseByNum.has(r.num))baseByNum.set(r.num,r);});
+    const localMap={};
+    base.forEach(r=>{
+      const l=r.localidad||'Sin localidad';
+      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+      localMap[l].sold++;
+    });
+    control.forEach(r=>{
+      const b=baseByNum.get(r.num);const l=b?.localidad||'Sin localidad';
+      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+      localMap[l].controlled++;localMap[l].paid+=r.pag;if(r.baja===1)localMap[l].bajas++;
+    });
+    missing.forEach(r=>{const l=r.localidad||'Sin localidad';if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};localMap[l].missing++;});
+    let period=base.map(r=>r.mes).find(Boolean)||'';
+    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,firstPayment,fullPayment,uniqueControl:uniqueSet.size,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},_rawSource:{controlRows,baseRows}};
+  }
+  function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
+
+  function renderControl(){
+    const has=!!CONTROL;
+    $c('ctlDataCard').classList.toggle('hidden',!has);
+    $c('ctlReportsGrid').classList.toggle('hidden',!has);
+    $c('ctlAdvancedGrid').classList.toggle('hidden',!has);
+    $c('ctlInsightsCard').classList.toggle('hidden',!has);
+    $c('ctlMissingCard').classList.toggle('hidden',!has);
+    const sb=$c('ctlSourceBadge');
+    if(sb){sb.textContent=has?'Archivo asignado':'Sin archivo';sb.className='control-badge '+(has?'ok':'warn');}
+    if(!has){
+      $c('ctlFileInfo').innerHTML='Asigná un archivo a <b>Control</b> desde Carga de Datos.';
+      $c('ctlKpis').innerHTML='';$c('ctlBreakdownTable').innerHTML='';$c('ctlLocalityTable').innerHTML='';$c('ctlMissingPreview').innerHTML='';
+      $c('ctlMissingCount').textContent='0';$c('ctlMatchBadge').textContent='—';return;
+    }
+    $c('ctlFileInfo').innerHTML=`<div class="control-file"><b>${esc(CONTROL.fileName)}</b><span class="control-badge ok">✓ Hojas Control + Base</span></div>`;
+    const c=CONTROL;
+    $c('ctlPeriodLabel').textContent=(c.period||'Período no informado')+' · '+new Date().toLocaleDateString('es-AR');
+    const ratio=c.base.length?c.control.length/c.base.length:0;
+    $c('ctlMatchBadge').textContent=`${pct(c.control.length,c.base.length)} controlado`;
+    $c('ctlMatchBadge').className='control-badge '+(c.missing.length?'warn':'ok');
+    $c('ctlKpis').innerHTML=[
+      ['Total vendidas',c.base.length,''],
+      ['Controladas',c.control.length,'ok'],
+      ['Faltan controlar',c.missing.length,'danger'],
+      ['Cuotas cobradas',c.totalPaid,''],
+      ['Bajas',c.baja.length,'danger'],
+      ['Contados',c.counted,'ok']
+    ].map(x=>`<div class="control-kpi ${x[2]}"><div class="v">${money(x[1])}</div><div class="l">${x[0]}</div></div>`).join('');
+    renderBreakdown();renderLocalities();renderCollectors();renderQuality();renderInsights();renderMissing();
+  }
+
+  function renderBreakdown(){
+    const c=CONTROL,total=c.base.length,rows=[];
+    for(let q=10;q>=1;q--){
+      const qty=c.dist[q]||0;
+      const cuotas=q*qty;
+      const p=total?cuotas/total:0;
+      rows.push(`<tr><td class="control-summary-title">${q===10?'Boletas completadas':'Boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s')}</td><td class="num">${money(q)}</td><td class="num">${money(qty)}</td><td class="num">${money(cuotas)}</td><td class="num">${CFGC.showPercent?pct(cuotas,total):'—'}</td></tr>`);
+    }
+    const bajasPct=total?c.baja.length/total:0;
+    rows.push(`<tr class="total"><td>Bajas</td><td class="num">—</td><td class="num">${money(c.baja.length)}</td><td class="num">—</td><td class="num">${CFGC.showPercent?(bajasPct*100).toFixed(1)+'%':'—'}</td></tr>`);
+    $c('ctlBreakdownTable').innerHTML=`<thead><tr><th>Boletas pagas</th><th class="num">Cuotas</th><th class="num">Cantidad</th><th class="num">Total cuotas</th><th class="num">%</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+  }
+  function renderLocalities(){
+    const box=$c('ctlLocalityTable');
+    if(!CFGC.showLocalities){box.closest('.card').classList.add('hidden');return;}
+    box.closest('.card').classList.remove('hidden');
+    const c=CONTROL,arr=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+    box.innerHTML='<thead><tr><th>Localidad</th><th class="num">Vendidas</th><th class="num">Control.</th><th class="num">Faltan</th><th class="num">Bajas</th></tr></thead><tbody>'+
+      arr.map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${money(v.sold)}</td><td class="num">${money(v.controlled)}</td><td class="num">${money(v.missing)}</td><td class="num">${money(v.bajas)}</td></tr>`).join('')+
+      `<tr class="total"><td>Total</td><td class="num">${money(c.base.length)}</td><td class="num">${money(c.control.length)}</td><td class="num">${money(c.missing.length)}</td><td class="num">${money(c.baja.length)}</td></tr></tbody>`;
+  }
+  function renderCollectors(){
+    const box=$c('ctlCollectorTable'),wrap=box.closest('.card');
+    if(!CFGC.showCollectors){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
+    const m=CONTROL.cobradorMap||{},arr=Object.entries(m).sort((a,b)=>b[1].count-a[1].count||a[0].localeCompare(b[0],'es'));
+    const real=arr.filter(([name])=>name!=='Sin cobrador');
+    if(!real.length){wrap.classList.add('hidden');return;}
+    wrap.classList.remove('hidden');
+    const total=CONTROL.control.length;box.innerHTML='<thead><tr><th>Cobrador</th><th class="num">Boletas</th><th class="num">Cuotas</th><th class="num">Bajas</th><th class="num">Promedio</th><th class="num">%</th></tr></thead><tbody>'+arr.map(([name,v])=>`<tr><td>${esc(name)}</td><td class="num">${money(v.count)}</td><td class="num">${money(v.paid)}</td><td class="num">${money(v.bajas)}</td><td class="num">${v.count?(v.paid/v.count).toFixed(2):'0'}</td><td class="num">${CFGC.showPercent?pct(v.count,total):'—'}</td></tr>`).join('')+`<tr class="total"><td>Total</td><td class="num">${money(total)}</td><td class="num">${money(CONTROL.totalPaid)}</td><td class="num">${money(CONTROL.baja.length)}</td><td class="num">${total?(CONTROL.totalPaid/total).toFixed(2):'0'}</td><td class="num">100%</td></tr></tbody>`;
+  }
+  function renderQuality(){
+    const box=$c('ctlQualityTable'),wrap=box.closest('.card');
+    if(!CFGC.showQuality){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
+    const cond=Object.entries(CONTROL.conditionMap||{}).sort((a,b)=>b[1]-a[1]);
+    const dup=CONTROL.duplicateNumbers||0, repeated=CONTROL.duplicateRows||0;
+    box.innerHTML='<thead><tr><th>Indicador</th><th class="num">Cantidad</th><th class="num">%</th></tr></thead><tbody>'+cond.map(([k,v])=>`<tr><td>Condición: ${esc(k||'Sin informar')}</td><td class="num">${money(v)}</td><td class="num">${CFGC.showPercent?pct(v,CONTROL.control.length):'—'}</td></tr>`).join('')+`<tr><td>Números repetidos en Control</td><td class="num">${money(dup)}</td><td class="num">${CFGC.showPercent?pct(dup,CONTROL.control.length):'—'}</td></tr><tr><td>Filas que participan de duplicados</td><td class="num">${money(repeated)}</td><td class="num">${CFGC.showPercent?pct(repeated,CONTROL.control.length):'—'}</td></tr><tr><td>Registros con 1ª cuota</td><td class="num">${money(CONTROL.firstPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.firstPayment,CONTROL.control.length):'—'}</td></tr><tr><td>Boletas con 10 cuotas</td><td class="num">${money(CONTROL.fullPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.fullPayment,CONTROL.control.length):'—'}</td></tr></tbody>`;
+  }
+  function renderInsights(){
+    const c=CONTROL,box=$c('ctlInsights');
+    const vals=[['Cobertura del control',pct(c.control.length,c.base.length),'ok'],['Pendientes',pct(c.missing.length,c.base.length),'warn'],['Tasa de bajas',pct(c.baja.length,c.control.length),'danger'],['Promedio de cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0',''],['Números únicos controlados',money(c.uniqueControl),'']];
+    box.innerHTML=vals.map(x=>`<div class="control-kpi ${x[2]||''}"><div class="v">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');
+  }
+  function renderMissing(){
+    const c=CONTROL;
+    $c('ctlMissingCount').textContent=money(c.missing.length);
+    if(!c.missing.length){$c('ctlMissingPreview').innerHTML='<div class="control-empty">✓ Todas las boletas de la Base de Datos Original llegaron al Control.</div>';return;}
+    $c('ctlMissingPreview').innerHTML=`<div class="control-table-wrap"><table class="control-table"><thead><tr><th class="num">N°</th><th>Apellido</th><th>Nombre</th><th>Calle</th><th>Nro</th><th>Localidad</th><th>Estado</th></tr></thead><tbody>${c.missing.map(r=>`<tr><td class="num">${esc(r.num)}</td><td>${esc(r.apellido)}</td><td>${esc(r.nombre)}</td><td>${esc(r.calle)}</td><td>${esc(r.nro)}</td><td>${esc(r.localidad)}</td><td><span class="control-badge warn">No llegó</span></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function marginMm(){return CFGC.margin==='small'?10:CFGC.margin==='large'?22:15}
+  function fontSize(){return CFGC.size==='small'?7.5:CFGC.size==='large'?10:8.5}
+  function rowPad(){return CFGC.rowH==='small'?1.2:CFGC.rowH==='large'?3:1.8}
+  function rgb(hex){
+    hex=String(hex||'#1f4e8c').replace('#','');
+    if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+    return [0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)||0);
+  }
+  function accent(){return rgb((window.CFG&&CFG.accent)||'#1f4e8c')}
+  function drawHeader(doc,title,subtitle){
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),a=accent();
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(16);doc.setTextColor(25,30,38);doc.text(title,M,28);
+    doc.setDrawColor(a[0],a[1],a[2]);doc.setLineWidth(1.5);doc.line(M,34,W-M,34);
+    doc.setFont(CFGC.font,'normal');doc.setFontSize(8.5);doc.setTextColor(105,112,122);
+    doc.text(subtitle||'',M,43);
+    doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
+    if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,String(CFGC.logo).startsWith('data:image/jpeg')?'JPEG':'PNG',W-M-30,8,30,15);}catch(e){}}
+  }
+  function drawFooter(doc){
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),pages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont(CFGC.font,'normal');doc.setFontSize(7);doc.setTextColor(125,130,138);doc.text(CFGC.footer||'Nora · Control',M,H-9);doc.text('Página '+p+' de '+pages,W-M,H-9,{align:'right'});}
+  }
+  async function generateControlSummaryPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,CFGC.title||'Resumen del control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen general',M,58);
+    const kpis=[
+      ['Total de boletas vendidas',money(c.base.length)],
+      ['Cuotas cobradas (con primeras cuotas)',money(c.totalPaid)],
+      ['Cuotas cobradas (sin primeras cuotas)',money(c.paidWithoutFirst)],
+      ['Bajas',money(c.baja.length)],
+      ['Contados',money(c.counted)],
+      ['Faltan controlar',money(c.missing.length)]
+    ];
+    doc.autoTable({startY:63,head:[['Indicador','Cantidad']],body:kpis,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
+    let y=doc.lastAutoTable.finalY+10;
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen adicional',M,y);y+=5;
+    const distRows=[];
+    for(let q=10;q>=1;q--){const qty=c.dist[q]||0;distRows.push([q===10?'Boletas completadas':'Total de boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s'),q,qty,q*qty,CFGC.showPercent?pct(q*qty,c.base.length):'—']);}
+    distRows.push(['Bajas','—',c.baja.length,'—',CFGC.showPercent?pct(c.baja.length,c.base.length):'—']);
+    doc.autoTable({startY:y,head:[['Boletas pagas','Cuotas','Cantidad','Total de cuotas','%']],body:distRows,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
+    if(CFGC.showLocalities){
+      y=doc.lastAutoTable.finalY+10;
+      if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}
+      doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen por localidad',M,y);y+=5;
+      const locRows=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]);
+      locRows.push(['TOTAL',c.base.length,c.control.length,c.missing.length,c.baja.length]);
+      doc.autoTable({startY:y,head:[['Localidad','Vendidas','Controladas','Faltan','Bajas']],body:locRows,theme:'grid',
+        styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+        headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
+    }
+    drawFooter(doc);
+    await savePdfBlob(doc.output('blob'),`Resumen Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  async function generateControlMissingPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,'Boletas que no llegaron al control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
+    doc.text('Cantidad: '+money(c.missing.length),M,58);
+    const body=c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
+    if(!body.length){doc.setFont(CFGC.font,'normal');doc.setFontSize(10);doc.text('Todas las boletas de la Base de Datos Original llegaron al Control.',M,70);drawFooter(doc);await savePdfBlob(doc.output('blob'),`Boletas no llegaron - ${safeCtl(c.period||'control')}.pdf`);return;}
+    doc.autoTable({startY:64,head:[['N°','Apellido','Nombre','Calle','Nro','Localidad','Estado']],body,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2,overflow:'linebreak'},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},
+      columnStyles:{0:{halign:'right'},6:{fontStyle:'bold',textColor:[180,70,15]}},margin:{left:M,right:M}});
+    drawFooter(doc);
+    await savePdfBlob(doc.output('blob'),`Boletas no llegaron al Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  async function generateControlFullPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,'Informe completo de Control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen ejecutivo',M,58);
+    const exec=[['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan llegar al control',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0']];
+    doc.autoTable({startY:63,head:[['Indicador','Valor']],body:exec,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
+    let y=doc.lastAutoTable.finalY+9;
+    const addTable=(title,head,body)=>{if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text(title,M,y);y+=5;doc.autoTable({startY:y,head:[head],body,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});y=doc.lastAutoTable.finalY+9;};
+    addTable('Distribución de cuotas',['Cuotas','Cantidad','Total cuotas','%'],Array.from({length:10},(_,i)=>10-i).map(q=>[q,c.dist[q]||0,(q*(c.dist[q]||0)),CFGC.showPercent?pct(c.dist[q]||0,c.base.length):'—']));
+    if(CFGC.showLocalities)addTable('Resumen por localidad',['Localidad','Vendidas','Controladas','Faltan','Bajas'],Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]));
+    if(CFGC.showCollectors&&Object.keys(c.cobradorMap||{}).length)addTable('Resumen por cobrador',['Cobrador','Boletas','Cuotas','Bajas'],Object.entries(c.cobradorMap).sort((a,b)=>b[1].count-a[1].count).map(([l,v])=>[l,v.count,v.paid,v.bajas]));
+    if(CFGC.showQuality)addTable('Calidad del control',['Indicador','Cantidad'],[['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers],['Filas en duplicados',c.duplicateRows],['Con 1ª cuota',c.firstPayment],['Con 10 cuotas',c.fullPayment],['Contados',c.counted]]);
+    if(c.missing.length)addTable('Boletas que no llegaron',['N°','Apellido','Nombre','Calle','Nro','Localidad'],c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad]));
+    drawFooter(doc);await savePdfBlob(doc.output('blob'),`Informe completo Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  async function exportControlXlsx(){
+    const c=CONTROL,wb=XLSX.utils.book_new();
+    const resumen=[['Indicador','Valor'],['Período',c.period],['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Contados',c.counted],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):0],['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.localMap).map(([l,v])=>({Localidad:l,Vendidas:v.sold,Controladas:v.controlled,Faltan:v.missing,Bajas:v.bajas,Cuotas:v.paid}))), 'Localidades');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.cobradorMap||{}).map(([l,v])=>({Cobrador:l,Boletas:v.count,Cuotas:v.paid,Bajas:v.bajas,Promedio:v.count?v.paid/v.count:0}))), 'Cobradores');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.missing.map(r=>({'N°':r.num,Apellido:r.apellido,Nombre:r.nombre,Calle:r.calle,Nro:r.nro,Localidad:r.localidad}))), 'No llegaron');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.control.map(r=>({'N°':r.num,Pag:r.pag,Baja:r.baja,Cobrador:r.cobrador,Condicion:r.condicion,Duplicado:r.duplicado}))), 'Control detalle');
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveXlsxBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Analisis Control - ${safeCtl(c.period||'control')}.xlsx`);notify('Análisis XLSX exportado','ok');
+  }
+  function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
+
+  /* recuperar último procesamiento */
+  try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
+  window.noraControlLoadFile=loadControlFile;
+  async function syncFromFiles(force){
+    try{
+      const list=(typeof FILES!=='undefined'?FILES:[]);
+      const f=list.find(x=>x&&x.raw&&(x.kind==='control'||x.sourceType==='control'||(typeof fileHasDestination==='function'&&fileHasDestination(x,'control'))));
+      if(!f){return false;}
+      if(CONTROL&&CONTROL.fileName===f.name&&!force)return true;
+      let bytes=f.raw;
+      if(ArrayBuffer.isView(bytes))bytes=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
+      if(!(bytes instanceof ArrayBuffer)){try{bytes=new Uint8Array(bytes).buffer;}catch(e){return false;}}
+      await loadControlFile(new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      return !!CONTROL;
+    }catch(e){console.warn('noraControlSync',e);return false;}
+  }
+  window.noraControlSync=syncFromFiles;
+  window.noraControlCurrentName=()=>CONTROL&&CONTROL.fileName;
+  /* Si el Centro de datos recibe un Excel antes de terminar de inicializar Control,
+     se procesa automáticamente apenas el módulo queda disponible. */
+  const __pendingControlFiles=window.__noraControlPendingFiles||[];
+  window.__noraControlPendingFiles=[];
+  if(__pendingControlFiles.length){
+    Promise.resolve().then(async()=>{
+      for(const f of __pendingControlFiles){
+        try{await window.noraControlLoadFile(f);}
+        catch(e){try{if(typeof notify==='function')notify('No se pudo procesar Control: '+(e.message||e),'err');}catch(_){}}
+      }
+      try{syncDataCenterUI();renderFilesList();renderHome();}catch(e){}
+    });
+  }
+  /* Restaurar automáticamente las planillas Control que ya estaban en Carga de Datos. */
+  Promise.resolve().then(async()=>{
+    try{
+      if(window.__noraControlRestoredOnce)return;
+      window.__noraControlRestoredOnce=true;
+      if(CONTROL){renderControl();return;}
+      if(await syncFromFiles(false))return;
+      const stored=(typeof FILES!=='undefined'?FILES:[]).filter(f=>
+        f && (f.kind==='control'||f.sourceType==='control'||(typeof window.isControlFileName==='function'&&window.isControlFileName(f.name)))
+      );
+      for(const f of stored){
+        if(!f.raw)continue;
+        let bytes=f.raw;
+        if(bytes instanceof Uint8Array)bytes=bytes.buffer;
+        if(!(bytes instanceof ArrayBuffer)){
+          try{bytes=new Uint8Array(bytes).buffer;}catch(e){continue;}
+        }
+        const file=new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        await window.noraControlLoadFile(file);
+        if(CONTROL)break;
+      }
+      try{syncDataCenterUI();renderFilesList();renderHome();if(typeof renderDataManager==='function')renderDataManager();}catch(e){}
+    }catch(e){console.warn('No se pudo restaurar automáticamente la Planilla Control desde Carga de Datos',e);}
+  });
+  window.noraControlClear=function(){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}try{renderControl();}catch(e){}};
+  paintCfg();bindCfg();renderControl();
+
+  /* integrar navegación existente */
+  if(typeof TITLES!=='undefined')TITLES.control=['Control','Control mensual, resumen y boletas que no llegaron.'];
+  if(Array.isArray(window.VIEW_ORDER)){}
+  try{
+    if(typeof VIEW_ORDER!=='undefined'&&!VIEW_ORDER.includes('control'))VIEW_ORDER.splice(VIEW_ORDER.indexOf('sorteos'),0,'control');
+  }catch(e){}
+  document.querySelectorAll('[data-view="control"]').forEach(b=>b.addEventListener('click',()=>window.setView('control')));
+  const originalSetView=window.setView;
+  if(originalSetView&&!originalSetView.__controlWrapped){
+    const wrapped=function(v,...args){return originalSetView.call(this,v,...args)};
+    wrapped.__controlWrapped=true;window.setView=wrapped;
+  }
+  /* actualiza el orden del buscador y accesos */
+  setTimeout(()=>{try{paintIcons(document.getElementById('view-control'));}catch(e){}},50);
+})();
+
+
 </script>
 <script id="nora-b2">
 /* ===== NORA v2.3 · Estilos UI: Arcilla (claymorphism), Suave (neumorphism), Cristal (glassmorphism) ===== */
@@ -5908,476 +6337,6 @@ safe('mount',()=>{const h=$('hHero'),d=$('view-dash');if(h)h.after(mkCard('nrSum
 let sig='';setInterval(()=>{const s=(typeof RECORDS!=='undefined'?RECORDS.length:0)+'|'+(typeof FILES!=='undefined'?FILES.length:0)+'|'+(typeof RECORDS!=='undefined'&&RECORDS.length?RECORDS[RECORDS.length-1].source:'');if(s!==sig){sig=s;paintAll();}},1200);
 safe('hooks',()=>{const sv=window.setView;if(sv)window.setView=function(){const r=sv.apply(this,arguments);setTimeout(paintAll,0);return r;};const hf=window.handleFiles;if(hf)window.handleFiles=async function(){const r=await hf.apply(this,arguments);paintAll();return r;};const rh=window.renderHome;if(rh)window.renderHome=function(){const r=rh.apply(this,arguments);setTimeout(paintAll,0);return r;};});
 })();
-</script>
-
-<script id="nora-control-main">
-/* ================= CONTROL — Planilla Control ================= */
-(function(){
-  'use strict';
-  const KEY='nora_control_v1';
-  const DEF={
-    title:'Resumen del control',
-    subtitle:'Control mensual de boletas y cuotas',
-    footer:'Nora · Control de cobranza',
-    orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
-    showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:''
-  };
-  let CFGC=Object.assign({},DEF);
-  try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
-  let CONTROL=null;
-
-  const $c=id=>document.getElementById(id);
-  const nrm=v=>String(v==null?'':v).trim();
-  const keyNum=v=>{
-    if(v==null||v==='')return '';
-    if(typeof v==='number'&&Number.isFinite(v))return String(Math.trunc(v));
-    let x=nrm(v).replace(/\s+/g,'');
-    if(/^\d+\.0+$/.test(x))x=x.split('.')[0];
-    return x;
-  };
-  const numVal=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
-  const money=n=>new Intl.NumberFormat('es-AR').format(Math.round(n||0));
-  const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'0,0%';
-  const capCtl=v=>nrm(v).toLocaleUpperCase('es-AR');
-  const sheetName=(wb,wanted)=>{
-    const x=wb.SheetNames.find(s=>nrm(s).toLowerCase()===wanted.toLowerCase());
-    return x||wb.SheetNames.find(s=>nrm(s).toLowerCase().replace(/\s+/g,' ')===wanted.toLowerCase().replace(/\s+/g,' '));
-  };
-  const saveCfg=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFGC));}catch(e){}};
-  function fileDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
-  function paintCfg(){
-    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
-      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
-    });
-    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
-    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
-      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
-    });
-  }
-  function bindCfg(){
-    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
-      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
-      if(el)el.addEventListener('input',()=>{CFGC[k]=el.value;saveCfg();});
-      if(el)el?.addEventListener('change',()=>{CFGC[k]=el.value;saveCfg();});
-    });
-    const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
-    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
-      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
-      el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
-    });
-    $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
-    $c('ctlLoadBtn').onclick=()=>{try{window.setView('carga');}catch(e){}};
-    /* La carga de archivos NO existe en Control. Todo entra por Carga de Datos. */
-    $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
-    $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
-    $c('ctlMissingPdf').onclick=()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn');
-    $c('ctlRecalcBtn').onclick=()=>{if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
-    $c('ctlFullPdf').onclick=()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn');
-    $c('ctlExportXlsx').onclick=()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn');
-    $c('ctlLogoBtn').onclick=()=>$c('ctlLogoFile').click();
-    $c('ctlLogoFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{CFGC.logo=await fileDataUrl(f);CFGC.logoName=f.name;CFGC.showLogo=true;saveCfg();paintCfg();notify('Logo de Control guardado','ok');}catch(err){notify('No se pudo cargar el logo','err');}};
-  }
-
-  async function loadControlFile(file){
-    try{
-      if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){notify('Seleccioná un Excel .xlsx, .xls o .xlsm','err');return;}
-      if(typeof XLSX==='undefined'){throw new Error('No se pudo cargar el motor de Excel (XLSX). Recargá la página y probá nuevamente.');}
-      $c('ctlStatus').className='status-line';
-      $c('ctlStatus').textContent='Leyendo '+file.name+'…';
-      const buf=await file.arrayBuffer();
-      const wb=XLSX.read(buf,{type:'array',cellDates:true});
-      const shControl=sheetName(wb,'Control');
-      const shBase=sheetName(wb,'Base de Datos Original');
-      if(!shControl||!shBase)throw new Error('El Excel debe tener las hojas “Control” y “Base de Datos Original”.');
-      const controlRows=XLSX.utils.sheet_to_json(wb.Sheets[shControl],{header:1,defval:null,raw:true});
-      const baseRows=XLSX.utils.sheet_to_json(wb.Sheets[shBase],{header:1,defval:null,raw:true});
-      CONTROL=buildControlModel(file.name,controlRows,baseRows);
-      try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}
-      renderControl();
-      $c('ctlStatus').className='status-line ok';
-      $c('ctlStatus').textContent=`Planilla procesada: ${CONTROL.fileName} · ${money(CONTROL.base.length)} vendidas · ${money(CONTROL.control.length)} controladas · ${money(CONTROL.missing.length)} faltantes.`;
-      notify('Planilla Control procesada','ok');
-    }catch(e){
-      console.error(e);
-      $c('ctlStatus').className='status-line err';
-      $c('ctlStatus').textContent='Error: '+(e.message||e);
-      notify('No se pudo procesar la Planilla Control','err');
-    }
-  }
-
-  function findHeader(rows,needles){
-    const max=Math.min(rows.length,30);
-    for(let i=0;i<max;i++){
-      const r=rows[i]||[];
-      const text=r.map(nrm).join('|').toLowerCase();
-      if(needles.every(x=>text.includes(x.toLowerCase())))return i;
-    }
-    return -1;
-  }
-  function buildControlModel(fileName,controlRows,baseRows){
-    const ch=findHeader(controlRows,['n°','pag','bajas'])>=0?findHeader(controlRows,['n°','pag','bajas']):5;
-    const bh=findHeader(baseRows,['n°','apellido','nombre','calle'])>=0?findHeader(baseRows,['n°','apellido','nombre','calle']):6;
-    const mapHeaders=(rows,h)=>{const m={};(rows[h]||[]).forEach((v,i)=>{m[nrm(v).toLowerCase().replace(/[°.:]/g,'').replace(/\s+/g,' ')]=i;});return m;};
-    const cm=mapHeaders(controlRows,ch),bm=mapHeaders(baseRows,bh);
-    const ci=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(cm[k]!=null)return cm[k];}return def};
-    const bi=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(bm[k]!=null)return bm[k];}return def};
-    const cidx={num:ci(['n°','n'],'0'),pag:ci(['pag','pago'],1),baja:ci(['bajas','baja'],2),cobrador:ci(['cobrador'],3),dup:ci(['duplicados','duplicado'],4),cond:ci(['condicion','condición','situacion','situación'],5)};
-    const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes'],8),compl:bi(['compl','completo'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],12)};
-    const control=[];
-    for(let i=ch+1;i<controlRows.length;i++){
-      const r=controlRows[i]||[], num=keyNum(r[cidx.num]);
-      if(!num)continue;
-      control.push({num,pag:Math.max(0,Math.round(numVal(r[cidx.pag]))),baja:/(^1$|si|sí|true)/i.test(nrm(r[cidx.baja]))?1:0,cobrador:nrm(r[cidx.cobrador]),duplicado:numVal(r[cidx.dup]),condicion:nrm(r[cidx.cond])});
-    }
-    const base=[];
-    for(let i=bh+1;i<baseRows.length;i++){
-      const r=baseRows[i]||[], num=keyNum(r[bidx.num]);if(!num)continue;
-      base.push({num,apellido:nrm(r[bidx.ape]),nombre:nrm(r[bidx.nom]),calle:nrm(r[bidx.calle]),nro:nrm(r[bidx.nro]),piso:nrm(r[bidx.piso]),dpto:nrm(r[bidx.dpto]),pago:numVal(r[bidx.pago]),mes:nrm(r[bidx.mes]),situacion:nrm(r[bidx.sit]),localidad:nrm(r[bidx.loc]),duplicado:numVal(r[bidx.dup])});
-    }
-    const controlCount=new Map();
-    const uniqueSet=new Set(), conditionMap={}, cobradorMap={}, paymentDist={};
-    control.forEach(r=>{uniqueSet.add(r.num);conditionMap[r.condicion||'Sin informar']=(conditionMap[r.condicion||'Sin informar']||0)+1;const cob=r.cobrador||'Sin cobrador';if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};cobradorMap[cob].count++;cobradorMap[cob].paid+=r.pag;cobradorMap[cob].bajas+=r.baja;paymentDist[r.pag]=(paymentDist[r.pag]||0)+1;});
-    control.forEach(r=>controlCount.set(r.num,(controlCount.get(r.num)||0)+1));
-    const used=new Map(),missing=[];
-    base.forEach(r=>{
-      const u=used.get(r.num)||0,c=controlCount.get(r.num)||0;
-      if(u<c)used.set(r.num,u+1); else missing.push(r);
-    });
-    const baja=control.filter(r=>r.baja===1);
-    const counted=control.filter(r=>/contad/i.test(r.condicion)).length;
-    const duplicateFreq={};control.forEach(r=>duplicateFreq[r.num]=(duplicateFreq[r.num]||0)+1);
-    const duplicateNumbers=Object.values(duplicateFreq).filter(v=>v>1).length;
-    const duplicateRows=Object.values(duplicateFreq).filter(v=>v>1).reduce((a,v)=>a+v,0);
-    const firstPayment=control.filter(r=>r.pag===1).length;
-    const fullPayment=control.filter(r=>r.pag>=10).length;
-    const controlledNonBaja=control.filter(r=>r.baja!==1).length;
-    const completed=controlledNonBaja+missing.length;
-    const totalPaid=control.reduce((a,r)=>a+r.pag,0);
-    const paidWithoutFirst=control.reduce((a,r)=>a+Math.max(0,r.pag-1),0);
-    /* La plantilla original considera como completadas (10 cuotas) todas
-       las boletas sin baja y suma también las que no llegaron al control.
-       Las bajas se distribuyen por las cuotas efectivamente registradas. */
-    const dist={};
-    for(let q=1;q<=10;q++)dist[q]=0;
-    control.forEach(r=>{
-      if(r.baja===1){
-        const q=Math.max(1,Math.min(9,r.pag||1));
-        dist[q]=(dist[q]||0)+1;
-      }else{
-        dist[10]=(dist[10]||0)+1;
-      }
-    });
-    dist[10]+=missing.length;
-    const baseByNum=new Map();base.forEach(r=>{if(!baseByNum.has(r.num))baseByNum.set(r.num,r);});
-    const localMap={};
-    base.forEach(r=>{
-      const l=r.localidad||'Sin localidad';
-      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
-      localMap[l].sold++;
-    });
-    control.forEach(r=>{
-      const b=baseByNum.get(r.num);const l=b?.localidad||'Sin localidad';
-      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
-      localMap[l].controlled++;localMap[l].paid+=r.pag;if(r.baja===1)localMap[l].bajas++;
-    });
-    missing.forEach(r=>{const l=r.localidad||'Sin localidad';if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};localMap[l].missing++;});
-    let period=base.map(r=>r.mes).find(Boolean)||'';
-    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,firstPayment,fullPayment,uniqueControl:uniqueSet.size,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},_rawSource:{controlRows,baseRows}};
-  }
-  function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
-
-  function renderControl(){
-    const has=!!CONTROL;
-    $c('ctlDataCard').classList.toggle('hidden',!has);
-    $c('ctlReportsGrid').classList.toggle('hidden',!has);
-    $c('ctlAdvancedGrid').classList.toggle('hidden',!has);
-    $c('ctlInsightsCard').classList.toggle('hidden',!has);
-    $c('ctlMissingCard').classList.toggle('hidden',!has);
-    if(!has){
-      $c('ctlFileInfo').innerHTML='';
-      $c('ctlKpis').innerHTML='';$c('ctlBreakdownTable').innerHTML='';$c('ctlLocalityTable').innerHTML='';$c('ctlMissingPreview').innerHTML='';
-      $c('ctlMissingCount').textContent='0';$c('ctlMatchBadge').textContent='—';return;
-    }
-    $c('ctlFileInfo').innerHTML=`<div class="control-file"><b>${esc(CONTROL.fileName)}</b><span class="control-badge ok">✓ Hojas Control + Base</span></div>`;
-    const c=CONTROL;
-    $c('ctlPeriodLabel').textContent=(c.period||'Período no informado')+' · '+new Date().toLocaleDateString('es-AR');
-    const ratio=c.base.length?c.control.length/c.base.length:0;
-    $c('ctlMatchBadge').textContent=`${pct(c.control.length,c.base.length)} controlado`;
-    $c('ctlMatchBadge').className='control-badge '+(c.missing.length?'warn':'ok');
-    $c('ctlKpis').innerHTML=[
-      ['Total vendidas',c.base.length,''],
-      ['Controladas',c.control.length,'ok'],
-      ['Faltan controlar',c.missing.length,'danger'],
-      ['Cuotas cobradas',c.totalPaid,''],
-      ['Bajas',c.baja.length,'danger'],
-      ['Contados',c.counted,'ok']
-    ].map(x=>`<div class="control-kpi ${x[2]}"><div class="v">${money(x[1])}</div><div class="l">${x[0]}</div></div>`).join('');
-    renderBreakdown();renderLocalities();renderMissing();
-  }
-
-  function renderBreakdown(){
-    const c=CONTROL,total=c.base.length,rows=[];
-    for(let q=10;q>=1;q--){
-      const qty=c.dist[q]||0;
-      const cuotas=q*qty;
-      const p=total?cuotas/total:0;
-      rows.push(`<tr><td class="control-summary-title">${q===10?'Boletas completadas':'Boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s')}</td><td class="num">${money(q)}</td><td class="num">${money(qty)}</td><td class="num">${money(cuotas)}</td><td class="num">${CFGC.showPercent?pct(cuotas,total):'—'}</td></tr>`);
-    }
-    const bajasPct=total?c.baja.length/total:0;
-    rows.push(`<tr class="total"><td>Bajas</td><td class="num">—</td><td class="num">${money(c.baja.length)}</td><td class="num">—</td><td class="num">${CFGC.showPercent?(bajasPct*100).toFixed(1)+'%':'—'}</td></tr>`);
-    $c('ctlBreakdownTable').innerHTML=`<thead><tr><th>Boletas pagas</th><th class="num">Cuotas</th><th class="num">Cantidad</th><th class="num">Total cuotas</th><th class="num">%</th></tr></thead><tbody>${rows.join('')}</tbody>`;
-  }
-  function renderLocalities(){
-    const box=$c('ctlLocalityTable');
-    if(!CFGC.showLocalities){box.closest('.card').classList.add('hidden');return;}
-    box.closest('.card').classList.remove('hidden');
-    const c=CONTROL,arr=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es'));
-    box.innerHTML='<thead><tr><th>Localidad</th><th class="num">Vendidas</th><th class="num">Control.</th><th class="num">Faltan</th><th class="num">Bajas</th></tr></thead><tbody>'+
-      arr.map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${money(v.sold)}</td><td class="num">${money(v.controlled)}</td><td class="num">${money(v.missing)}</td><td class="num">${money(v.bajas)}</td></tr>`).join('')+
-      `<tr class="total"><td>Total</td><td class="num">${money(c.base.length)}</td><td class="num">${money(c.control.length)}</td><td class="num">${money(c.missing.length)}</td><td class="num">${money(c.baja.length)}</td></tr></tbody>`;
-  }
-  function renderCollectors(){
-    const box=$c('ctlCollectorTable'),wrap=box.closest('.card');
-    if(!CFGC.showCollectors){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
-    const m=CONTROL.cobradorMap||{},arr=Object.entries(m).sort((a,b)=>b[1].count-a[1].count||a[0].localeCompare(b[0],'es'));
-    const real=arr.filter(([name])=>name!=='Sin cobrador');
-    if(!real.length){wrap.classList.add('hidden');return;}
-    wrap.classList.remove('hidden');
-    const total=CONTROL.control.length;box.innerHTML='<thead><tr><th>Cobrador</th><th class="num">Boletas</th><th class="num">Cuotas</th><th class="num">Bajas</th><th class="num">Promedio</th><th class="num">%</th></tr></thead><tbody>'+arr.map(([name,v])=>`<tr><td>${esc(name)}</td><td class="num">${money(v.count)}</td><td class="num">${money(v.paid)}</td><td class="num">${money(v.bajas)}</td><td class="num">${v.count?(v.paid/v.count).toFixed(2):'0'}</td><td class="num">${CFGC.showPercent?pct(v.count,total):'—'}</td></tr>`).join('')+`<tr class="total"><td>Total</td><td class="num">${money(total)}</td><td class="num">${money(CONTROL.totalPaid)}</td><td class="num">${money(CONTROL.baja.length)}</td><td class="num">${total?(CONTROL.totalPaid/total).toFixed(2):'0'}</td><td class="num">100%</td></tr></tbody>`;
-  }
-  function renderQuality(){
-    const box=$c('ctlQualityTable'),wrap=box.closest('.card');
-    if(!CFGC.showQuality){wrap.classList.add('hidden');return;} wrap.classList.remove('hidden');
-    const cond=Object.entries(CONTROL.conditionMap||{}).sort((a,b)=>b[1]-a[1]);
-    const dup=CONTROL.duplicateNumbers||0, repeated=CONTROL.duplicateRows||0;
-    box.innerHTML='<thead><tr><th>Indicador</th><th class="num">Cantidad</th><th class="num">%</th></tr></thead><tbody>'+cond.map(([k,v])=>`<tr><td>Condición: ${esc(k||'Sin informar')}</td><td class="num">${money(v)}</td><td class="num">${CFGC.showPercent?pct(v,CONTROL.control.length):'—'}</td></tr>`).join('')+`<tr><td>Números repetidos en Control</td><td class="num">${money(dup)}</td><td class="num">${CFGC.showPercent?pct(dup,CONTROL.control.length):'—'}</td></tr><tr><td>Filas que participan de duplicados</td><td class="num">${money(repeated)}</td><td class="num">${CFGC.showPercent?pct(repeated,CONTROL.control.length):'—'}</td></tr><tr><td>Registros con 1ª cuota</td><td class="num">${money(CONTROL.firstPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.firstPayment,CONTROL.control.length):'—'}</td></tr><tr><td>Boletas con 10 cuotas</td><td class="num">${money(CONTROL.fullPayment)}</td><td class="num">${CFGC.showPercent?pct(CONTROL.fullPayment,CONTROL.control.length):'—'}</td></tr></tbody>`;
-  }
-  function renderInsights(){
-    const c=CONTROL,box=$c('ctlInsights');
-    const vals=[['Cobertura del control',pct(c.control.length,c.base.length),'ok'],['Pendientes',pct(c.missing.length,c.base.length),'warn'],['Tasa de bajas',pct(c.baja.length,c.control.length),'danger'],['Promedio de cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0',''],['Números únicos controlados',money(c.uniqueControl),'']];
-    box.innerHTML=vals.map(x=>`<div class="control-kpi ${x[2]||''}"><div class="v">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');
-  }
-  function renderMissing(){
-    const c=CONTROL;
-    $c('ctlMissingCount').textContent=money(c.missing.length);
-    if(!c.missing.length){$c('ctlMissingPreview').innerHTML='<div class="control-empty">✓ Todas las boletas de la Base de Datos Original llegaron al Control.</div>';return;}
-    $c('ctlMissingPreview').innerHTML=`<div class="control-table-wrap"><table class="control-table"><thead><tr><th class="num">N°</th><th>Apellido</th><th>Nombre</th><th>Calle</th><th>Nro</th><th>Localidad</th><th>Estado</th></tr></thead><tbody>${c.missing.map(r=>`<tr><td class="num">${esc(r.num)}</td><td>${esc(r.apellido)}</td><td>${esc(r.nombre)}</td><td>${esc(r.calle)}</td><td>${esc(r.nro)}</td><td>${esc(r.localidad)}</td><td><span class="control-badge warn">No llegó</span></td></tr>`).join('')}</tbody></table></div>`;
-  }
-
-  function marginMm(){return CFGC.margin==='small'?10:CFGC.margin==='large'?22:15}
-  function fontSize(){return CFGC.size==='small'?7.5:CFGC.size==='large'?10:8.5}
-  function rowPad(){return CFGC.rowH==='small'?1.2:CFGC.rowH==='large'?3:1.8}
-  function rgb(hex){
-    hex=String(hex||'#1f4e8c').replace('#','');
-    if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
-    return [0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)||0);
-  }
-  function accent(){return rgb((window.CFG&&CFG.accent)||'#1f4e8c')}
-  function drawHeader(doc,title,subtitle){
-    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),a=accent();
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(16);doc.setTextColor(25,30,38);doc.text(title,M,28);
-    doc.setDrawColor(a[0],a[1],a[2]);doc.setLineWidth(1.5);doc.line(M,34,W-M,34);
-    doc.setFont(CFGC.font,'normal');doc.setFontSize(8.5);doc.setTextColor(105,112,122);
-    doc.text(subtitle||'',M,43);
-    doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
-    if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,String(CFGC.logo).startsWith('data:image/jpeg')?'JPEG':'PNG',W-M-30,8,30,15);}catch(e){}}
-  }
-  function drawFooter(doc){
-    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),pages=doc.internal.getNumberOfPages();
-    for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont(CFGC.font,'normal');doc.setFontSize(7);doc.setTextColor(125,130,138);doc.text(CFGC.footer||'Nora · Control',M,H-9);doc.text('Página '+p+' de '+pages,W-M,H-9,{align:'right'});}
-  }
-  async function generateControlSummaryPdf(){
-    const c=CONTROL,{jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
-    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,CFGC.title||'Resumen del control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen general',M,58);
-    const kpis=[
-      ['Total de boletas vendidas',money(c.base.length)],
-      ['Cuotas cobradas (con primeras cuotas)',money(c.totalPaid)],
-      ['Cuotas cobradas (sin primeras cuotas)',money(c.paidWithoutFirst)],
-      ['Bajas',money(c.baja.length)],
-      ['Contados',money(c.counted)],
-      ['Faltan controlar',money(c.missing.length)]
-    ];
-    doc.autoTable({startY:63,head:[['Indicador','Cantidad']],body:kpis,theme:'grid',
-      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
-      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
-    let y=doc.lastAutoTable.finalY+10;
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen adicional',M,y);y+=5;
-    const distRows=[];
-    for(let q=10;q>=1;q--){const qty=c.dist[q]||0;distRows.push([q===10?'Boletas completadas':'Total de boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s'),q,qty,q*qty,CFGC.showPercent?pct(q*qty,c.base.length):'—']);}
-    distRows.push(['Bajas','—',c.baja.length,'—',CFGC.showPercent?pct(c.baja.length,c.base.length):'—']);
-    doc.autoTable({startY:y,head:[['Boletas pagas','Cuotas','Cantidad','Total de cuotas','%']],body:distRows,theme:'grid',
-      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
-      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
-    if(CFGC.showLocalities){
-      y=doc.lastAutoTable.finalY+10;
-      if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}
-      doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen por localidad',M,y);y+=5;
-      const locRows=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]);
-      locRows.push(['TOTAL',c.base.length,c.control.length,c.missing.length,c.baja.length]);
-      doc.autoTable({startY:y,head:[['Localidad','Vendidas','Controladas','Faltan','Bajas']],body:locRows,theme:'grid',
-        styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
-        headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
-    }
-    drawFooter(doc);
-    await savePdfBlob(doc.output('blob'),`Resumen Control - ${safeCtl(c.period||'control')}.pdf`);
-  }
-  async function generateControlMissingPdf(){
-    const c=CONTROL,{jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
-    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Boletas que no llegaron al control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
-    doc.text('Cantidad: '+money(c.missing.length),M,58);
-    const body=c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
-    if(!body.length){doc.setFont(CFGC.font,'normal');doc.setFontSize(10);doc.text('Todas las boletas de la Base de Datos Original llegaron al Control.',M,70);drawFooter(doc);await savePdfBlob(doc.output('blob'),`Boletas no llegaron - ${safeCtl(c.period||'control')}.pdf`);return;}
-    doc.autoTable({startY:64,head:[['N°','Apellido','Nombre','Calle','Nro','Localidad','Estado']],body,theme:'grid',
-      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2,overflow:'linebreak'},
-      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},
-      columnStyles:{0:{halign:'right'},6:{fontStyle:'bold',textColor:[180,70,15]}},margin:{left:M,right:M}});
-    drawFooter(doc);
-    await savePdfBlob(doc.output('blob'),`Boletas no llegaron al Control - ${safeCtl(c.period||'control')}.pdf`);
-  }
-  async function generateControlFullPdf(){
-    const c=CONTROL,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Informe completo de Control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen ejecutivo',M,58);
-    const exec=[['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan llegar al control',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0']];
-    doc.autoTable({startY:63,head:[['Indicador','Valor']],body:exec,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
-    let y=doc.lastAutoTable.finalY+9;
-    const addTable=(title,head,body)=>{if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text(title,M,y);y+=5;doc.autoTable({startY:y,head:[head],body,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});y=doc.lastAutoTable.finalY+9;};
-    addTable('Distribución de cuotas',['Cuotas','Cantidad','Total cuotas','%'],Array.from({length:10},(_,i)=>10-i).map(q=>[q,c.dist[q]||0,(q*(c.dist[q]||0)),CFGC.showPercent?pct(c.dist[q]||0,c.base.length):'—']));
-    if(CFGC.showLocalities)addTable('Resumen por localidad',['Localidad','Vendidas','Controladas','Faltan','Bajas'],Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]));
-    if(CFGC.showCollectors&&Object.keys(c.cobradorMap||{}).length)addTable('Resumen por cobrador',['Cobrador','Boletas','Cuotas','Bajas'],Object.entries(c.cobradorMap).sort((a,b)=>b[1].count-a[1].count).map(([l,v])=>[l,v.count,v.paid,v.bajas]));
-    if(CFGC.showQuality)addTable('Calidad del control',['Indicador','Cantidad'],[['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers],['Filas en duplicados',c.duplicateRows],['Con 1ª cuota',c.firstPayment],['Con 10 cuotas',c.fullPayment],['Contados',c.counted]]);
-    if(c.missing.length)addTable('Boletas que no llegaron',['N°','Apellido','Nombre','Calle','Nro','Localidad'],c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad]));
-    drawFooter(doc);await savePdfBlob(doc.output('blob'),`Informe completo Control - ${safeCtl(c.period||'control')}.pdf`);
-  }
-  async function exportControlXlsx(){
-    const c=CONTROL,wb=XLSX.utils.book_new();
-    const resumen=[['Indicador','Valor'],['Período',c.period],['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Contados',c.counted],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):0],['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers]];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.localMap).map(([l,v])=>({Localidad:l,Vendidas:v.sold,Controladas:v.controlled,Faltan:v.missing,Bajas:v.bajas,Cuotas:v.paid}))), 'Localidades');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.cobradorMap||{}).map(([l,v])=>({Cobrador:l,Boletas:v.count,Cuotas:v.paid,Bajas:v.bajas,Promedio:v.count?v.paid/v.count:0}))), 'Cobradores');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.missing.map(r=>({'N°':r.num,Apellido:r.apellido,Nombre:r.nombre,Calle:r.calle,Nro:r.nro,Localidad:r.localidad}))), 'No llegaron');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(c.control.map(r=>({'N°':r.num,Pag:r.pag,Baja:r.baja,Cobrador:r.cobrador,Condicion:r.condicion,Duplicado:r.duplicado}))), 'Control detalle');
-    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveXlsxBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Analisis Control - ${safeCtl(c.period||'control')}.xlsx`);notify('Análisis XLSX exportado','ok');
-  }
-  function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
-
-  /* recuperar último procesamiento */
-  try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
-  window.noraControlLoadFile=loadControlFile;
-  /* Si el Centro de datos recibe un Excel antes de terminar de inicializar Control,
-     se procesa automáticamente apenas el módulo queda disponible. */
-  const __pendingControlFiles=window.__noraControlPendingFiles||[];
-  window.__noraControlPendingFiles=[];
-  if(__pendingControlFiles.length){
-    Promise.resolve().then(async()=>{
-      for(const f of __pendingControlFiles){
-        try{await window.noraControlLoadFile(f);}
-        catch(e){try{if(typeof notify==='function')notify('No se pudo procesar Control: '+(e.message||e),'err');}catch(_){}}
-      }
-      try{syncDataCenterUI();renderFilesList();renderHome();}catch(e){}
-    });
-  }
-  /* Restaurar automáticamente las planillas Control que ya estaban en Carga de Datos. */
-  Promise.resolve().then(async()=>{
-    try{
-      if(window.__noraControlRestoredOnce)return;
-      window.__noraControlRestoredOnce=true;
-      if(CONTROL)return;
-      const stored=(typeof FILES!=='undefined'?FILES:[]).filter(f=>
-        f && (f.kind==='control'||f.sourceType==='control'||(typeof window.isControlFileName==='function'&&window.isControlFileName(f.name)))
-      );
-      for(const f of stored){
-        if(!f.raw)continue;
-        let bytes=f.raw;
-        if(bytes instanceof Uint8Array)bytes=bytes.buffer;
-        if(!(bytes instanceof ArrayBuffer)){
-          try{bytes=new Uint8Array(bytes).buffer;}catch(e){continue;}
-        }
-        const file=new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-        await window.noraControlLoadFile(file);
-        if(CONTROL)break;
-      }
-      try{syncDataCenterUI();renderFilesList();renderHome();if(typeof renderDataManager==='function')renderDataManager();}catch(e){}
-    }catch(e){console.warn('No se pudo restaurar automáticamente la Planilla Control desde Carga de Datos',e);}
-  });
-  window.noraControlClear=function(){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}try{renderControl();}catch(e){}};
-  window.noraControlRender=renderControl;
-  window.noraControlRecalc=()=>{if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
-  window.noraControlSyncFromDataCenter=async function(){
-    try{const list=(typeof FILES!=='undefined'?FILES:[]).filter(f=>f&&fileHasDestination(f,'control'));if(!list.length){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();return false;}const f=list[0];if(!f.raw)return false;let bytes=f.raw;if(bytes instanceof Uint8Array)bytes=bytes.buffer;if(!(bytes instanceof ArrayBuffer))bytes=new Uint8Array(bytes).buffer;await loadControlFile(new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));return !!CONTROL;}catch(e){console.error('noraControlSyncFromDataCenter',e);return false;}
-  };
-  window.noraControlActions={summary:()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn'),full:()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn'),missing:()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn'),xlsx:()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn'),clear:()=>window.noraControlClear(),recalc:()=>window.noraControlRecalc()};
-  paintCfg();bindCfg();renderControl();
-
-  /* integrar navegación existente */
-  if(typeof TITLES!=='undefined')TITLES.control=['Control','Control mensual, resumen y boletas que no llegaron.'];
-  if(Array.isArray(window.VIEW_ORDER)){}
-  try{
-    if(typeof VIEW_ORDER!=='undefined'&&!VIEW_ORDER.includes('control'))VIEW_ORDER.splice(VIEW_ORDER.indexOf('sorteos'),0,'control');
-  }catch(e){}
-  document.querySelectorAll('[data-view="control"]').forEach(b=>b.addEventListener('click',()=>window.setView('control')));
-  const originalSetView=window.setView;
-  if(originalSetView&&!originalSetView.__controlWrapped){
-    const wrapped=function(v,...args){return originalSetView.call(this,v,...args)};
-    wrapped.__controlWrapped=true;window.setView=wrapped;
-  }
-  /* actualiza el orden del buscador y accesos */
-  setTimeout(()=>{try{paintIcons(document.getElementById('view-control'));}catch(e){}},50);
-})();
-
-/* ===== CONTROL · CARGA ROBUSTA DE EXCEL ===== */
-(function(){
-  'use strict';
-  function byId(id){return document.getElementById(id)}
-  function goCenter(){
-    try{if(typeof window.setView==='function')window.setView('home');}catch(e){}
-    setTimeout(function(){const i=byId('dataCenterFile');if(i){try{i.value='';}catch(e){};i.click();}const c=byId('dataCenterCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},120);
-  }
-  function pick(){goCenter();}
-  function load(f){
-    if(!f)return;
-    if(typeof window.noraControlLoadFile==='function'){window.noraControlLoadFile(f);return;}
-    if(typeof XLSX==='undefined'){
-      const st=byId('ctlStatus');if(st){st.className='status-line err';st.textContent='No está disponible el motor Excel XLSX. Recargá la página con conexión a Internet.';}
-      if(typeof notify==='function')notify('No está disponible el motor Excel XLSX','err');
-      return;
-    }
-  }
-  function bind(){
-    const btn=byId('ctlLoadBtn'),inp=byId('ctlFile'),drop=byId('ctlDrop');
-    if(!btn||!inp||!drop)return false;
-    if(!btn.dataset.robustBound){
-      btn.dataset.robustBound='1';
-      btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();pick();},true);
-    }
-    if(!inp.dataset.robustBound){
-      inp.dataset.robustBound='1';
-      inp.addEventListener('change',function(e){const f=e.target.files&&e.target.files[0];if(f){if(typeof window.handleFiles==='function')window.handleFiles([f]);else load(f);}},true);
-    }
-    if(!drop.dataset.robustBound){
-      drop.dataset.robustBound='1';
-      ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();drop.classList.add('drag-over','ready');},true));
-      ['dragleave','dragend'].forEach(ev=>drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('drag-over','ready');},true));
-      drop.addEventListener('drop',function(e){
-        e.preventDefault();e.stopPropagation();drop.classList.remove('drag-over','ready');
-        const files=e.dataTransfer&&e.dataTransfer.files;
-        if(files&&files.length&&typeof window.handleFiles==='function')window.handleFiles(Array.from(files));
-      },true);
-      drop.addEventListener('click',function(e){if(e.target.closest('button,a,input'))return;e.preventDefault();e.stopPropagation();pick();},true);
-    }
-    return true;
-  }
-  let tries=0;const timer=setInterval(()=>{tries++;if(bind()||tries>40)clearInterval(timer)},150);
-  document.addEventListener('DOMContentLoaded',bind,{once:true});
-  window.noraControlPickExcel=pick;
-})();
-  
 </script>
 </body>
 </html>
