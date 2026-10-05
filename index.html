@@ -2805,7 +2805,7 @@ document.getElementById('btnBack').onclick=()=>{if(navIndex>0){navIndex--;setVie
 document.getElementById('btnForward').onclick=()=>{if(navIndex<navHistory.length-1){navIndex++;setView(navHistory[navIndex],true);updateNavBtns();}};
 window.setView=setView;
 document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
-if(!document.getElementById('cMonth').value)document.getElementById('cMonth').value=new Date().toISOString().slice(0,7);setView('home',true);navHistory=['home'];navIndex=0;initDataManager();syncDataCenterUI();
+if(!document.getElementById('cMonth').value)document.getElementById('cMonth').value=new Date().toISOString().slice(0,7);setView('home',true);navHistory=['home'];navIndex=0;initDataManager();syncDataCenterUI();renderDataManager();
 
 (function swipe(){let ts=null;const content=document.getElementById('mainContent');content.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(t.target.closest('input,select,textarea,button,canvas,.scrollx,.omni-overlay,.dv-wrap,.rec-overlay'))return;ts={x:t.clientX,y:t.clientY,t:Date.now()};},{passive:true});content.addEventListener('touchend',e=>{if(!ts)return;const dx=e.changedTouches[0].clientX-ts.x;const dy=e.changedTouches[0].clientY-ts.y;const dt=Date.now()-ts.t;ts=null;if(dt>700)return;if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;const cur=VIEW_ORDER.findIndex(v=>document.getElementById('view-'+v).classList.contains('active'));const next=dx<0?Math.min(cur+1,VIEW_ORDER.length-1):Math.max(cur-1,0);if(next!==cur)setView(VIEW_ORDER[next]);},{passive:true});})();
 let lastScrollY=0;
@@ -2832,7 +2832,34 @@ function recordsForDestination(dest){
   const names=new Set(FILES.filter(f=>fileHasDestination(f,dest)).map(f=>f.name));
   return RECORDS.filter(r=>names.has(r.source));
 }
-async function saveState(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put({files:FILES.map(f=>({name:f.name,kind:f.kind||f.sourceType||'data',sourceType:f.sourceType||'data',destinations:getFileDestinations(f),raw:f.raw||null,records:(f.records||[]).map(r=>({...r,fcarga:r.fcarga instanceof Date?r.fcarga.toISOString():r.fcarga}))})),headers:window.__HEADERS||[],ts:Date.now()},'main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){console.warn(e);}scheduleAutoBackup();}
+async function saveState(opts={}){
+  try{
+    const db=await openDB();
+    const tx=db.transaction(STORE,'readwrite');
+    const os=tx.objectStore(STORE);
+    const currentFiles=Array.isArray(FILES)?FILES:[];
+    // Never erase an existing populated state because of an initialization race.
+    if(!currentFiles.length && !opts.allowEmpty){
+      const old=await new Promise((resolve,reject)=>{const rq=os.get('main');rq.onsuccess=()=>resolve(rq.result||null);rq.onerror=()=>reject(rq.error);});
+      if(old&&Array.isArray(old.files)&&old.files.length) return;
+    }
+    const payload={
+      files:currentFiles.map(f=>({
+        name:f.name,
+        kind:f.kind||f.sourceType||'data',
+        sourceType:f.sourceType||f.kind||'data',
+        destinations:getFileDestinations(f),
+        raw:f.raw||null,
+        records:(f.records||[]).map(r=>({...r,fcarga:r.fcarga instanceof Date?r.fcarga.toISOString():r.fcarga}))
+      })),
+      headers:window.__HEADERS||[],ts:Date.now()
+    };
+    os.put(payload,'main');
+    await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+  }catch(e){console.warn('saveState',e);}
+  scheduleAutoBackup();
+}
+
 async function loadState(){try{const db=await openDB();const req=db.transaction(STORE,'readonly').objectStore(STORE).get('main');return await new Promise((a,b)=>{req.onsuccess=()=>a(req.result);req.onerror=b;});}catch(e){return null;}}
 async function clearState(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete('main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}scheduleAutoBackup();}
 
@@ -2962,13 +2989,35 @@ function renderDataManager(){
   paintIcons();
 }
 function initDataManager(){
-  const drop=document.getElementById('dataManagerDrop'),input=document.getElementById('dataManagerFile'); if(!drop||!input)return;
-  const send=fs=>{if(fs&&fs.length)handleFiles(Array.from(fs));};
+  const drop=document.getElementById('dataManagerDrop'),input=document.getElementById('dataManagerFile');
+  if(!drop||!input)return;
+  if(drop.dataset.bound==='1')return;
+  drop.dataset.bound='1';
+  const send=async fs=>{
+    const list=Array.from(fs||[]).filter(Boolean);
+    if(!list.length)return;
+    const st=document.getElementById('dmStatus');
+    if(st)st.className='status-line';
+    if(st)st.textContent='Cargando '+list.length+' archivo(s)…';
+    try{
+      await handleFiles(list);
+      if(st){st.className='status-line ok';st.textContent='Carga terminada · '+FILES.length+' archivo(s) en el Centro de datos.';}
+      renderDataManager();syncDataCenterUI();
+    }catch(e){
+      console.error(e);
+      if(st){st.className='status-line err';st.textContent='Error al cargar: '+(e.message||String(e));}
+      notify('No se pudo cargar el Excel: '+(e.message||String(e)),'err',{duration:8000});
+    }
+  };
   drop.onclick=e=>{if(e.target!==input)input.click();};
-  drop.ondragover=e=>{e.preventDefault();drop.classList.add('ready');};drop.ondragleave=()=>drop.classList.remove('ready');drop.ondrop=e=>{e.preventDefault();drop.classList.remove('ready');send(e.dataTransfer.files);};input.onchange=()=>{send(input.files);input.value='';};
+  drop.ondragover=e=>{e.preventDefault();e.stopPropagation();drop.classList.add('ready');};
+  drop.ondragleave=e=>{e.preventDefault();drop.classList.remove('ready');};
+  drop.ondrop=e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('ready');send(e.dataTransfer?.files);};
+  input.onchange=()=>{const fs=input.files;send(fs);input.value='';};
   document.getElementById('dmRefresh')?.addEventListener('click',renderDataManager);
   document.getElementById('goDataManager')?.addEventListener('click',()=>setView('carga'));
 }
+
 function refreshSelects(){fillSourceSelect('fSource');fillSourceSelect('dSource');[['fSit','situacion'],['fMes','mes'],['fLoc','localidad'],['dSit','situacion'],['dMes','mes'],['dLoc','localidad']].forEach(([id,f])=>fillSelect(id,uniq(f)));}
 function populateBulkPdfSelectors(){
   const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc'),type=document.getElementById('bulkPdfType');
@@ -3728,7 +3777,57 @@ function jumpToRecord(r){setView('datos');setTimeout(()=>{document.getElementByI
 function initSheet(toggleId,cardId){const t=document.getElementById(toggleId);const c=document.getElementById(cardId);if(!t||!c)return;const mq=window.matchMedia('(max-width:820px)');const apply=()=>{if(mq.matches){t.style.display='inline-block';c.classList.add('sheet-closed');}else{t.style.display='none';c.classList.remove('sheet-closed');}};apply();mq.addEventListener?mq.addEventListener('change',apply):mq.addListener(apply);t.onclick=()=>{const closed=c.classList.toggle('sheet-closed');notify(closed?'Filtros ocultos':'Filtros visibles','');};}
 initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersCard');
 
-(async function restoreState(){await _boot;const st=await loadState();if(!st||!st.files||!st.files.length){try{await tryReconnectBackup();}catch(e){}return;}try{if(st.headers)window.__HEADERS=st.headers;FILES=st.files.map(f=>({name:f.name,kind:f.kind||f.sourceType||'data',sourceType:f.sourceType||f.kind||'data',destinations:Array.isArray(f.destinations)?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data'),raw:f.raw||null,records:(f.records||[]).map(r=>{let fc=r.fcarga;if(fc&&typeof fc==='string'){const d=new Date(fc);fc=isNaN(d.getTime())?null:d;}return {...r,fcarga:fc,calleKey:r.calleKey||claveCalle(r.calle)};})}));rebuildRecords();if(!RECORDS.length)return;renderFilesList();dz.classList.add('ready');['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.remove('hidden'));document.getElementById('filesActions').classList.remove('hidden');document.getElementById('dashEmpty').classList.add('hidden');document.getElementById('dashBody').classList.remove('hidden');refreshSelects();populateBulkPdfSelectors();refreshPreview();updateDashboard();updateFilenamePreview();syncDataCenterUI();updateStatusLine([],[],[]);document.getElementById('status').className='status-line ok';document.getElementById('status').textContent='Datos restaurados: '+RECORDS.length+' registros.';syncDataCenterUI();renderHome();}catch(e){console.warn(e);}try{await tryReconnectBackup();}catch(e){}try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}})();
+(async function restoreState(){
+  await _boot;
+  let st=null;
+  try{st=await loadState();}catch(e){st=null;}
+  // Compatibility fallback: the existing mirror uses the same MIRROR_KEY as the working version.
+  if(!st||!Array.isArray(st.files)||!st.files.length){
+    try{
+      const raw=localStorage.getItem(MIRROR_KEY);
+      const mir=raw?JSON.parse(raw):null;
+      const ms=mir&&mir.state&&mir.state.main?mir.state.main:null;
+      if(ms&&Array.isArray(ms.files)&&ms.files.length)st=ms;
+    }catch(e){}
+  }
+  if(!st||!Array.isArray(st.files)||!st.files.length){
+    try{await tryReconnectBackup();}catch(e){}
+    syncDataCenterUI();renderDataManager();
+    return;
+  }
+  try{
+    if(st.headers)window.__HEADERS=st.headers;
+    FILES=st.files.map(f=>({
+      name:f.name,
+      kind:f.kind||f.sourceType||'data',
+      sourceType:f.sourceType||f.kind||'data',
+      destinations:Array.isArray(f.destinations)&&f.destinations.length?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data'),
+      raw:f.raw||null,
+      records:(f.records||[]).map(r=>{
+        let fc=r.fcarga;
+        if(fc&&typeof fc==='string'){const d=new Date(fc);fc=isNaN(d.getTime())?null:d;}
+        return {...r,fcarga:fc,calleKey:r.calleKey||claveCalle(r.calle)};
+      })
+    }));
+    rebuildRecords();
+    renderFilesList();syncDataCenterUI();renderDataManager();
+    if(RECORDS.length){
+      if(typeof dz!=='undefined'&&dz)dz.classList.add('ready');
+      ['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.remove('hidden'));
+      document.getElementById('filesActions')?.classList.remove('hidden');
+      document.getElementById('dashEmpty')?.classList.add('hidden');document.getElementById('dashBody')?.classList.remove('hidden');
+      refreshSelects();populateBulkPdfSelectors();refreshPreview();updateDashboard();updateFilenamePreview();
+      updateStatusLine([],[],[]);
+      const stEl=document.getElementById('status');if(stEl){stEl.className='status-line ok';stEl.textContent='Datos restaurados: '+RECORDS.length+' registros.';}
+    }else{
+      const stEl=document.getElementById('status');if(stEl){stEl.className='status-line ok';stEl.textContent='Archivos restaurados: '+FILES.length+'.';}
+    }
+    renderHome();
+  }catch(e){console.warn('restoreState',e);}
+  try{await tryReconnectBackup();}catch(e){}
+  try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}
+})();
+
 window.addEventListener('beforeunload',()=>{try{if(backupFileHandle)writeAutoBackup('cierre');}catch(e){}});
 
 const MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
