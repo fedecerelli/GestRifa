@@ -2847,6 +2847,8 @@ function isControlFileName(name){
 }
 window.isControlFileName=isControlFileName;
 
+window.__noraControlPendingFiles=window.__noraControlPendingFiles||[];
+
 async function handleFiles(files,silent,opts){
   if(!files||!files.length)return;
   const statusEl=document.getElementById('status');
@@ -2877,8 +2879,12 @@ async function handleFiles(files,silent,opts){
   rebuildRecords();renderFilesList();updateStatusLine(added,replaced,allErrors);syncDataCenterUI();
   for(const file of controlFiles){
     try{
-      if(typeof window.noraControlLoadFile==='function')await window.noraControlLoadFile(file);
-      else allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:'El módulo Control todavía no está listo.'}]});
+      if(typeof window.noraControlLoadFile==='function'){
+        await window.noraControlLoadFile(file);
+      }else{
+        window.__noraControlPendingFiles=window.__noraControlPendingFiles||[];
+        if(!window.__noraControlPendingFiles.some(f=>f===file))window.__noraControlPendingFiles.push(file);
+      }
     }catch(err){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:err.message||String(err)}]});}
   }
   if(!opts?.fromSorteo && typeof window.__sorteoLoadFiles==='function'){
@@ -5320,6 +5326,19 @@ function mobilePrint(blob,name){
   /* recuperar último procesamiento */
   try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
   window.noraControlLoadFile=loadControlFile;
+  /* Si el Centro de datos recibe un Excel antes de terminar de inicializar Control,
+     se procesa automáticamente apenas el módulo queda disponible. */
+  const __pendingControlFiles=window.__noraControlPendingFiles||[];
+  window.__noraControlPendingFiles=[];
+  if(__pendingControlFiles.length){
+    Promise.resolve().then(async()=>{
+      for(const f of __pendingControlFiles){
+        try{await window.noraControlLoadFile(f);}
+        catch(e){try{if(typeof notify==='function')notify('No se pudo procesar Control: '+(e.message||e),'err');}catch(_){}}
+      }
+      try{syncDataCenterUI();renderFilesList();renderHome();}catch(e){}
+    });
+  }
   window.noraControlClear=function(){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}try{renderControl();}catch(e){}};
   paintCfg();bindCfg();renderControl();
 
