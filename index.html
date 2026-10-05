@@ -996,6 +996,17 @@ body.nx-hide-floats .nx-float{display:none}
 #ctlFile{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
 #ctlDrop.drag-over{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--panel2))!important;transform:scale(1.005)}
 </style>
+<style id="ctl-enhancements">
+.control-report-options{align-items:end}
+.control-source-note{min-height:39px;padding:9px 11px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;color:var(--sub);font-size:12px;display:flex;align-items:center}
+.control-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.control-chart-grid .chartbox{height:285px;cursor:default}
+.chart-title{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}
+.chartbox-small{height:235px;margin-top:12px;cursor:default}
+.control-prof-note{margin-top:8px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:11.5px;color:var(--sub)}
+.control-prof-note b{color:var(--ink)}
+@media(max-width:800px){.control-chart-grid{grid-template-columns:1fr}.control-report-options .field{max-width:none!important;width:100%}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1404,10 +1415,31 @@ body.nx-hide-floats .nx-float{display:none}
 
   <div class="card hidden" id="ctlDataCard">
     <div class="control-section-title">
-      <div><h3>Resultado del control</h3><small id="ctlPeriodLabel">—</small></div>
+      <div><h3 id="ctlScreenTitle">Resultado del control</h3><small id="ctlPeriodLabel">—</small></div>
       <span class="control-badge" id="ctlMatchBadge">—</span>
     </div>
+    <div class="row control-report-options" style="margin:0 0 12px">
+      <div class="field" style="max-width:330px">
+        <label>Localidad principal para títulos</label>
+        <select id="ctlPrincipalLocality"></select>
+      </div>
+      <div class="field" style="max-width:360px">
+        <label>Faltantes en los resúmenes</label>
+        <select id="ctlMissingAsPaid">
+          <option value="0">No considerarlos cobrados</option>
+          <option value="1">Considerarlos cobrados con 10 cuotas</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:330px">
+        <label>Origen de contados</label>
+        <div class="control-source-note">Base de Datos Original · celda M4</div>
+      </div>
+    </div>
     <div class="control-kpis" id="ctlKpis"></div>
+    <div class="control-chart-grid">
+      <div class="chartbox"><div class="chart-title">Distribución de boletas por cuotas</div><canvas id="ctlQuotaChart"></canvas></div>
+      <div class="chartbox"><div class="chart-title">Estado del control</div><canvas id="ctlStatusChart"></canvas></div>
+    </div>
   </div>
 
   <div class="control-grid hidden" id="ctlReportsGrid">
@@ -1419,9 +1451,10 @@ body.nx-hide-floats .nx-float{display:none}
     </div>
     <div class="card">
       <div class="control-section-title">
-        <div><h3>Resumen por localidad</h3><small>Controladas, faltantes y bajas</small></div>
+        <div><h3 id="ctlLocalityTitle">Resumen por localidad</h3><small id="ctlLocalitySubtitle">Controladas, faltantes y bajas</small></div>
       </div>
       <div class="control-table-wrap"><table class="control-table" id="ctlLocalityTable"></table></div>
+      <div class="chartbox chartbox-small"><div class="chart-title">Control por localidad</div><canvas id="ctlLocalityChart"></canvas></div>
     </div>
   </div>
 
@@ -5174,6 +5207,8 @@ window.nrIfPrint=function(iframe,url){
  if(!isMobile()){try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}return;}
  fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));};
 })();
+
+
 /* ================= CONTROL — Planilla Control ================= */
 (function(){
   'use strict';
@@ -5183,7 +5218,8 @@ window.nrIfPrint=function(iframe,url){
     subtitle:'Control mensual de boletas y cuotas',
     footer:'Nora · Control de cobranza',
     orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
-    showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:''
+    showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:'',
+    missingAsPaid:false,principalLocality:''
   };
   let CFGC=Object.assign({},DEF);
   try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
@@ -5213,6 +5249,8 @@ window.nrIfPrint=function(iframe,url){
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
     });
     const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
+    const loc=$c('ctlPrincipalLocality');if(loc&&CONTROL){loc.value=CFGC.principalLocality||loc.value;}
+    const ma=$c('ctlMissingAsPaid');if(ma)ma.value=CFGC.missingAsPaid?'1':'0';
     ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
     });
@@ -5228,6 +5266,8 @@ window.nrIfPrint=function(iframe,url){
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
       el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
     });
+    $c('ctlPrincipalLocality')?.addEventListener('change',e=>{CFGC.principalLocality=e.target.value;saveCfg();if(CONTROL)renderControl();});
+    $c('ctlMissingAsPaid')?.addEventListener('change',e=>{CFGC.missingAsPaid=e.target.value==='1';saveCfg();if(CONTROL)renderControl();});
     $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
     $c('ctlLoadBtn').onclick=()=>{try{window.setView('carga');}catch(e){}};
     /* La carga de archivos NO existe en Control. Todo entra por Carga de Datos. */
@@ -5278,59 +5318,70 @@ window.nrIfPrint=function(iframe,url){
     return -1;
   }
   function buildControlModel(fileName,controlRows,baseRows){
-    const ch=findHeader(controlRows,['n°','pag','bajas'])>=0?findHeader(controlRows,['n°','pag','bajas']):5;
-    const bh=findHeader(baseRows,['n°','apellido','nombre','calle'])>=0?findHeader(baseRows,['n°','apellido','nombre','calle']):6;
+    const ch0=findHeader(controlRows,['n°','pag','bajas']);
+    const bh0=findHeader(baseRows,['n°','apellido','nombre','calle']);
+    const ch=ch0>=0?ch0:5, bh=bh0>=0?bh0:6;
     const mapHeaders=(rows,h)=>{const m={};(rows[h]||[]).forEach((v,i)=>{m[nrm(v).toLowerCase().replace(/[°.:]/g,'').replace(/\s+/g,' ')]=i;});return m;};
     const cm=mapHeaders(controlRows,ch),bm=mapHeaders(baseRows,bh);
     const ci=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(cm[k]!=null)return cm[k];}return def};
     const bi=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(bm[k]!=null)return bm[k];}return def};
     const cidx={num:ci(['n°','n'],'0'),pag:ci(['pag','pago'],1),baja:ci(['bajas','baja'],2),cobrador:ci(['cobrador'],3),dup:ci(['duplicados','duplicado'],4),cond:ci(['condicion','condición','situacion','situación'],5)};
     const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes'],8),compl:bi(['compl','completo'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],12)};
+
     const control=[];
     for(let i=ch+1;i<controlRows.length;i++){
       const r=controlRows[i]||[], num=keyNum(r[cidx.num]);
       if(!num)continue;
       control.push({num,pag:Math.max(0,Math.round(numVal(r[cidx.pag]))),baja:/(^1$|si|sí|true)/i.test(nrm(r[cidx.baja]))?1:0,cobrador:nrm(r[cidx.cobrador]),duplicado:numVal(r[cidx.dup]),condicion:nrm(r[cidx.cond])});
     }
+
     const base=[];
     for(let i=bh+1;i<baseRows.length;i++){
       const r=baseRows[i]||[], num=keyNum(r[bidx.num]);if(!num)continue;
       base.push({num,apellido:nrm(r[bidx.ape]),nombre:nrm(r[bidx.nom]),calle:nrm(r[bidx.calle]),nro:nrm(r[bidx.nro]),piso:nrm(r[bidx.piso]),dpto:nrm(r[bidx.dpto]),pago:numVal(r[bidx.pago]),mes:nrm(r[bidx.mes]),situacion:nrm(r[bidx.sit]),localidad:nrm(r[bidx.loc]),duplicado:numVal(r[bidx.dup])});
     }
-    const controlCount=new Map();
-    const uniqueSet=new Set(), conditionMap={}, cobradorMap={}, paymentDist={};
-    control.forEach(r=>{uniqueSet.add(r.num);conditionMap[r.condicion||'Sin informar']=(conditionMap[r.condicion||'Sin informar']||0)+1;const cob=r.cobrador||'Sin cobrador';if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};cobradorMap[cob].count++;cobradorMap[cob].paid+=r.pag;cobradorMap[cob].bajas+=r.baja;paymentDist[r.pag]=(paymentDist[r.pag]||0)+1;});
-    control.forEach(r=>controlCount.set(r.num,(controlCount.get(r.num)||0)+1));
+
+    /* Regla fija del negocio: la cantidad de contados está en M4 de Base de Datos Original. */
+    const countedCell=baseRows?.[3]?.[12];
+    const counted=Math.max(0,Math.round(numVal(countedCell)));
+
+    const controlCount=new Map(),uniqueSet=new Set(),conditionMap={},cobradorMap={},paymentDist={};
+    control.forEach(r=>{
+      uniqueSet.add(r.num);
+      conditionMap[r.condicion||'Sin informar']=(conditionMap[r.condicion||'Sin informar']||0)+1;
+      const cob=r.cobrador||'Sin cobrador';
+      if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};
+      cobradorMap[cob].count++;cobradorMap[cob].paid+=r.pag;cobradorMap[cob].bajas+=r.baja;
+      paymentDist[r.pag]=(paymentDist[r.pag]||0)+1;
+      controlCount.set(r.num,(controlCount.get(r.num)||0)+1);
+    });
+
     const used=new Map(),missing=[];
     base.forEach(r=>{
       const u=used.get(r.num)||0,c=controlCount.get(r.num)||0;
-      if(u<c)used.set(r.num,u+1); else missing.push(r);
+      if(u<c)used.set(r.num,u+1);else missing.push(r);
     });
+
     const baja=control.filter(r=>r.baja===1);
-    const counted=control.filter(r=>/contad/i.test(r.condicion)).length;
     const duplicateFreq={};control.forEach(r=>duplicateFreq[r.num]=(duplicateFreq[r.num]||0)+1);
     const duplicateNumbers=Object.values(duplicateFreq).filter(v=>v>1).length;
     const duplicateRows=Object.values(duplicateFreq).filter(v=>v>1).reduce((a,v)=>a+v,0);
     const firstPayment=control.filter(r=>r.pag===1).length;
     const fullPayment=control.filter(r=>r.pag>=10).length;
     const controlledNonBaja=control.filter(r=>r.baja!==1).length;
-    const completed=controlledNonBaja+missing.length;
     const totalPaid=control.reduce((a,r)=>a+r.pag,0);
     const paidWithoutFirst=control.reduce((a,r)=>a+Math.max(0,r.pag-1),0);
-    /* La plantilla original considera como completadas (10 cuotas) todas
-       las boletas sin baja y suma también las que no llegaron al control.
-       Las bajas se distribuyen por las cuotas efectivamente registradas. */
-    const dist={};
-    for(let q=1;q<=10;q++)dist[q]=0;
+
+    /* Distribución real del control: las faltantes quedan fuera.
+       La opción de usuario se aplica solamente a los totales proyectados. */
+    const dist={};for(let q=1;q<=10;q++)dist[q]=0;
     control.forEach(r=>{
       if(r.baja===1){
         const q=Math.max(1,Math.min(9,r.pag||1));
         dist[q]=(dist[q]||0)+1;
-      }else{
-        dist[10]=(dist[10]||0)+1;
-      }
+      }else dist[10]=(dist[10]||0)+1;
     });
-    dist[10]+=missing.length;
+
     const baseByNum=new Map();base.forEach(r=>{if(!baseByNum.has(r.num))baseByNum.set(r.num,r);});
     const localMap={};
     base.forEach(r=>{
@@ -5339,15 +5390,43 @@ window.nrIfPrint=function(iframe,url){
       localMap[l].sold++;
     });
     control.forEach(r=>{
-      const b=baseByNum.get(r.num);const l=b?.localidad||'Sin localidad';
+      const b=baseByNum.get(r.num),l=b?.localidad||'Sin localidad';
       if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
       localMap[l].controlled++;localMap[l].paid+=r.pag;if(r.baja===1)localMap[l].bajas++;
     });
-    missing.forEach(r=>{const l=r.localidad||'Sin localidad';if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};localMap[l].missing++;});
-    let period=base.map(r=>r.mes).find(Boolean)||'';
-    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,firstPayment,fullPayment,uniqueControl:uniqueSet.size,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},_rawSource:{controlRows,baseRows}};
+    missing.forEach(r=>{
+      const l=r.localidad||'Sin localidad';
+      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+      localMap[l].missing++;
+    });
+
+    const localities=[...new Set(base.map(r=>r.localidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    const period=base.map(r=>r.mes).find(Boolean)||'';
+    return {
+      fileName,base,control,missing,baja,counted,controlledNonBaja,totalPaid,paidWithoutFirst,
+      dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,
+      firstPayment,fullPayment,uniqueControl:uniqueSet.size,localities,
+      source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},
+      sourceCounted:'Base de Datos Original!M4',
+      _rawSource:{controlRows,baseRows}
+    };
   }
   function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
+
+  const CTL_CHARTS={quota:null,status:null,locality:null};
+  function destroyCtlChart(k){if(CTL_CHARTS[k]){try{CTL_CHARTS[k].destroy();}catch(e){}CTL_CHARTS[k]=null;}}
+  function renderControlCharts(){
+    if(!CONTROL||typeof Chart==='undefined')return;
+    const c=CONTROL;
+    destroyCtlChart('quota');destroyCtlChart('status');destroyCtlChart('locality');
+    const qctx=$c('ctlQuotaChart')?.getContext('2d');
+    if(qctx)CTL_CHARTS.quota=new Chart(qctx,{type:'bar',data:{labels:['1','2','3','4','5','6','7','8','9','10'],datasets:[{label:'Boletas',data:[1,2,3,4,5,6,7,8,9,10].map(q=>c.dist[q]||0),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{title:{display:true,text:'Cuotas pagadas'}}}}});
+    const sctx=$c('ctlStatusChart')?.getContext('2d');
+    if(sctx)CTL_CHARTS.status=new Chart(sctx,{type:'doughnut',data:{labels:['Controladas','No llegaron','Bajas'],datasets:[{data:[Math.max(0,c.control.length-c.baja.length),c.missing.length,c.baja.length],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+    const lctx=$c('ctlLocalityChart')?.getContext('2d');
+    const entries=Object.entries(c.localMap).sort((a,b)=>b[1].sold-a[1].sold).slice(0,12);
+    if(lctx&&entries.length)CTL_CHARTS.locality=new Chart(lctx,{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'Vendidas',data:entries.map(x=>x[1].sold),borderWidth:1},{label:'Controladas',data:entries.map(x=>x[1].controlled),borderWidth:1},{label:'Faltan',data:entries.map(x=>x[1].missing),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+  }
 
   function renderControl(){
     const has=!!CONTROL;
@@ -5365,7 +5444,18 @@ window.nrIfPrint=function(iframe,url){
     }
     $c('ctlFileInfo').innerHTML=`<div class="control-file"><b>${esc(CONTROL.fileName)}</b><span class="control-badge ok">✓ Hojas Control + Base</span></div>`;
     const c=CONTROL;
-    $c('ctlPeriodLabel').textContent=(c.period||'Período no informado')+' · '+new Date().toLocaleDateString('es-AR');
+    const locSel=$c('ctlPrincipalLocality');
+    if(locSel){
+      const current=CFGC.principalLocality||'';
+      locSel.innerHTML=(c.localities||[]).map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('');
+      if(!locSel.options.length)locSel.innerHTML='<option value="">Sin localidad disponible</option>';
+      if(current&&[...locSel.options].some(o=>o.value===current))locSel.value=current;
+      else if(locSel.options.length){locSel.value=locSel.options[0].value;CFGC.principalLocality=locSel.value;saveCfg();}
+    }
+    const principal=CFGC.principalLocality||'';
+    $c('ctlScreenTitle').textContent='Resultado del control · '+(principal||'Localidad principal');
+    $c('ctlPeriodLabel').textContent=(c.period||'Período no informado')+' · '+(principal||'Todas las localidades')+' · '+new Date().toLocaleDateString('es-AR');
+    const ma=$c('ctlMissingAsPaid');if(ma)ma.value=CFGC.missingAsPaid?'1':'0';
     const ratio=c.base.length?c.control.length/c.base.length:0;
     $c('ctlMatchBadge').textContent=`${pct(c.control.length,c.base.length)} controlado`;
     $c('ctlMatchBadge').className='control-badge '+(c.missing.length?'warn':'ok');
@@ -5375,22 +5465,32 @@ window.nrIfPrint=function(iframe,url){
       ['Faltan controlar',c.missing.length,'danger'],
       ['Cuotas cobradas',c.totalPaid,''],
       ['Bajas',c.baja.length,'danger'],
-      ['Contados',c.counted,'ok']
+      ['Contados · M4',c.counted,'ok']
     ].map(x=>`<div class="control-kpi ${x[2]}"><div class="v">${money(x[1])}</div><div class="l">${x[0]}</div></div>`).join('');
-    renderBreakdown();renderLocalities();renderCollectors();renderQuality();renderInsights();renderMissing();
+    renderBreakdown();renderLocalities();renderCollectors();renderQuality();renderInsights();renderMissing();renderControlCharts();
+    const lt=$c('ctlLocalityTitle'),ls=$c('ctlLocalitySubtitle');
+    if(lt)lt.textContent='Resumen por localidad · '+(principal||'Principal');
+    if(ls)ls.textContent=`Controladas, faltantes y bajas · ${principal||'todas las localidades'}`;
   }
 
   function renderBreakdown(){
     const c=CONTROL,total=c.base.length,rows=[];
     for(let q=10;q>=1;q--){
       const qty=c.dist[q]||0;
-      const cuotas=q*qty;
-      const p=total?cuotas/total:0;
-      rows.push(`<tr><td class="control-summary-title">${q===10?'Boletas completadas':'Boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s')}</td><td class="num">${money(q)}</td><td class="num">${money(qty)}</td><td class="num">${money(cuotas)}</td><td class="num">${CFGC.showPercent?pct(cuotas,total):'—'}</td></tr>`);
+      const p=total?qty/total:0;
+      rows.push(`<tr><td class="control-summary-title">${q===10?'Completadas (10 cuotas)':'Con '+q+' cuota'+(q===1?'':'s')}</td><td class="num">${money(q)}</td><td class="num">${money(qty)}</td><td class="num">${CFGC.showPercent?pct(qty,total):'—'}</td></tr>`);
     }
-    const bajasPct=total?c.baja.length/total:0;
-    rows.push(`<tr class="total"><td>Bajas</td><td class="num">—</td><td class="num">${money(c.baja.length)}</td><td class="num">—</td><td class="num">${CFGC.showPercent?(bajasPct*100).toFixed(1)+'%':'—'}</td></tr>`);
-    $c('ctlBreakdownTable').innerHTML=`<thead><tr><th>Boletas pagas</th><th class="num">Cuotas</th><th class="num">Cantidad</th><th class="num">Total cuotas</th><th class="num">%</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+    rows.push(`<tr class="warn"><td class="control-summary-title">No llegaron al control</td><td class="num">—</td><td class="num">${money(c.missing.length)}</td><td class="num">${CFGC.showPercent?pct(c.missing.length,total):'—'}</td></tr>`);
+    rows.push(`<tr class="total"><td>BAJAS</td><td class="num">—</td><td class="num">${money(c.baja.length)}</td><td class="num">${CFGC.showPercent?pct(c.baja.length,total):'—'}</td></tr>`);
+    const projected=c.totalPaid+(CFGC.missingAsPaid?c.missing.length*10:0);
+    const projectedBoletas=c.control.length+(CFGC.missingAsPaid?c.missing.length:0);
+    const note=CFGC.missingAsPaid
+      ? `Faltantes incluidos como 10 cuotas: <b>${money(c.missing.length*10)}</b> cuotas proyectadas.`
+      : `Faltantes excluidos del cobro: <b>${money(c.missing.length)}</b> números permanecen informados por separado.`;
+    $c('ctlBreakdownTable').innerHTML=`<thead><tr><th>Distribución</th><th class="num">Cuotas</th><th class="num">Boletas</th><th class="num">%</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+    const wrap=$c('ctlBreakdownTable').closest('.card');
+    let n=wrap.querySelector('.control-prof-note');if(!n){n=document.createElement('div');n.className='control-prof-note';wrap.appendChild(n);}
+    n.innerHTML=`${note}<br><b>Total cuotas registradas:</b> ${money(c.totalPaid)} · <b>Total proyectado:</b> ${money(projected)} · <b>Boletas consideradas:</b> ${money(projectedBoletas)}.`;
   }
   function renderLocalities(){
     const box=$c('ctlLocalityTable');
@@ -5455,7 +5555,7 @@ window.nrIfPrint=function(iframe,url){
     const c=CONTROL,{jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
     const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,CFGC.title||'Resumen del control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    drawHeader(doc,CFGC.title||'Resumen del control',(CFGC.subtitle||'')+' · '+(c.period||'Período')+' · '+(CFGC.principalLocality||'Localidad principal'));
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen general',M,58);
     const kpis=[
       ['Total de boletas vendidas',money(c.base.length)],
@@ -5493,7 +5593,7 @@ window.nrIfPrint=function(iframe,url){
     const c=CONTROL,{jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
     const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Boletas que no llegaron al control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    drawHeader(doc,'Boletas que no llegaron al control',(CFGC.subtitle||'')+' · '+(c.period||'Período')+' · '+(CFGC.principalLocality||'Localidad principal'));
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
     doc.text('Cantidad: '+money(c.missing.length),M,58);
     const body=c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
@@ -5507,7 +5607,7 @@ window.nrIfPrint=function(iframe,url){
   }
   async function generateControlFullPdf(){
     const c=CONTROL,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Informe completo de Control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    drawHeader(doc,'Informe completo de Control',(CFGC.subtitle||'')+' · '+(c.period||'Período')+' · '+(CFGC.principalLocality||'Localidad principal'));
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen ejecutivo',M,58);
     const exec=[['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan llegar al control',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0']];
     doc.autoTable({startY:63,head:[['Indicador','Valor']],body:exec,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
@@ -5522,7 +5622,7 @@ window.nrIfPrint=function(iframe,url){
   }
   async function exportControlXlsx(){
     const c=CONTROL,wb=XLSX.utils.book_new();
-    const resumen=[['Indicador','Valor'],['Período',c.period],['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Contados',c.counted],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):0],['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers]];
+    const resumen=[['Indicador','Valor'],['Período',c.period],['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Contados (Base de Datos Original!M4)',c.counted],['Faltantes considerados como cobrados',CFGC.missingAsPaid?'Sí':'No'],['Cuotas proyectadas',c.totalPaid+(CFGC.missingAsPaid?c.missing.length*10:0)],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):0],['Números únicos controlados',c.uniqueControl],['Números repetidos',c.duplicateNumbers]];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.localMap).map(([l,v])=>({Localidad:l,Vendidas:v.sold,Controladas:v.controlled,Faltan:v.missing,Bajas:v.bajas,Cuotas:v.paid}))), 'Localidades');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(c.cobradorMap||{}).map(([l,v])=>({Cobrador:l,Boletas:v.count,Cuotas:v.paid,Bajas:v.bajas,Promedio:v.count?v.paid/v.count:0}))), 'Cobradores');
@@ -5533,7 +5633,7 @@ window.nrIfPrint=function(iframe,url){
   function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
 
   /* recuperar último procesamiento */
-  try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
+  try{const raw=localStorage.getItem(KEY+'_data');if(raw){CONTROL=JSON.parse(raw);if(CONTROL&&CONTROL._rawSource){CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows);}}}catch(e){}
   window.noraControlLoadFile=loadControlFile;
   async function syncFromFiles(force){
     try{
@@ -5568,8 +5668,8 @@ window.nrIfPrint=function(iframe,url){
     try{
       if(window.__noraControlRestoredOnce)return;
       window.__noraControlRestoredOnce=true;
+      if(await syncFromFiles(true))return;
       if(CONTROL){renderControl();return;}
-      if(await syncFromFiles(false))return;
       const stored=(typeof FILES!=='undefined'?FILES:[]).filter(f=>
         f && (f.kind==='control'||f.sourceType==='control'||(typeof window.isControlFileName==='function'&&window.isControlFileName(f.name)))
       );
