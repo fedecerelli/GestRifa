@@ -5569,7 +5569,7 @@ window.nrIfPrint=function(iframe,url){
     const c=CONTROL;
     $c('ctlMissingCount').textContent=money(c.missing.length);
     if(!c.missing.length){$c('ctlMissingPreview').innerHTML='<div class="control-empty">✓ Todas las boletas de la Base de Datos Original llegaron al Control.</div>';return;}
-    $c('ctlMissingPreview').innerHTML=`<div class="control-table-wrap"><table class="control-table"><thead><tr><th class="num">N°</th><th>Apellido</th><th>Nombre</th><th>Calle</th><th>Nro</th><th>Localidad</th><th>Estado</th></tr></thead><tbody>${c.missing.map(r=>`<tr><td class="num">${esc(r.num)}</td><td>${esc(r.apellido)}</td><td>${esc(r.nombre)}</td><td>${esc(r.calle)}</td><td>${esc(r.nro)}</td><td>${esc(r.localidad)}</td><td><span class="control-badge warn">No llegó</span></td></tr>`).join('')}</tbody></table></div>`;
+    $c('ctlMissingPreview').innerHTML=`<div class="control-table-wrap"><table class="control-table"><thead><tr><th class="num">N°</th><th>Apellido</th><th>Nombre</th><th>Calle</th><th>Nro</th><th>Localidad</th><th>Estado</th></tr></thead><tbody>${sortControlMissing(c.missing).map(r=>`<tr><td class="num">${esc(formatControlMissingNum(r.num))}</td><td>${esc(r.apellido)}</td><td>${esc(r.nombre)}</td><td>${esc(r.calle)}</td><td>${esc(r.nro)}</td><td>${esc(r.localidad)}</td><td><span class="control-badge warn">No llegó</span></td></tr>`).join('')}</tbody></table></div>`;
   }
 
   function marginMm(){return CFGC.margin==='small'?10:CFGC.margin==='large'?22:15}
