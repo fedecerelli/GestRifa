@@ -1733,7 +1733,7 @@ body.nx-hide-floats .nx-float{display:none}
             <button class="secondary" id="btnLinkCobFiles2"><span class="b-ic" data-icon="link"></span>Vincular cobranza</button>
             <button class="secondary" id="btnReconnectCobFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
             <button class="secondary" id="btnLinkSorteoFiles2"><span class="b-ic" data-icon="link"></span>Vincular sorteos</button>
-            <button class="secondary" id="btnReconnectSorteoFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
+            <button class="secondary" id="btnReconnectSorteoFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
           </div>
           <div id="cobLinkStatus2" class="hint" style="margin-top:8px"></div>
           <div id="sorteoLinkStatus2" class="hint" style="margin-top:4px"></div>
@@ -6336,6 +6336,437 @@ function paintAll(){cards.forEach(c=>safe('paint',()=>paint(c)));}
 safe('mount',()=>{const h=$('hHero'),d=$('view-dash');if(h)h.after(mkCard('nrSumHome'));if(d)d.prepend(mkCard('nrSumDash'));paintAll();});
 let sig='';setInterval(()=>{const s=(typeof RECORDS!=='undefined'?RECORDS.length:0)+'|'+(typeof FILES!=='undefined'?FILES.length:0)+'|'+(typeof RECORDS!=='undefined'&&RECORDS.length?RECORDS[RECORDS.length-1].source:'');if(s!==sig){sig=s;paintAll();}},1200);
 safe('hooks',()=>{const sv=window.setView;if(sv)window.setView=function(){const r=sv.apply(this,arguments);setTimeout(paintAll,0);return r;};const hf=window.handleFiles;if(hf)window.handleFiles=async function(){const r=await hf.apply(this,arguments);paintAll();return r;};const rh=window.renderHome;if(rh)window.renderHome=function(){const r=rh.apply(this,arguments);setTimeout(paintAll,0);return r;};});
+})();
+</script>
+<script id="nora-b6">
+/* ===== NORA v2.7 · Consola útil + Control con auto-detección ===== */
+(function(){
+'use strict';
+if(window.__nrB6)return;
+window.__nrB6=true;
+const $=id=>document.getElementById(id);
+
+/* ============================================================
+   1) CONSOLA ÚTIL
+   ============================================================ */
+(function enhanceConsole(){
+  const box=$('cmdLogs');
+  const header=document.querySelector('.cmd-header');
+  const el=$('cmdConsole');
+  if(!box||!header||!el)return;
+
+  /* Estilos de la consola mejorada */
+  if(!$('nr-cmd-st')){
+    const s=document.createElement('style');
+    s.id='nr-cmd-st';
+    s.textContent=[
+      '.cmd-header{gap:8px;flex-wrap:wrap;position:relative;padding:6px 10px}',
+      '.cmd-header .cmd-ctl{all:unset;cursor:pointer;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;color:#a6accd;border:1px solid #354154}',
+      '.cmd-header .cmd-ctl:hover{background:#1a1f2c;color:#fff}',
+      '.cmd-header .cmd-ctl.active{background:#4ea8de;color:#0a1420;border-color:#4ea8de}',
+      '.cmd-logs .log-row{display:grid;grid-template-columns:80px 58px 1fr;gap:8px;align-items:start;padding:4px 0;font-size:12px;border-bottom:1px dashed #2f334d;word-break:break-word}',
+      '.cmd-logs .log-time{color:#6a7290;font-variant-numeric:tabular-nums;font-size:11px;white-space:nowrap}',
+      '.cmd-logs .log-lvl{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;text-align:center;line-height:1.6;letter-spacing:.04em}',
+      '.cmd-logs .log-lvl.info{background:#1e2c46;color:#8fb8ff}',
+      '.cmd-logs .log-lvl.ok{background:#1a3a26;color:#7ee0a0}',
+      '.cmd-logs .log-lvl.warn{background:#3a2c1a;color:#ffcc66}',
+      '.cmd-logs .log-lvl.error{background:#3a1a1a;color:#ff8f8f}',
+      '.cmd-logs .log-msg{color:#d4d8e0;white-space:pre-wrap}',
+      '.cmd-logs .log-row[data-lvl=error] .log-msg{color:#ff8f8f}',
+      '.cmd-logs .log-row[data-lvl=ok] .log-msg{color:#c3e88d}',
+      '.cmd-logs .log-row[data-lvl=warn] .log-msg{color:#ffcc66}',
+      '.cmd-empty{color:#6a7290;text-align:center;padding:24px;font-size:12px}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  const entries=[];
+  const MAX=1000;
+  const ts=()=>{
+    const d=new Date();
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+
+           String(d.getSeconds()).padStart(2,'0')+'.'+String(d.getMilliseconds()).padStart(3,'0');
+  };
+
+  /* Formatear cualquier argumento de console.* */
+  function fmtArg(x){
+    if(x instanceof Error)return x.name+': '+x.message+(x.stack?'\n'+x.stack:'');
+    if(typeof x==='object'&&x!==null){try{return JSON.stringify(x);}catch(e){return String(x);}}
+    return String(x);
+  }
+
+  let filter='all';
+  const matches=e=>filter==='all'||e.tipo===filter;
+
+  function makeRow(e){
+    const r=document.createElement('div');
+    r.className='log-row';
+    r.dataset.lvl=e.tipo;
+    r.innerHTML='<span class="log-time"></span><span class="log-lvl '+e.tipo+'">'+e.tipo+'</span><span class="log-msg"></span>';
+    r.querySelector('.log-time').textContent=e.time;
+    r.querySelector('.log-msg').textContent=e.msg;
+    if(!matches(e))r.style.display='none';
+    return r;
+  }
+
+  function push(msg,tipo){
+    const e={msg:String(msg==null?'':msg),tipo:tipo||'info',time:ts()};
+    entries.push(e);
+    if(entries.length>MAX)entries.shift();
+    const empty=box.querySelector('.cmd-empty');if(empty)empty.remove();
+    box.appendChild(makeRow(e));
+    while(box.children.length>MAX)box.removeChild(box.firstChild);
+    if(box.dataset.noScroll!=='1')box.scrollTop=box.scrollHeight;
+    if(tipo==='error')checkAutoOpen();
+    return e;
+  }
+
+  /* Auto-abrir la consola cuando hay errores repetidos */
+  const errTimes=[];let lastAuto=0;
+  function checkAutoOpen(){
+    const now=Date.now();
+    errTimes.push(now);
+    while(errTimes.length&&now-errTimes[0]>4000)errTimes.shift();
+    if(errTimes.length>=3&&now-lastAuto>15000){
+      lastAuto=now;
+      if(el.classList.contains('hidden')){
+        el.classList.remove('hidden');
+        push('La consola se abrió automáticamente por errores recientes.','warn');
+      }
+    }
+  }
+
+  /* Reemplazar AppLog */
+  window.AppLog=window.AppLog||{};
+  AppLog.logs=entries;
+  AppLog.write=function(m,t){push(m,t||'info');};
+  AppLog.error=function(m){push(m,'error');};
+  AppLog.warn=function(m){push(m,'warn');};
+  AppLog.success=function(m){push(m,'ok');};
+
+  /* Interceptar console.* */
+  const _log=console.log,_err=console.error,_warn=console.warn,_info=console.info;
+  console.log=function(){try{push(Array.from(arguments).map(fmtArg).join(' '),'info');}catch(e){}return _log.apply(console,arguments);};
+  console.info=function(){try{push(Array.from(arguments).map(fmtArg).join(' '),'info');}catch(e){}return _info.apply(console,arguments);};
+  console.warn=function(){try{push(Array.from(arguments).map(fmtArg).join(' '),'warn');}catch(e){}return _warn.apply(console,arguments);};
+  console.error=function(){try{push(Array.from(arguments).map(fmtArg).join(' '),'error');}catch(e){}return _err.apply(console,arguments);};
+
+  /* Errores globales y promesas rechazadas */
+  window.addEventListener('error',function(ev){
+    const t=ev.target;
+    if(t&&t!==window&&(t.tagName==='IMG'||t.tagName==='SCRIPT'||t.tagName==='LINK')){
+      const src=t.src||t.href||'';
+      push('Recurso no cargado: '+src,'warn');return;
+    }
+    const loc=ev.filename?' · '+String(ev.filename).split('/').pop()+':'+ev.lineno+':'+ev.colno:'';
+    push((ev.message||'Error')+loc,'error');
+  },true);
+  window.addEventListener('unhandledrejection',function(ev){
+    const r=ev.reason;
+    const msg=(r&&(r.stack||r.message))||String(r||'(sin detalle)');
+    push('Promesa rechazada sin manejar: '+msg,'error');
+  });
+
+  /* Reconstruir la barra del header con filtros y acciones */
+  const title=header.querySelector('b');
+  const bar=document.createElement('div');
+  bar.style.cssText='display:flex;gap:4px;align-items:center;flex-wrap:wrap;flex:1';
+  bar.innerHTML=
+    '<button type="button" class="cmd-ctl active" data-lvl="all">Todo</button>'
+    +'<button type="button" class="cmd-ctl" data-lvl="info">Info</button>'
+    +'<button type="button" class="cmd-ctl" data-lvl="ok">OK</button>'
+    +'<button type="button" class="cmd-ctl" data-lvl="warn">Avisos</button>'
+    +'<button type="button" class="cmd-ctl" data-lvl="error">Errores</button>'
+    +'<span style="flex:1"></span>'
+    +'<button type="button" class="cmd-ctl" data-act="test">Probar</button>'
+    +'<button type="button" class="cmd-ctl" data-act="state">Estado</button>'
+    +'<button type="button" class="cmd-ctl" data-act="copy">Copiar</button>'
+    +'<button type="button" class="cmd-ctl" data-act="clear">Limpiar</button>'
+    +'<button type="button" class="cmd-ctl" data-act="close" title="Cerrar">✖</button>';
+  header.innerHTML='';
+  if(title)header.appendChild(title);
+  header.appendChild(bar);
+
+  bar.addEventListener('click',function(ev){
+    const b=ev.target.closest('button');if(!b)return;
+    if(b.dataset.lvl){
+      filter=b.dataset.lvl;
+      bar.querySelectorAll('[data-lvl]').forEach(x=>x.classList.toggle('active',x===b));
+      box.querySelectorAll('.log-row').forEach((r,i)=>{r.style.display=matches(entries[i])?'':'none';});
+      return;
+    }
+    const a=b.dataset.act;
+    if(a==='test'){
+      push('Mensaje informativo de prueba','info');
+      push('Operación completada correctamente','ok');
+      push('Aviso: revisar configuración','warn');
+      push('Error simulado: no se pudo conectar al servidor','error');
+    } else if(a==='state'){
+      push('── Estado actual ──','info');
+      push('FILES: '+(typeof FILES!=='undefined'?FILES.length:'?')+' · RECORDS: '+(typeof RECORDS!=='undefined'?RECORDS.length:'?'),'info');
+      push('Control activo: '+((window.noraControlCurrentName&&noraControlCurrentName())||'(sin cargar)'),'info');
+      push('Tareas: '+(typeof TASKS!=='undefined'?TASKS.length:'?')+' · Reportes: '+(typeof REPORTS!=='undefined'?REPORTS.length:'?'),'info');
+      push('Skin: '+((window.CFG&&CFG.skin)||'estándar')+' · Tema: '+((window.CFG&&CFG.theme)||'auto')+' · Densidad: '+((window.CFG&&CFG.density)||'comoda'),'info');
+    } else if(a==='copy'){
+      const txt=entries.map(x=>'['+x.time+'] ['+x.tipo.toUpperCase()+'] '+x.msg).join('\n');
+      try{
+        navigator.clipboard.writeText(txt).then(
+          ()=>push('Logs copiados al portapapeles','ok'),
+          ()=>push('No se pudo copiar (permiso del navegador)','warn')
+        );
+      }catch(e){push('No se pudo copiar: '+e.message,'warn');}
+    } else if(a==='clear'){
+      entries.length=0;
+      box.innerHTML='<div class="cmd-empty">Sin registros.</div>';
+    } else if(a==='close'){
+      el.classList.add('hidden');
+    }
+  });
+
+  /* Toggle de autoscroll al scrollear hacia arriba */
+  box.addEventListener('scroll',function(){
+    const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<24;
+    box.dataset.noScroll=atBottom?'0':'1';
+  });
+
+  /* Input de comandos */
+  const inp=$('cmdInput');
+  if(inp){
+    const ni=inp.cloneNode(true);
+    inp.parentNode.replaceChild(ni,inp);
+    ni.placeholder='Filtrar… o comando: help, clear, test, state, files, view <sección>';
+    ni.addEventListener('keydown',function(e){
+      if(e.key!=='Enter')return;
+      const v=ni.value.trim();ni.value='';
+      if(!v){box.querySelectorAll('.log-row').forEach((r,i)=>{r.style.display=matches(entries[i])?'':'none';});return;}
+      const lc=v.toLowerCase();
+      if(lc==='help'||lc==='?'){
+        push('Comandos: help · clear · test · state · files · view <sección>','info');
+        push('Secciones: home · carga · dash · datos · pdf · print · control · sorteos · listados · tasks · settings','info');
+        return;
+      }
+      if(lc==='clear'){entries.length=0;box.innerHTML='<div class="cmd-empty">Sin registros.</div>';return;}
+      if(lc==='test'){
+        push('Mensaje informativo de prueba','info');
+        push('Operación OK','ok');
+        push('Aviso de prueba','warn');
+        push('Error simulado','error');return;
+      }
+      if(lc==='state'){
+        push('FILES: '+(typeof FILES!=='undefined'?FILES.length:'?')+' · RECORDS: '+(typeof RECORDS!=='undefined'?RECORDS.length:'?')+' · Control: '+((window.noraControlCurrentName&&noraControlCurrentName())||'-'),'info');
+        return;
+      }
+      if(lc==='files'){
+        const fs=(typeof FILES!=='undefined'?FILES:[]);
+        if(!fs.length)push('No hay archivos cargados','warn');
+        fs.forEach(f=>push('· '+f.name+' ['+((f.kind||f.sourceType)||'data')+'] '+(f.records?f.records.length:0)+' reg. · destinos: '+((f.destinations||[]).join(', ')||'—'),(f.kind==='control'?'ok':'info')));
+        return;
+      }
+      if(lc.startsWith('view ')){
+        const n=v.slice(5).trim();
+        if(typeof setView!=='function'){push('setView no disponible','error');return;}
+        try{setView(n);push('Cambiando a vista: '+n,'ok');}catch(err){push('Error al cambiar vista: '+(err.message||err),'error');}
+        return;
+      }
+      /* Filtro por texto libre */
+      const q=lc;
+      box.querySelectorAll('.log-row').forEach(r=>{
+        r.style.display=(r.querySelector('.log-msg').textContent.toLowerCase().includes(q))?'':'none';
+      });
+    });
+  }
+
+  box.innerHTML='<div class="cmd-empty">Sin registros.</div>';
+  push('Consola activa · Ctrl+Ñ para abrir/cerrar','ok');
+  push('Los errores y promesas rechazadas se registran automáticamente','info');
+  push('Escribí "help" en la barra inferior para ver los comandos','info');
+})();
+
+/* ============================================================
+   2) CONTROL: auto-detección y selector de planillas
+   ============================================================ */
+(function enhanceControl(){
+  const view=$('view-control');
+  if(!view||view.dataset.nr)return;
+  view.dataset.nr='1';
+
+  /* Encontrar la tarjeta "Fuente de Control" */
+  const cards=Array.from(view.querySelectorAll('.card'));
+  const srcCard=cards.find(c=>{
+    const h=c.querySelector('h3');
+    return h&&/Fuente de Control/i.test(h.textContent);
+  })||cards[1];
+  if(!srcCard){AppLog&&AppLog.warn('No encontré la tarjeta Fuente de Control');return;}
+
+  const info=$('ctlFileInfo');
+  if(!info){AppLog&&AppLog.warn('No encontré #ctlFileInfo');return;}
+
+  /* Insertar dropzone + selector */
+  const wrap=document.createElement('div');
+  wrap.innerHTML=
+    '<div id="ctlDrop" class="control-drop" role="button" tabindex="0" aria-label="Cargar Planilla Control">'
+    +'<span class="b-ic" data-icon="upload"></span>'
+    +'<b>Arrastrá la Planilla Control acá</b>'
+    +'<div class="hint">Excel con hojas <b>Control</b> y <b>Base de Datos Original</b>. También se detecta automáticamente si la cargás desde <b>Carga de Datos</b>.</div>'
+    +'</div>'
+    +'<div id="ctlAvail" class="hidden" style="margin-top:10px">'
+    +'<label for="ctlPicker" style="display:block;font-size:12px;color:var(--sub);margin-bottom:4px">Planillas Control detectadas</label>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+    +'<select id="ctlPicker" style="flex:1;min-width:220px;max-width:420px"></select>'
+    +'<button type="button" class="secondary miniBtn" id="ctlReload">Releer</button>'
+    +'</div></div>';
+  info.parentNode.insertBefore(wrap,info.nextSibling);
+  try{paintIcons(wrap);}catch(e){}
+
+  const drop=$('ctlDrop');
+  const fi=$('ctlFile');       /* input ya existente en el HTML */
+  const picker=$('ctlPicker');
+  const avail=$('ctlAvail');
+  const reloadBtn=$('ctlReload');
+
+  if(!fi){AppLog&&AppLog.error('No encontré el input #ctlFile');return;}
+
+  drop.onclick=function(e){if(e.target!==fi)fi.click();};
+  drop.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click();}};
+  drop.ondragover=function(e){e.preventDefault();drop.classList.add('ready','drag-over');};
+  drop.ondragleave=function(){drop.classList.remove('ready','drag-over');};
+  drop.ondrop=function(e){
+    e.preventDefault();drop.classList.remove('ready','drag-over');
+    const fs=Array.from((e.dataTransfer&&e.dataTransfer.files)||[]);
+    if(fs.length)loadFiles(fs);
+  };
+  fi.onchange=function(){
+    const fs=Array.from(fi.files||[]);fi.value='';
+    if(fs.length)loadFiles(fs);
+  };
+
+  async function loadFiles(fs){
+    for(const f of fs){
+      try{
+        if(!/\.(xlsx|xls|xlsm)$/i.test(f.name)){
+          AppLog&&AppLog.error('Formato no admitido: '+f.name);
+          notify&&notify('Formato no admitido: '+f.name,'err');
+          continue;
+        }
+        if(window.isControlFileName&&!isControlFileName(f.name)){
+          AppLog&&AppLog.warn('"'+f.name+'" no tiene "control" en el nombre, se intentará igual.');
+        }
+        AppLog&&AppLog.write('Cargando Planilla Control: '+f.name,'info');
+        if(typeof window.handleFiles==='function'){
+          await window.handleFiles([f],true);
+        } else if(window.noraControlLoadFile){
+          await window.noraControlLoadFile(f);
+        }
+        AppLog&&AppLog.success('Planilla Control procesada: '+f.name);
+        notify&&notify('Planilla Control cargada','ok');
+      }catch(e){
+        AppLog&&AppLog.error('No se pudo procesar "'+f.name+'": '+(e.message||e));
+        notify&&notify('Error al procesar la planilla','err');
+      }
+    }
+    refresh();
+  }
+
+  function getControlFiles(){
+    if(typeof FILES==='undefined')return[];
+    return FILES.filter(function(f){
+      if(!f)return false;
+      if(f.kind==='control'||f.sourceType==='control')return true;
+      if(typeof isControlFileName==='function'&&isControlFileName(f.name))return true;
+      if(typeof fileHasDestination==='function'&&fileHasDestination(f,'control'))return true;
+      return false;
+    });
+  }
+
+  function bytesOf(f){
+    const raw=f.raw;if(!raw)return null;
+    if(raw instanceof ArrayBuffer)return raw;
+    if(ArrayBuffer.isView(raw))return raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength);
+    try{return new Uint8Array(raw).buffer;}catch(e){return null;}
+  }
+
+  let activating=false;
+  async function activate(name){
+    if(activating)return;activating=true;
+    try{
+      const f=getControlFiles().find(x=>x.name===name);
+      if(!f){AppLog&&AppLog.error('Archivo no encontrado: '+name);return;}
+      const buf=bytesOf(f);
+      if(!buf){
+        AppLog&&AppLog.error('"'+f.name+'" no tiene contenido guardado. Releelo desde Carga de Datos.');
+        notify&&notify('Sin contenido. Releelo desde Carga de Datos.','warn');
+        return;
+      }
+      const file=new File([buf],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      await window.noraControlLoadFile(file);
+      AppLog&&AppLog.success('Control activado: '+f.name);
+    }catch(e){
+      AppLog&&AppLog.error('Error al activar "'+name+'": '+(e.message||e));
+    } finally {
+      activating=false;
+      refresh();
+    }
+  }
+
+  const escHtml=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+  function refresh(){
+    const list=getControlFiles();
+    const current=(window.noraControlCurrentName&&noraControlCurrentName())||'';
+    if(!list.length){avail.classList.add('hidden');return;}
+    avail.classList.remove('hidden');
+    picker.innerHTML=list.map(function(f){
+      const isCur=f.name===current;
+      return '<option value="'+escHtml(f.name)+'"'+(isCur?' selected':'')+'>'+escHtml(f.name)+(isCur?' ✓':'')+'</option>';
+    }).join('');
+    /* Auto-activar si hay una sola y no hay ninguna cargada */
+    if(!current&&list.length>=1&&!activating){
+      const first=list[0];
+      if(bytesOf(first)){
+        AppLog&&AppLog.write('Auto-cargando Planilla Control: '+first.name,'info');
+        activate(first.name);
+      } else {
+        AppLog&&AppLog.warn('Hay planilla Control en FILES pero sin contenido. Releela desde Carga de Datos.');
+      }
+    }
+  }
+
+  picker.onchange=function(){activate(picker.value);};
+  reloadBtn.onclick=function(){
+    const name=picker.value||((window.noraControlCurrentName&&noraControlCurrentName())||'');
+    if(!name){notify&&notify('Elegí una planilla','warn');return;}
+    activate(name);
+  };
+
+  /* Poll para detectar cambios en FILES */
+  let lastSig='';
+  setInterval(function(){
+    const list=getControlFiles();
+    const sig=list.length+'|'+list.map(x=>x.name).join('|')+'|'+((window.noraControlCurrentName&&noraControlCurrentName())||'');
+    if(sig===lastSig)return;
+    lastSig=sig;
+    refresh();
+  },1500);
+
+  /* Reaccionar al cambio de vista */
+  if(typeof window.setView==='function'&&!window.setView.__ctlB6){
+    const _sv=window.setView;
+    const w=function(v){const r=_sv.apply(this,arguments);if(v==='control')setTimeout(refresh,120);return r;};
+    w.__ctlB6=true;
+    window.setView=w;
+  }
+
+  /* Hookear handleFiles para refrescar al cargar archivos */
+  if(typeof window.handleFiles==='function'&&!window.handleFiles.__ctlB6){
+    const _hf=window.handleFiles;
+    const w=async function(){const r=await _hf.apply(this,arguments);setTimeout(refresh,120);return r;};
+    w.__ctlB6=true;
+    window.handleFiles=w;
+  }
+
+  setTimeout(refresh,600);
+  AppLog&&AppLog.write('Sección Control: dropzone y selector de planillas activados.','info');
+})();
 })();
 </script>
 </body>
