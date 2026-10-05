@@ -4923,8 +4923,7 @@ function mobilePrint(blob,name){
   if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>`<img src="${p}" alt="">`).join('')}
-<script>
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}</body></html>`);
 /* ================= CONTROL — Planilla Control ================= */
 (function(){
   'use strict';
@@ -5348,9 +5347,6 @@ function mobilePrint(blob,name){
   document.addEventListener('DOMContentLoaded',bind,{once:true});
   window.noraControlPickExcel=pick;
 })();
-</script>
-
-</body></html>`);
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
