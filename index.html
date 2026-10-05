@@ -2822,10 +2822,17 @@ function defaultDestinations(name,kind){
   if(isSorteoFileName(name))return ['sorteos','dashboard','explorador','listados'];
   return DATA_DESTINATIONS.filter(x=>x[0]!=='control'&&x[0]!=='sorteos').map(x=>x[0]);
 }
-function getFileDestinations(f){
-  const d=Array.isArray(f?.destinations)?f.destinations:defaultDestinations(f?.name,f?.kind||f?.sourceType||'data');
-  return [...new Set(d.filter(x=>DATA_DESTINATIONS.some(y=>y[0]===x)))];
+function normalizeDestinationsForFile(f,destinations){
+  const name=f?.name||'';
+  const kind=f?.kind||f?.sourceType||'data';
+  if(kind==='control'||isControlFileName(name))return ['control'];
+  let d=[...new Set((Array.isArray(destinations)?destinations:defaultDestinations(name,kind)).filter(x=>DATA_DESTINATIONS.some(y=>y[0]===x)))];
+  if(isSorteoFileName(name)){if(!d.includes('sorteos'))d.push('sorteos');}
+  else d=d.filter(x=>x!=='sorteos');
+  if(!d.length)d=defaultDestinations(name,kind);
+  return d;
 }
+function getFileDestinations(f){return normalizeDestinationsForFile(f,f?.destinations);}
 function fileHasDestination(f,d){return getFileDestinations(f).includes(d);}
 function destinationLabel(d){return (DATA_DESTINATIONS.find(x=>x[0]===d)||['',''])[1]||d;}
 function recordsForDestination(dest){
@@ -2883,7 +2890,7 @@ function validateSchema(rows,hIdx,fileName){const errors=[];const headerRow=rows
 function findHeaderIndex(headerRow,names,fallback){const wanted=names.map(x=>String(x).trim().toLowerCase());const idx=headerRow.findIndex(h=>wanted.includes(String(h||'').trim().toLowerCase()));return idx>=0?idx:fallback;}
 function normalizeMonthText(v){if(v===null||v===undefined)return '';const s=String(v).trim();if(!s)return '';if(/^\d{4}[-\/]\d{1,2}$/.test(s)){const [y,m]=s.split(/[-\/]/);return String(y)+'-'+String(m).padStart(2,'0');}if(/^\d{1,2}[-\/]\d{4}$/.test(s)){const [m,y]=s.split(/[-\/]/);return String(y)+'-'+String(m).padStart(2,'0');}return cap(s);}
 
-function classifyFileName(name){const n=String(name||'').trim().toUpperCase();if(/^L\s*-/.test(n))return 'sorteo';if(/^U\s*-/.test(n))return 'cobranza';return 'general';}
+function classifyFileName(name){const n=normalizeFileNameForRole(name);if(isControlFileName(n))return 'control';if(/^L\s*-/.test(n)&&!/^U\s*-/.test(n))return 'sorteo';if(/^U\s*-/.test(n))return 'cobranza';return 'general';}
 function isSorteoFileName(name){return classifyFileName(name)==='sorteo';}
 function splitSearchTokens(q){return String(q||'').split(/[\s,;\n\r\t]+/).map(x=>x.trim().toLowerCase()).filter(Boolean);}
 function recordMatchesToken(r,t){const digits=t.replace(/\D/g,'');const fields=[r.num,r.apellido,r.nombre,r.calle,r.calleKey,r.nroCalle,r.localidad,r.situacion,r.mes,r.source,r.sourceType].map(x=>String(x??'').toLowerCase());if(digits&&/^\d+$/.test(t))return fields[0].includes(digits)||fields.some(x=>x.includes(t));return fields.join(' ').includes(t)||(r._raw?Object.values(r._raw).join(' ').toLowerCase().includes(t):false);}
@@ -2910,7 +2917,7 @@ function normalizeFileNameForRole(name){
 }
 function isControlFileName(name){
   const n=normalizeFileNameForRole(name);
-  return /\bcontrol(?:es)?\b/.test(n) || /\bctrl\b/.test(n) || /\bplanilla\s+control\b/.test(n) || /\bcontrol\s+planilla\b/.test(n);
+  return /control/.test(n) || /(^|\s|[-_])ctrl(?:$|\s|[-_])/.test(n);
 }
 window.isControlFileName=isControlFileName;
 
@@ -2929,7 +2936,7 @@ async function handleFiles(files,silent,opts){
         const idx=FILES.findIndex(f=>f.name===file.name);
         const prevEntry=FILES.find(f=>f.name===file.name);
         const rawControl=await file.arrayBuffer();
-        const entry={name:file.name,records:[],sourceType:'control',kind:'control',destinations:prevEntry?.destinations||['control'],raw:rawControl};
+        const entry={name:file.name,records:[],sourceType:'control',kind:'control',destinations:['control'],raw:rawControl};
         if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
         continue;
       }
@@ -2941,10 +2948,11 @@ async function handleFiles(files,silent,opts){
       if(result.errors.length){allErrors.push({file:file.name,errors:result.errors});if(!result.records.length)continue;}
       if(!result.records.length){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:'Sin filas válidas'}]});continue;}
       const idx=FILES.findIndex(f=>f.name===file.name);
-      const prevEntry=FILES.find(f=>f.name===file.name); const entry={name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name)),raw:buf};
+      const prevEntry=FILES.find(f=>f.name===file.name); const entry={name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:normalizeDestinationsForFile({name:file.name,kind:'data',sourceType:classifyFileName(file.name)},prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name))),raw:buf};
       if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
     }catch(err){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:err.message||String(err)}]});}
   }
+  FILES.forEach(f=>{f.destinations=normalizeDestinationsForFile(f,f.destinations);});
   rebuildRecords();renderFilesList();updateStatusLine(added,replaced,allErrors);syncDataCenterUI();
   for(const file of controlFiles){
     try{
@@ -2980,14 +2988,27 @@ async function handleFiles(files,silent,opts){
 }
 window.handleFiles = handleFiles;
 function renderDataManager(){
-  const list=document.getElementById('dataManagerList'),count=document.getElementById('dmCount'); if(!list)return;
+  const list=document.getElementById('dataManagerList'),count=document.getElementById('dmCount');if(!list)return;
   if(count)count.textContent=FILES.length+' archivo(s)';
   if(!FILES.length){list.innerHTML='<div class="dm-empty"><span class="b-ic" data-icon="upload"></span><br><b>No hay archivos cargados</b><br>Cargá uno o varios Excel arriba para comenzar.</div>';paintIcons();return;}
-  list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;const dest=getFileDestinations(f);return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta">${isCtl?'Planilla de Control · detectada por nombre':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>`<label class="dm-dest ${dest.includes(id)?'on':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${dest.includes(id)?'checked':''}>${label}</label>`).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}">Todas excepto Control</button><button class="ghost miniBtn" data-dm-clear="${i}">Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}"><span class="b-ic" data-icon="trash"></span>Eliminar archivo</button></div></div>`;}).join('');
-  list.querySelectorAll('[data-dm-dest]').forEach(ch=>ch.onchange=async()=>{const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f)return;let d=getFileDestinations(f);if(ch.checked&&!d.includes(id))d.push(id);if(!ch.checked)d=d.filter(x=>x!==id);if(!d.length){ch.checked=true;notify('Cada archivo debe tener al menos un destino','');return;}f.destinations=d;if(id==='control'&&ch.checked){if(f.raw){try{const file=new File([f.raw],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});if(typeof window.noraControlLoadFile==='function')await window.noraControlLoadFile(file);else{window.__noraControlPendingFiles=window.__noraControlPendingFiles||[];window.__noraControlPendingFiles.push(file);}}catch(e){notify('No se pudo procesar Control: '+(e.message||e),'err');}}else if(isControlFileName(f.name)){notify('Este archivo fue detectado como Control. Volvé a cargarlo si necesitás reprocesar sus hojas Control y Base de Datos Original.','');}}await saveState();syncDataCenterUI();renderDataManager();});
-  list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f)return;f.destinations=DATA_DESTINATIONS.filter(x=>x[0]!=='control').map(x=>x[0]);await saveState();renderDataManager();});
-  list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f)return;f.destinations=[f.kind==='control'||isControlFileName(f.name)?'control':'explorador'];await saveState();renderDataManager();});
-  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!confirm('¿Eliminar '+FILES[i]?.name+' del Centro de datos?'))return;FILES.splice(i,1);rebuildRecords();await saveState();renderFilesList();syncDataCenterUI();renderDataManager();renderHome();});
+  list.innerHTML=FILES.map((f,i)=>{
+    f.destinations=normalizeDestinationsForFile(f,f.destinations);
+    const isCtl=f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name);
+    const isSort=isSorteoFileName(f.name);
+    const isU=/^U\s*-/.test(normalizeFileNameForRole(f.name));
+    const n=(f.records||[]).filter(r=>!r._excluded).length,dest=getFileDestinations(f);
+    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta">${isCtl?'Planilla de Control · SOLO Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}"><span class="b-ic" data-icon="trash"></span>Eliminar archivo</button></div></div>`;
+  }).join('');
+  list.querySelectorAll('[data-dm-dest]').forEach(ch=>ch.onchange=async()=>{
+    const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f||ch.disabled)return;
+    let d=getFileDestinations(f);if(ch.checked&&!d.includes(id))d.push(id);if(!ch.checked)d=d.filter(x=>x!==id);
+    f.destinations=normalizeDestinationsForFile(f,d);await saveState();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
+    if(document.getElementById('view-datos')?.classList.contains('active'))renderDataViewer();
+    if(document.getElementById('view-dash')?.classList.contains('active'))updateDashboard();
+  });
+  list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=isSorteoFileName(f.name)?['sorteos']:['dashboard'];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Eliminar '+FILES[i].name+' de Carga de Datos?'))return;FILES.splice(i,1);rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   paintIcons();
 }
 function initDataManager(){
@@ -3025,7 +3046,7 @@ function populateBulkPdfSelectors(){
   const src=document.getElementById('bulkPdfSource'),mes=document.getElementById('bulkPdfMonth'),loc=document.getElementById('bulkPdfLoc'),type=document.getElementById('bulkPdfType');
   if(!src||!mes||!loc)return;
   const prev={src:src.value,mes:mes.value,loc:loc.value,type:type?type.value:'both'};
-  const sourceFiles=FILES.filter(f=>(f.kind||f.sourceType||'data')!=='control');
+  const sourceFiles=FILES.filter(f=>fileHasDestination(f,'pdf')&&f.kind!=='control'&&f.sourceType!=='control');
   src.innerHTML='<option value="">Todos los archivos</option>'+sourceFiles.map(f=>{const kind=classifyFileName(f.name)==='sorteo'?' · SORTEO':classifyFileName(f.name)==='cobranza'?' · COBRANZA':'';return `<option value="${esc(f.name)}">${esc(f.name)}${kind}</option>`;}).join('');
   if([...src.options].some(o=>o.value===prev.src))src.value=prev.src;
   if(type&&[...type.options].some(o=>o.value===prev.type))type.value=prev.type;
@@ -3815,7 +3836,7 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
       name:f.name,
       kind:f.kind||f.sourceType||'data',
       sourceType:f.sourceType||f.kind||'data',
-      destinations:Array.isArray(f.destinations)&&f.destinations.length?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data'),
+      destinations:normalizeDestinationsForFile(f,Array.isArray(f.destinations)&&f.destinations.length?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data')),
       raw:f.raw||null,
       records:(f.records||[]).map(r=>{
         let fc=r.fcarga;
