@@ -2899,7 +2899,7 @@ function parseRecords(rows,sourceName){let hIdx=-1;for(let i=0;i<Math.min(rows.l
 const dz=document.getElementById('dz'),fileInput=document.getElementById('file');
 function syncDataCenterUI(){
   const count=document.getElementById('dataCenterCount'),st=document.getElementById('dataCenterStatus'),list=document.getElementById('dataCenterFiles'),actions=document.getElementById('dataCenterActions');
-  const controlCount=FILES.filter(f=>f.kind==='control'||f.sourceType==='control').length;
+  const controlCount=FILES.filter(f=>fileHasDestination(f,'control')||f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name)).length;
   if(count)count.textContent=`${FILES.length} archivo(s) · ${RECORDS.length} registro(s) · ${controlCount} Control`;
   if(st)st.textContent=FILES.length?`${RECORDS.length} registros disponibles para todo el sistema${controlCount?' · '+controlCount+' planilla(s) Control detectada(s)':''}.`:'Sin datos cargados.';
   if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(+b.dataset.dcRemove,1);rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
@@ -2993,7 +2993,7 @@ function renderDataManager(){
   if(!FILES.length){list.innerHTML='<div class="dm-empty"><span class="b-ic" data-icon="upload"></span><br><b>No hay archivos cargados</b><br>Cargá uno o varios Excel arriba para comenzar.</div>';paintIcons();return;}
   list.innerHTML=FILES.map((f,i)=>{
     f.destinations=normalizeDestinationsForFile(f,f.destinations);
-    const isCtl=f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name);
+    const isCtl=fileHasDestination(f,'control')||f.kind==='control'||f.sourceType==='control'||isControlFileName(f.name);
     const isSort=isSorteoFileName(f.name);
     const isU=/^U\s*-/.test(normalizeFileNameForRole(f.name));
     const n=(f.records||[]).filter(r=>!r._excluded).length,dest=getFileDestinations(f);
@@ -3004,6 +3004,9 @@ function renderDataManager(){
     let d=getFileDestinations(f);if(ch.checked&&!d.includes(id))d.push(id);if(!ch.checked)d=d.filter(x=>x!==id);
     f.destinations=normalizeDestinationsForFile(f,d);await saveState();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
     if(document.getElementById('view-datos')?.classList.contains('active'))renderDataViewer();
+    if(id==='control'&&typeof window.noraControlSyncFromDataCenter==='function'){
+      try{await window.noraControlSyncFromDataCenter();}catch(e){console.error(e);notify('No se pudo sincronizar Control: '+(e.message||e),'err',{duration:8000});}
+    }
     if(document.getElementById('view-dash')?.classList.contains('active'))updateDashboard();
   });
   list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
@@ -3862,6 +3865,9 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
   try{await tryReconnectBackup();}catch(e){}
   try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}
 })();
+
+/* ===== CONTROL · sincronización definitiva con Carga de Datos ===== */
+(function(){let lastSig='',tries=0;async function sync(){try{if(typeof FILES==='undefined'||!Array.isArray(FILES)||typeof window.noraControlLoadFile!=='function')return;const cs=FILES.filter(f=>f&&fileHasDestination(f,'control'));if(!cs.length){if(CONTROL&&lastSig){CONTROL=null;try{localStorage.removeItem('nora_control_v1_data');}catch(e){}try{if(window.noraControlRender)window.noraControlRender();}catch(e){}}lastSig='';return;}const f=cs[0],sig=f.name+'|'+(f.raw?.byteLength||0);if(sig===lastSig&&CONTROL)return;if(!f.raw)return;let b=f.raw;if(b instanceof Uint8Array)b=b.buffer;if(!(b instanceof ArrayBuffer))b=new Uint8Array(b).buffer;await window.noraControlLoadFile(new File([b],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));lastSig=sig;try{renderDataManager();syncDataCenterUI();}catch(e){}}catch(e){console.warn('Sincronización Control',e);}}window.noraControlSyncFromDataCenter=sync;const t=setInterval(async()=>{await sync();if(++tries>100)clearInterval(t);},250);window.addEventListener('load',()=>setTimeout(sync,300));})();
 
 window.addEventListener('beforeunload',()=>{try{if(backupFileHandle)writeAutoBackup('cierre');}catch(e){}});
 
@@ -5155,7 +5161,8 @@ function mobilePrint(blob,name){
   if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}</body></html>`);
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}<script>(function(){function bind(){const map={ctlSummaryPdf:'summary',ctlFullPdf:'full',ctlMissingPdf:'missing',ctlExportXlsx:'xlsx',ctlClearBtn:'clear',ctlRecalcBtn:'recalc'};Object.entries(map).forEach(([id,a])=>{const b=document.getElementById(id),fn=window.noraControlActions&&window.noraControlActions[a];if(!b||!fn||b.dataset.finalControlBound==='1')return;b.dataset.finalControlBound='1';b.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();try{fn();}catch(err){console.error(err);if(typeof notify==='function')notify('No se pudo ejecutar la acción','err');}},true);});const l=document.getElementById('ctlLoadBtn');if(l&&!l.dataset.finalControlBound){l.dataset.finalControlBound='1';l.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();if(typeof window.setView==='function')window.setView('carga');},true);}}const t=setInterval(()=>{bind();if(document.readyState==='complete')clearInterval(t);},200);document.addEventListener('DOMContentLoaded',bind,{once:true});})();</script>
+</body></html>`);
 /* ================= CONTROL — Planilla Control ================= */
 (function(){
   'use strict';
@@ -5552,6 +5559,12 @@ function mobilePrint(blob,name){
     }catch(e){console.warn('No se pudo restaurar automáticamente la Planilla Control desde Carga de Datos',e);}
   });
   window.noraControlClear=function(){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}try{renderControl();}catch(e){}};
+  window.noraControlRender=renderControl;
+  window.noraControlRecalc=()=>{if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
+  window.noraControlSyncFromDataCenter=async function(){
+    try{const list=(typeof FILES!=='undefined'?FILES:[]).filter(f=>f&&fileHasDestination(f,'control'));if(!list.length){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();return false;}const f=list[0];if(!f.raw)return false;let bytes=f.raw;if(bytes instanceof Uint8Array)bytes=bytes.buffer;if(!(bytes instanceof ArrayBuffer))bytes=new Uint8Array(bytes).buffer;await loadControlFile(new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));return !!CONTROL;}catch(e){console.error('noraControlSyncFromDataCenter',e);return false;}
+  };
+  window.noraControlActions={summary:()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn'),full:()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn'),missing:()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn'),xlsx:()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn'),clear:()=>window.noraControlClear(),recalc:()=>window.noraControlRecalc()};
   paintCfg();bindCfg();renderControl();
 
   /* integrar navegación existente */
