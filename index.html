@@ -930,6 +930,52 @@ body.nx-hide-floats .nx-float{display:none}
   transform:translateY(-2px);
 }
 .nx-picker-item svg{width:22px;height:22px;color:var(--accent);stroke-width:1.8}
+
+/* ================= CONTROL ================= */
+.control-view .control-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center}
+.control-view .control-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.control-view .control-brand .control-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));color:var(--accent);font-size:21px}
+.control-view .control-brand h2{margin:0;font-size:18px}
+.control-view .control-brand p{margin:3px 0 0;color:var(--sub);font-size:11.5px}
+.control-view .control-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.control-view .control-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:9px}
+.control-view .control-kpi{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0}
+.control-view .control-kpi .v{font-size:21px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.control-view .control-kpi .l{margin-top:4px;color:var(--sub);font-size:10.5px;line-height:1.25}
+.control-view .control-kpi.warn .v{color:var(--warn)}
+.control-view .control-kpi.ok .v{color:var(--accent2)}
+.control-view .control-kpi.danger .v{color:var(--danger)}
+.control-view .control-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:12px}
+.control-view .control-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.control-view .control-section-title h3{font-size:13.5px;margin:0}
+.control-view .control-section-title small{color:var(--sub);font-size:10.5px}
+.control-view .control-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+.control-view .control-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.control-view .control-table th,.control-view .control-table td{padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+.control-view .control-table th{background:var(--panel2);color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;z-index:1}
+.control-view .control-table td.num,.control-view .control-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.control-view .control-table tr:last-child td{border-bottom:0}
+.control-view .control-table .total td{font-weight:800;background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.control-view .control-progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden;min-width:80px}
+.control-view .control-progress i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.control-view .control-empty{padding:24px;text-align:center;color:var(--sub);border:1px dashed var(--line);border-radius:10px}
+.control-view .control-drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--sub);cursor:pointer;transition:.15s}
+.control-view .control-drop:hover,.control-view .control-drop.ready{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.control-view .control-file{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-top:9px;border:1px solid var(--line);background:var(--panel2);border-radius:10px}
+.control-view .control-file b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.control-view .control-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);font-size:10px;color:var(--sub)}
+.control-view .control-badge.ok{color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}
+.control-view .control-badge.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.control-view .control-note{padding:10px 12px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel2));border-radius:0 9px 9px 0;color:var(--sub);font-size:11px;line-height:1.45}
+.control-view .control-options{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:9px}
+.control-view .control-options .field{min-width:0}
+.control-view .control-checks{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.control-view .control-checks label{display:flex;align-items:center;gap:6px;text-transform:none;font-weight:600;color:var(--ink)}
+.control-view .control-summary-title{font-weight:800;color:var(--ink)}
+.control-view .control-mini{font-size:10px;color:var(--sub)}
+@media(max-width:1000px){.control-view .control-kpis{grid-template-columns:repeat(3,minmax(120px,1fr))}.control-view .control-grid{grid-template-columns:1fr}.control-view .control-options{grid-template-columns:repeat(2,minmax(130px,1fr))}}
+@media(max-width:650px){.control-view .control-hero{grid-template-columns:1fr}.control-view .control-actions{justify-content:flex-start}.control-view .control-kpis{grid-template-columns:repeat(2,minmax(120px,1fr))}.control-view .control-options{grid-template-columns:1fr}.control-view .control-table{font-size:10.5px}.control-view .control-table th,.control-view .control-table td{padding:7px 8px}.control-view .control-brand h2{font-size:16px}}
+
 </style>
 </head>
 <body>
@@ -949,6 +995,7 @@ body.nx-hide-floats .nx-float{display:none}
     <button data-view="pdf" data-icon="filetext"><span class="nav-ic"></span>Generador PDF</button>
     <button data-view="print" data-icon="printer"><span class="nav-ic"></span>Impresión</button>
     <div class="navlbl">Herramientas</div>
+    <button data-view="control" data-icon="clipboard"><span class="nav-ic"></span>Control</button>
     <button data-view="sorteos" data-icon="target"><span class="nav-ic"></span>Sorteos</button>
     <button data-view="listados" data-icon="list"><span class="nav-ic"></span>Listados</button>
     <button data-view="tasks" data-icon="check"><span class="nav-ic"></span>Tareas<span class="nbadge" id="taskBadge" style="display:none">0</span></button>
@@ -1275,6 +1322,95 @@ body.nx-hide-floats .nx-float{display:none}
   </div>
 </section>
 
+
+<section class="view control-view" id="view-control">
+  <div class="card">
+    <div class="control-hero">
+      <div class="control-brand">
+        <div class="control-icon">✓</div>
+        <div>
+          <h2>Control <span class="tag">Planilla de Control</span></h2>
+          <p>Procesá la hoja <b>Control</b> y comparala automáticamente con <b>Base de Datos Original</b>.</p>
+        </div>
+      </div>
+      <div class="control-actions">
+        <button class="secondary miniBtn" id="ctlLoadBtn"><span class="b-ic" data-icon="upload"></span>Cargar Excel</button>
+        <button class="ghost miniBtn" id="ctlClearBtn"><span class="b-ic" data-icon="trash"></span>Limpiar</button>
+        <button class="primary miniBtn" id="ctlSummaryPdf"><span class="b-ic" data-icon="filetext"></span>Resumen PDF</button>
+        <button class="secondary miniBtn" id="ctlMissingPdf"><span class="b-ic" data-icon="filetext"></span>No llegaron PDF</button>
+        <input id="ctlFile" type="file" accept=".xlsx,.xls" class="hidden">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="ctlDrop" class="control-drop">
+      <div style="font-size:25px;margin-bottom:5px">⇧</div>
+      <b>Arrastrá la Planilla Control acá</b>
+      <div class="hint">Se requieren las hojas “Control” y “Base de Datos Original”. También podés hacer clic para seleccionarla.</div>
+    </div>
+    <div id="ctlFileInfo"></div>
+    <div id="ctlStatus" class="status-line">Sin planilla de control cargada.</div>
+  </div>
+
+  <div class="card hidden" id="ctlDataCard">
+    <div class="control-section-title">
+      <div><h3>Resultado del control</h3><small id="ctlPeriodLabel">—</small></div>
+      <span class="control-badge" id="ctlMatchBadge">—</span>
+    </div>
+    <div class="control-kpis" id="ctlKpis"></div>
+  </div>
+
+  <div class="control-grid hidden" id="ctlReportsGrid">
+    <div class="card">
+      <div class="control-section-title">
+        <div><h3>Resumen adicional</h3><small>Distribución de boletas por cuotas pagadas</small></div>
+      </div>
+      <div class="control-table-wrap"><table class="control-table" id="ctlBreakdownTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="control-section-title">
+        <div><h3>Resumen por localidad</h3><small>Controladas, faltantes y bajas</small></div>
+      </div>
+      <div class="control-table-wrap"><table class="control-table" id="ctlLocalityTable"></table></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="ctlMissingCard">
+    <div class="control-section-title">
+      <div><h3>Boletas que no llegaron al control</h3><small>Comparación por número contra “Control”</small></div>
+      <span class="control-badge warn" id="ctlMissingCount">0</span>
+    </div>
+    <div id="ctlMissingPreview"></div>
+  </div>
+
+  <div class="card">
+    <div class="control-section-title">
+      <div><h3>Personalización de las planillas</h3><small>Se guarda automáticamente para próximos controles</small></div>
+      <button class="ghost miniBtn" id="ctlResetCfg">Restaurar</button>
+    </div>
+    <div class="control-options">
+      <div class="field grow"><label>Título del resumen</label><input id="ctlTitle" type="text"></div>
+      <div class="field"><label>Orientación</label><select id="ctlOrient"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></div>
+      <div class="field"><label>Tipografía</label><select id="ctlFont"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></div>
+      <div class="field"><label>Tamaño</label><select id="ctlSize"><option value="small">Chico</option><option value="normal">Normal</option><option value="large">Grande</option></select></div>
+      <div class="field"><label>Márgenes</label><select id="ctlMargin"><option value="small">Angostos</option><option value="normal">Normales</option><option value="large">Amplios</option></select></div>
+      <div class="field"><label>Filas</label><select id="ctlRowH"><option value="small">Compactas</option><option value="normal">Normales</option><option value="large">Amplias</option></select></div>
+      <div class="field"><label>Subtítulo</label><input id="ctlSubtitle" type="text"></div>
+      <div class="field"><label>Pie de página</label><input id="ctlFooter" type="text"></div>
+    </div>
+    <div class="control-checks" style="margin-top:11px">
+      <label><input type="checkbox" id="ctlShowLocalities" checked> Resumen por localidad</label>
+      <label><input type="checkbox" id="ctlShowPercent" checked> Porcentajes</label>
+      <label><input type="checkbox" id="ctlZebra" checked> Filas alternadas</label>
+      <label><input type="checkbox" id="ctlShowLogo"> Logo</label>
+    </div>
+    <div class="control-note" style="margin-top:12px">
+      El estilo usa los colores activos de Nora y queda integrado al sistema de PDF existente. La comparación de faltantes se hace por número y soporta duplicados: si un número aparece dos veces en la Base y una sola vez en Control, queda una ocurrencia pendiente.
+    </div>
+  </div>
+</section>
+
 <section class="view" id="view-sorteos">
   <div class="chips" id="sTabs">
     <span class="chip" data-sp="month"><span class="b-ic" data-icon="target"></span>Mes</span>
@@ -1577,6 +1713,7 @@ body.nx-hide-floats .nx-float{display:none}
   <button data-view="datos" data-icon="table">Datos</button>
   <button data-view="tasks" data-icon="check">Tareas</button>
   <button data-view="print" data-icon="printer">Impr</button>
+  <button data-view="control" data-icon="clipboard">Control</button>
   <button data-view="sorteos" data-icon="target">Sorteos</button>
   <button data-view="settings" data-icon="settings">Ajustes</button>
 </nav>
@@ -4747,7 +4884,325 @@ function mobilePrint(blob,name){
   if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>`<img src="${p}" alt="">`).join('')}</body></html>`);
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>`<img src="${p}" alt="">`).join('')}
+<script>
+/* ================= CONTROL — Planilla Control ================= */
+(function(){
+  'use strict';
+  const KEY='nora_control_v1';
+  const DEF={
+    title:'Resumen del control',
+    subtitle:'Control mensual de boletas y cuotas',
+    footer:'Nora · Control de cobranza',
+    orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
+    showLocalities:true,showPercent:true,zebra:true,showLogo:false,logo:''
+  };
+  let CFGC=Object.assign({},DEF);
+  try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
+  let CONTROL=null;
+
+  const $c=id=>document.getElementById(id);
+  const nrm=v=>String(v==null?'':v).trim();
+  const keyNum=v=>{
+    if(v==null||v==='')return '';
+    if(typeof v==='number'&&Number.isFinite(v))return String(Math.trunc(v));
+    let x=nrm(v).replace(/\s+/g,'');
+    if(/^\d+\.0+$/.test(x))x=x.split('.')[0];
+    return x;
+  };
+  const numVal=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+  const money=n=>new Intl.NumberFormat('es-AR').format(Math.round(n||0));
+  const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'0,0%';
+  const capCtl=v=>nrm(v).toLocaleUpperCase('es-AR');
+  const sheetName=(wb,wanted)=>{
+    const x=wb.SheetNames.find(s=>nrm(s).toLowerCase()===wanted.toLowerCase());
+    return x||wb.SheetNames.find(s=>nrm(s).toLowerCase().replace(/\s+/g,' ')===wanted.toLowerCase().replace(/\s+/g,' '));
+  };
+  const saveCfg=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFGC));}catch(e){}};
+  function paintCfg(){
+    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
+    });
+    ['showLocalities','showPercent','zebra','showLogo'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
+    });
+  }
+  function bindCfg(){
+    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
+      if(el)el.addEventListener('input',()=>{CFGC[k]=el.value;saveCfg();});
+      if(el)el?.addEventListener('change',()=>{CFGC[k]=el.value;saveCfg();});
+    });
+    ['showLocalities','showPercent','zebra','showLogo'].forEach(k=>{
+      const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
+      el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
+    });
+    $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
+    $c('ctlLoadBtn').onclick=()=>$c('ctlFile').click();
+    $c('ctlDrop').onclick=()=>$c('ctlFile').click();
+    $c('ctlDrop').addEventListener('dragover',e=>{e.preventDefault();$c('ctlDrop').classList.add('ready');});
+    $c('ctlDrop').addEventListener('dragleave',()=> $c('ctlDrop').classList.remove('ready'));
+    $c('ctlDrop').addEventListener('drop',e=>{e.preventDefault();$c('ctlDrop').classList.remove('ready');const f=e.dataTransfer.files?.[0];if(f)loadControlFile(f);});
+    $c('ctlFile').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)loadControlFile(f);e.target.value='';});
+    $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
+    $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
+    $c('ctlMissingPdf').onclick=()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn');
+  }
+
+  async function loadControlFile(file){
+    try{
+      if(!/\.xlsx?$/i.test(file.name)){notify('Seleccioná un Excel .xlsx o .xls','err');return;}
+      $c('ctlStatus').className='status-line';
+      $c('ctlStatus').textContent='Leyendo '+file.name+'…';
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      const shControl=sheetName(wb,'Control');
+      const shBase=sheetName(wb,'Base de Datos Original');
+      if(!shControl||!shBase)throw new Error('El Excel debe tener las hojas “Control” y “Base de Datos Original”.');
+      const controlRows=XLSX.utils.sheet_to_json(wb.Sheets[shControl],{header:1,defval:null,raw:true});
+      const baseRows=XLSX.utils.sheet_to_json(wb.Sheets[shBase],{header:1,defval:null,raw:true});
+      CONTROL=buildControlModel(file.name,controlRows,baseRows);
+      try{localStorage.setItem(KEY+'_data',JSON.stringify(CONTROL));}catch(e){}
+      renderControl();
+      $c('ctlStatus').className='status-line ok';
+      $c('ctlStatus').textContent=`Planilla procesada: ${CONTROL.fileName} · ${money(CONTROL.base.length)} vendidas · ${money(CONTROL.control.length)} controladas · ${money(CONTROL.missing.length)} faltantes.`;
+      notify('Planilla Control procesada','ok');
+    }catch(e){
+      console.error(e);
+      $c('ctlStatus').className='status-line err';
+      $c('ctlStatus').textContent='Error: '+(e.message||e);
+      notify('No se pudo procesar la Planilla Control','err');
+    }
+  }
+
+  function findHeader(rows,needles){
+    const max=Math.min(rows.length,30);
+    for(let i=0;i<max;i++){
+      const r=rows[i]||[];
+      const text=r.map(nrm).join('|').toLowerCase();
+      if(needles.every(x=>text.includes(x.toLowerCase())))return i;
+    }
+    return -1;
+  }
+  function buildControlModel(fileName,controlRows,baseRows){
+    const ch=findHeader(controlRows,['n°','pag','bajas'])>=0?findHeader(controlRows,['n°','pag','bajas']):5;
+    const bh=findHeader(baseRows,['n°','apellido','nombre','calle'])>=0?findHeader(baseRows,['n°','apellido','nombre','calle']):6;
+    const mapHeaders=(rows,h)=>{const m={};(rows[h]||[]).forEach((v,i)=>{m[nrm(v).toLowerCase().replace(/[°.:]/g,'').replace(/\s+/g,' ')]=i;});return m;};
+    const cm=mapHeaders(controlRows,ch),bm=mapHeaders(baseRows,bh);
+    const ci=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(cm[k]!=null)return cm[k];}return def};
+    const bi=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(bm[k]!=null)return bm[k];}return def};
+    const cidx={num:ci(['n°','n'],'0'),pag:ci(['pag','pago'],1),baja:ci(['bajas','baja'],2),cobrador:ci(['cobrador'],3),dup:ci(['duplicados','duplicado'],4),cond:ci(['condicion','condición','situacion','situación'],5)};
+    const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes'],8),compl:bi(['compl','completo'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],12)};
+    const control=[];
+    for(let i=ch+1;i<controlRows.length;i++){
+      const r=controlRows[i]||[], num=keyNum(r[cidx.num]);
+      if(!num)continue;
+      control.push({num,pag:Math.max(0,Math.round(numVal(r[cidx.pag]))),baja:/(^1$|si|sí|true)/i.test(nrm(r[cidx.baja]))?1:0,cobrador:nrm(r[cidx.cobrador]),duplicado:numVal(r[cidx.dup]),condicion:nrm(r[cidx.cond])});
+    }
+    const base=[];
+    for(let i=bh+1;i<baseRows.length;i++){
+      const r=baseRows[i]||[], num=keyNum(r[bidx.num]);if(!num)continue;
+      base.push({num,apellido:nrm(r[bidx.ape]),nombre:nrm(r[bidx.nom]),calle:nrm(r[bidx.calle]),nro:nrm(r[bidx.nro]),piso:nrm(r[bidx.piso]),dpto:nrm(r[bidx.dpto]),pago:numVal(r[bidx.pago]),mes:nrm(r[bidx.mes]),situacion:nrm(r[bidx.sit]),localidad:nrm(r[bidx.loc]),duplicado:numVal(r[bidx.dup])});
+    }
+    const controlCount=new Map();
+    control.forEach(r=>controlCount.set(r.num,(controlCount.get(r.num)||0)+1));
+    const used=new Map(),missing=[];
+    base.forEach(r=>{
+      const u=used.get(r.num)||0,c=controlCount.get(r.num)||0;
+      if(u<c)used.set(r.num,u+1); else missing.push(r);
+    });
+    const baja=control.filter(r=>r.baja===1);
+    const counted=control.filter(r=>/contad/i.test(r.condicion)).length;
+    const controlledNonBaja=control.filter(r=>r.baja!==1).length;
+    const completed=controlledNonBaja+missing.length;
+    const totalPaid=control.reduce((a,r)=>a+r.pag,0);
+    const paidWithoutFirst=control.reduce((a,r)=>a+Math.max(0,r.pag-1),0);
+    /* La plantilla original considera como completadas (10 cuotas) todas
+       las boletas sin baja y suma también las que no llegaron al control.
+       Las bajas se distribuyen por las cuotas efectivamente registradas. */
+    const dist={};
+    for(let q=1;q<=10;q++)dist[q]=0;
+    control.forEach(r=>{
+      if(r.baja===1){
+        const q=Math.max(1,Math.min(9,r.pag||1));
+        dist[q]=(dist[q]||0)+1;
+      }else{
+        dist[10]=(dist[10]||0)+1;
+      }
+    });
+    dist[10]+=missing.length;
+    const localMap={};
+    base.forEach(r=>{
+      const l=r.localidad||'Sin localidad';
+      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+      localMap[l].sold++;
+    });
+    control.forEach(r=>{
+      const b=base.find(x=>x.num===r.num);const l=b?.localidad||'Sin localidad';
+      if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+      localMap[l].controlled++;localMap[l].paid+=r.pag;if(r.baja===1)localMap[l].bajas++;
+    });
+    missing.forEach(r=>{const l=r.localidad||'Sin localidad';if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};localMap[l].missing++;});
+    let period=base.map(r=>r.mes).find(Boolean)||'';
+    return {fileName,base,control,missing,baja,counted,controlledNonBaja,completed,totalPaid,paidWithoutFirst,dist,localMap,period,source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)}};
+  }
+  function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
+
+  function renderControl(){
+    const has=!!CONTROL;
+    $c('ctlDataCard').classList.toggle('hidden',!has);
+    $c('ctlReportsGrid').classList.toggle('hidden',!has);
+    $c('ctlMissingCard').classList.toggle('hidden',!has);
+    if(!has){
+      $c('ctlFileInfo').innerHTML='';
+      $c('ctlKpis').innerHTML='';$c('ctlBreakdownTable').innerHTML='';$c('ctlLocalityTable').innerHTML='';$c('ctlMissingPreview').innerHTML='';
+      $c('ctlMissingCount').textContent='0';$c('ctlMatchBadge').textContent='—';return;
+    }
+    $c('ctlFileInfo').innerHTML=`<div class="control-file"><b>${esc(CONTROL.fileName)}</b><span class="control-badge ok">✓ Hojas Control + Base</span></div>`;
+    const c=CONTROL;
+    $c('ctlPeriodLabel').textContent=(c.period||'Período no informado')+' · '+new Date().toLocaleDateString('es-AR');
+    const ratio=c.base.length?c.control.length/c.base.length:0;
+    $c('ctlMatchBadge').textContent=`${pct(c.control.length,c.base.length)} controlado`;
+    $c('ctlMatchBadge').className='control-badge '+(c.missing.length?'warn':'ok');
+    $c('ctlKpis').innerHTML=[
+      ['Total vendidas',c.base.length,''],
+      ['Controladas',c.control.length,'ok'],
+      ['Faltan controlar',c.missing.length,'danger'],
+      ['Cuotas cobradas',c.totalPaid,''],
+      ['Bajas',c.baja.length,'danger'],
+      ['Contados',c.counted,'ok']
+    ].map(x=>`<div class="control-kpi ${x[2]}"><div class="v">${money(x[1])}</div><div class="l">${x[0]}</div></div>`).join('');
+    renderBreakdown();renderLocalities();renderMissing();
+  }
+
+  function renderBreakdown(){
+    const c=CONTROL,total=c.base.length,rows=[];
+    for(let q=10;q>=1;q--){
+      const qty=c.dist[q]||0;
+      const cuotas=q*qty;
+      const p=total?cuotas/total:0;
+      rows.push(`<tr><td class="control-summary-title">${q===10?'Boletas completadas':'Boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s')}</td><td class="num">${money(q)}</td><td class="num">${money(qty)}</td><td class="num">${money(cuotas)}</td><td class="num">${CFGC.showPercent?pct(cuotas,total):'—'}</td></tr>`);
+    }
+    const bajasPct=total?c.baja.length/total:0;
+    rows.push(`<tr class="total"><td>Bajas</td><td class="num">—</td><td class="num">${money(c.baja.length)}</td><td class="num">—</td><td class="num">${CFGC.showPercent?(bajasPct*100).toFixed(1)+'%':'—'}</td></tr>`);
+    $c('ctlBreakdownTable').innerHTML=`<thead><tr><th>Boletas pagas</th><th class="num">Cuotas</th><th class="num">Cantidad</th><th class="num">Total cuotas</th><th class="num">%</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+  }
+  function renderLocalities(){
+    const box=$c('ctlLocalityTable');
+    if(!CFGC.showLocalities){box.closest('.card').classList.add('hidden');return;}
+    box.closest('.card').classList.remove('hidden');
+    const c=CONTROL,arr=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+    box.innerHTML='<thead><tr><th>Localidad</th><th class="num">Vendidas</th><th class="num">Control.</th><th class="num">Faltan</th><th class="num">Bajas</th></tr></thead><tbody>'+
+      arr.map(([l,v])=>`<tr><td>${esc(l)}</td><td class="num">${money(v.sold)}</td><td class="num">${money(v.controlled)}</td><td class="num">${money(v.missing)}</td><td class="num">${money(v.bajas)}</td></tr>`).join('')+
+      `<tr class="total"><td>Total</td><td class="num">${money(c.base.length)}</td><td class="num">${money(c.control.length)}</td><td class="num">${money(c.missing.length)}</td><td class="num">${money(c.baja.length)}</td></tr></tbody>`;
+  }
+  function renderMissing(){
+    const c=CONTROL;
+    $c('ctlMissingCount').textContent=money(c.missing.length);
+    if(!c.missing.length){$c('ctlMissingPreview').innerHTML='<div class="control-empty">✓ Todas las boletas de la Base de Datos Original llegaron al Control.</div>';return;}
+    $c('ctlMissingPreview').innerHTML=`<div class="control-table-wrap"><table class="control-table"><thead><tr><th class="num">N°</th><th>Apellido</th><th>Nombre</th><th>Calle</th><th>Nro</th><th>Localidad</th><th>Estado</th></tr></thead><tbody>${c.missing.map(r=>`<tr><td class="num">${esc(r.num)}</td><td>${esc(r.apellido)}</td><td>${esc(r.nombre)}</td><td>${esc(r.calle)}</td><td>${esc(r.nro)}</td><td>${esc(r.localidad)}</td><td><span class="control-badge warn">No llegó</span></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function marginMm(){return CFGC.margin==='small'?10:CFGC.margin==='large'?22:15}
+  function fontSize(){return CFGC.size==='small'?7.5:CFGC.size==='large'?10:8.5}
+  function rowPad(){return CFGC.rowH==='small'?1.2:CFGC.rowH==='large'?3:1.8}
+  function rgb(hex){
+    hex=String(hex||'#1f4e8c').replace('#','');
+    if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+    return [0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)||0);
+  }
+  function accent(){return rgb((window.CFG&&CFG.accent)||'#1f4e8c')}
+  function drawHeader(doc,title,subtitle){
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),a=accent();
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(16);doc.setTextColor(25,30,38);doc.text(title,M,28);
+    doc.setDrawColor(a[0],a[1],a[2]);doc.setLineWidth(1.5);doc.line(M,34,W-M,34);
+    doc.setFont(CFGC.font,'normal');doc.setFontSize(8.5);doc.setTextColor(105,112,122);
+    doc.text(subtitle||'',M,43);
+    doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
+    if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,'PNG',W-M-30,8,30,15);}catch(e){}}
+  }
+  function drawFooter(doc){
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),pages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont(CFGC.font,'normal');doc.setFontSize(7);doc.setTextColor(125,130,138);doc.text(CFGC.footer||'Nora · Control',M,H-9);doc.text('Página '+p+' de '+pages,W-M,H-9,{align:'right'});}
+  }
+  async function generateControlSummaryPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,CFGC.title||'Resumen del control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen general',M,58);
+    const kpis=[
+      ['Total de boletas vendidas',money(c.base.length)],
+      ['Cuotas cobradas (con primeras cuotas)',money(c.totalPaid)],
+      ['Cuotas cobradas (sin primeras cuotas)',money(c.paidWithoutFirst)],
+      ['Bajas',money(c.baja.length)],
+      ['Contados',money(c.counted)],
+      ['Faltan controlar',money(c.missing.length)]
+    ];
+    doc.autoTable({startY:63,head:[['Indicador','Cantidad']],body:kpis,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
+    let y=doc.lastAutoTable.finalY+10;
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);doc.text('Resumen adicional',M,y);y+=5;
+    const distRows=[];
+    for(let q=10;q>=1;q--){const qty=c.dist[q]||0;distRows.push([q===10?'Boletas completadas':'Total de boletas con '+q+' cuota'+(q===1?'':'s')+' pagada'+(q===1?'':'s'),q,qty,q*qty,CFGC.showPercent?pct(q*qty,c.base.length):'—']);}
+    distRows.push(['Bajas','—',c.baja.length,'—',CFGC.showPercent?pct(c.baja.length,c.base.length):'—']);
+    doc.autoTable({startY:y,head:[['Boletas pagas','Cuotas','Cantidad','Total de cuotas','%']],body:distRows,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
+    if(CFGC.showLocalities){
+      y=doc.lastAutoTable.finalY+10;
+      if(y>doc.internal.pageSize.getHeight()-55){doc.addPage();y=M+10;}
+      doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen por localidad',M,y);y+=5;
+      const locRows=Object.entries(c.localMap).sort((a,b)=>a[0].localeCompare(b[0],'es')).map(([l,v])=>[l,v.sold,v.controlled,v.missing,v.bajas]);
+      locRows.push(['TOTAL',c.base.length,c.control.length,c.missing.length,c.baja.length]);
+      doc.autoTable({startY:y,head:[['Localidad','Vendidas','Controladas','Faltan','Bajas']],body:locRows,theme:'grid',
+        styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2},
+        headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},margin:{left:M,right:M}});
+    }
+    drawFooter(doc);
+    await savePdfBlob(doc.output('blob'),`Resumen Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  async function generateControlMissingPdf(){
+    const c=CONTROL,{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
+    drawHeader(doc,'Boletas que no llegaron al control',(CFGC.subtitle||'')+' · '+(c.period||'Período'));
+    doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
+    doc.text('Cantidad: '+money(c.missing.length),M,58);
+    const body=c.missing.map(r=>[r.num,r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
+    if(!body.length){doc.setFont(CFGC.font,'normal');doc.setFontSize(10);doc.text('Todas las boletas de la Base de Datos Original llegaron al Control.',M,70);drawFooter(doc);await savePdfBlob(doc.output('blob'),`Boletas no llegaron - ${safeCtl(c.period||'control')}.pdf`);return;}
+    doc.autoTable({startY:64,head:[['N°','Apellido','Nombre','Calle','Nro','Localidad','Estado']],body,theme:'grid',
+      styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad(),textColor:[30,34,40],lineColor:[215,218,223],lineWidth:.2,overflow:'linebreak'},
+      headStyles:{fillColor:a,textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},
+      columnStyles:{0:{halign:'right'},6:{fontStyle:'bold',textColor:[180,70,15]}},margin:{left:M,right:M}});
+    drawFooter(doc);
+    await savePdfBlob(doc.output('blob'),`Boletas no llegaron al Control - ${safeCtl(c.period||'control')}.pdf`);
+  }
+  function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
+
+  /* recuperar último procesamiento */
+  try{const raw=localStorage.getItem(KEY+'_data');if(raw)CONTROL=JSON.parse(raw);}catch(e){}
+  paintCfg();bindCfg();renderControl();
+
+  /* integrar navegación existente */
+  if(typeof TITLES!=='undefined')TITLES.control=['Control','Control mensual, resumen y boletas que no llegaron.'];
+  if(Array.isArray(window.VIEW_ORDER)){}
+  try{
+    if(typeof VIEW_ORDER!=='undefined'&&!VIEW_ORDER.includes('control'))VIEW_ORDER.splice(VIEW_ORDER.indexOf('sorteos'),0,'control');
+  }catch(e){}
+  document.querySelectorAll('[data-view="control"]').forEach(b=>b.addEventListener('click',()=>window.setView('control')));
+  const originalSetView=window.setView;
+  if(originalSetView&&!originalSetView.__controlWrapped){
+    const wrapped=function(v,...args){return originalSetView.call(this,v,...args)};
+    wrapped.__controlWrapped=true;window.setView=wrapped;
+  }
+  /* actualiza el orden del buscador y accesos */
+  setTimeout(()=>{try{paintIcons(document.getElementById('view-control'));}catch(e){}},50);
+})();
+</script>
+
+</body></html>`);
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
