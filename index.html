@@ -5266,8 +5266,22 @@ window.nrIfPrint=function(iframe,url){
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
       el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
     });
-    $c('ctlPrincipalLocality')?.addEventListener('change',e=>{CFGC.principalLocality=e.target.value;saveCfg();if(CONTROL)renderControl();});
-    $c('ctlMissingAsPaid')?.addEventListener('change',e=>{CFGC.missingAsPaid=e.target.value==='1';saveCfg();if(CONTROL)renderControl();});
+    $c('ctlPrincipalLocality')?.addEventListener('change',e=>{
+      CFGC.principalLocality=e.target.value;
+      saveCfg();
+      if(CONTROL)renderControl();
+    });
+    $c('ctlMissingAsPaid')?.addEventListener('change',e=>{
+      CFGC.missingAsPaid=e.target.value==='1';
+      saveCfg();
+      /* Recalcular el modelo para que el mismo criterio impacte inmediatamente
+         KPIs, dashboard, gráficos, localidad, cobradores y todos los informes. */
+      if(CONTROL&&CONTROL._rawSource){
+        CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows);
+        try{localStorage.setItem(KEY+'_data',JSON.stringify(Object.assign({},CONTROL,{_rawSource:undefined})));}catch(err){}
+      }
+      if(CONTROL)renderControl();
+    });
     $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
     $c('ctlLoadBtn').onclick=()=>{try{window.setView('carga');}catch(e){}};
     /* La carga de archivos NO existe en Control. Todo entra por Carga de Datos. */
@@ -5400,12 +5414,41 @@ window.nrIfPrint=function(iframe,url){
       localMap[l].missing++;
     });
 
+    /* Si el usuario decide que los números faltantes se cobraron, se incorporan
+       al mismo circuito de datos que las filas de Control: 10 cuotas, sin tratamiento
+       especial en KPIs, gráficos, dashboard ni informes. La lista "No llegaron" se
+       conserva exclusivamente para poder identificar esos números cuando se solicite. */
+    const missingAsPaid=!!CFGC.missingAsPaid;
+    const syntheticMissing=missingAsPaid?missing.map(r=>({
+      num:r.num,pag:10,baja:0,cobrador:'Faltantes considerados cobrados',duplicado:0,
+      condicion:'Faltante considerado cobrado',_syntheticMissing:true
+    })):[];
+    const effectiveControl=control.concat(syntheticMissing);
+    if(missingAsPaid){
+      missing.forEach(r=>{
+        const l=r.localidad||'Sin localidad';
+        if(!localMap[l])localMap[l]={sold:0,controlled:0,missing:0,bajas:0,paid:0};
+        localMap[l].controlled++;localMap[l].paid+=10;
+      });
+      dist[10]=(dist[10]||0)+missing.length;
+      const cob='Faltantes considerados cobrados';
+      if(!cobradorMap[cob])cobradorMap[cob]={count:0,paid:0,bajas:0};
+      cobradorMap[cob].count+=missing.length;cobradorMap[cob].paid+=missing.length*10;
+    }
+    const effectiveTotalPaid=totalPaid+(missingAsPaid?missing.length*10:0);
+    const effectivePaidWithoutFirst=paidWithoutFirst+(missingAsPaid?missing.length*9:0);
+    const effectiveFirstPayment=firstPayment+(missingAsPaid?missing.length:0);
+    const effectiveFullPayment=fullPayment+(missingAsPaid?missing.length:0);
+    const effectiveControlledNonBaja=controlledNonBaja+(missingAsPaid?missing.length:0);
+    const effectiveUniqueControl=new Set([...uniqueSet,...(missingAsPaid?missing.map(r=>r.num):[])]).size;
+
     const localities=[...new Set(base.map(r=>r.localidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     const period=base.map(r=>r.mes).find(Boolean)||'';
     return {
-      fileName,base,control,missing,baja,counted,controlledNonBaja,totalPaid,paidWithoutFirst,
+      fileName,base,control:effectiveControl,missing,baja,counted,controlledNonBaja:effectiveControlledNonBaja,totalPaid:effectiveTotalPaid,paidWithoutFirst:effectivePaidWithoutFirst,
       dist,localMap,period,conditionMap,cobradorMap,paymentDist,duplicateNumbers,duplicateRows,
-      firstPayment,fullPayment,uniqueControl:uniqueSet.size,localities,
+      firstPayment:effectiveFirstPayment,fullPayment:effectiveFullPayment,uniqueControl:effectiveUniqueControl,localities,
+      missingAsPaid,syntheticMissing,
       source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},
       sourceCounted:'Base de Datos Original!M4',
       _rawSource:{controlRows,baseRows}
