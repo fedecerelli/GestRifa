@@ -5528,6 +5528,29 @@ function mobilePrint(blob,name){
       try{syncDataCenterUI();renderFilesList();renderHome();}catch(e){}
     });
   }
+  /* Restaurar automáticamente las planillas Control que ya estaban en Carga de Datos. */
+  Promise.resolve().then(async()=>{
+    try{
+      if(window.__noraControlRestoredOnce)return;
+      window.__noraControlRestoredOnce=true;
+      if(CONTROL)return;
+      const stored=(typeof FILES!=='undefined'?FILES:[]).filter(f=>
+        f && (f.kind==='control'||f.sourceType==='control'||(typeof window.isControlFileName==='function'&&window.isControlFileName(f.name)))
+      );
+      for(const f of stored){
+        if(!f.raw)continue;
+        let bytes=f.raw;
+        if(bytes instanceof Uint8Array)bytes=bytes.buffer;
+        if(!(bytes instanceof ArrayBuffer)){
+          try{bytes=new Uint8Array(bytes).buffer;}catch(e){continue;}
+        }
+        const file=new File([bytes],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        await window.noraControlLoadFile(file);
+        if(CONTROL)break;
+      }
+      try{syncDataCenterUI();renderFilesList();renderHome();if(typeof renderDataManager==='function')renderDataManager();}catch(e){}
+    }catch(e){console.warn('No se pudo restaurar automáticamente la Planilla Control desde Carga de Datos',e);}
+  });
   window.noraControlClear=function(){CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}try{renderControl();}catch(e){}};
   paintCfg();bindCfg();renderControl();
 
