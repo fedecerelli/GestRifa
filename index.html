@@ -1388,11 +1388,12 @@ body.nx-hide-floats .nx-float{display:none}
         <div class="control-icon"><span data-icon="clipboard"></span></div>
         <div>
           <h2>Control <span class="tag">Planilla de Control</span></h2>
-          <p>Procesá la hoja <b>Control</b> y comparala automáticamente con <b>Base de Datos Original</b>.</p>
+          <p title="Procesá la hoja Control y comparala automáticamente con Base de Datos Original.">Procesá la hoja <b>Control</b> y comparala automáticamente con <b>Base de Datos Original</b>.</p>
         </div>
       </div>
       <div class="control-actions">
         <button class="secondary miniBtn" id="ctlLoadBtn"><span class="b-ic" data-icon="upload"></span>Ver Carga de Datos</button>
+        <button class="ghost miniBtn" id="ctlEditReports"><span class="b-ic" data-icon="sliders"></span>Editar informes</button>
         <button class="ghost miniBtn" id="ctlRecalcBtn"><span class="b-ic" data-icon="refresh"></span>Recalcular</button>
         <button class="ghost miniBtn" id="ctlClearBtn"><span class="b-ic" data-icon="trash"></span>Limpiar</button>
         <button class="primary miniBtn" id="ctlSummaryPdf"><span class="b-ic" data-icon="filetext"></span>Resumen PDF</button>
@@ -1645,9 +1646,13 @@ body.nx-hide-floats .nx-float{display:none}
         </div>
         <div class="card" id="controlPdfDesignCard"><h2><span class="h-ic" data-icon="clipboard"></span>Planillas de Control <span class="tag">Control</span></h2>
           <p class="hint">La misma personalización se aplica al <b>Resumen</b>, <b>Informe completo</b> y <b>Boletas que no llegaron al control</b>.</p>
-          <div class="row">
+          <div class="row control-editor-row">
             <div class="field grow"><label>Título del resumen</label><input id="ctlTitle" type="text"></div>
-            <div class="field grow"><label>Subtítulo</label><input id="ctlSubtitle" type="text"></div>
+            <div class="field grow"><label>Título del informe completo</label><input id="ctlFullTitle" type="text"></div>
+            <div class="field grow"><label>Título de boletas no llegadas</label><input id="ctlMissingTitle" type="text"></div>
+          </div>
+          <div class="row control-editor-row" style="margin-top:10px">
+            <div class="field grow"><label>Subtítulo común (admite texto libre)</label><input id="ctlSubtitle" type="text" placeholder="Ej.: Las Rosas - Octubre - 2026"></div>
             <div class="field"><label>Orientación</label><select id="ctlOrient"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></div>
           </div>
           <div class="row" style="margin-top:10px">
@@ -1657,7 +1662,12 @@ body.nx-hide-floats .nx-float{display:none}
             <div class="field"><label>Alto de fila</label><select id="ctlRowH"><option value="small">Compactas</option><option value="normal">Normales</option><option value="large">Amplias</option></select></div>
             <div class="field grow"><label>Pie de página</label><input id="ctlFooter" type="text"></div>
           </div>
-          <div class="control-checks" style="margin-top:11px">
+          <div class="control-checks control-report-visibility" style="margin-top:11px">
+            <label><input type="checkbox" id="ctlShowTitle" checked> Mostrar título</label>
+            <label><input type="checkbox" id="ctlShowSubtitle" checked> Mostrar subtítulo</label>
+            <label><input type="checkbox" id="ctlShowGenerationDate" checked> Mostrar fecha de generación</label>
+            <label><input type="checkbox" id="ctlShowFooter" checked> Mostrar pie de página</label>
+            <label><input type="checkbox" id="ctlShowPageNumber" checked> Mostrar número de página</label>
             <label><input type="checkbox" id="ctlShowLocalities" checked> Resumen por localidad</label>
             <label><input type="checkbox" id="ctlShowPercent" checked> Porcentajes</label>
             <label><input type="checkbox" id="ctlZebra" checked> Filas alternadas</label>
@@ -2821,7 +2831,7 @@ let navHistory=[],navIndex=-1;
 function setView(v,skipHistory){
   document.querySelectorAll('.nav button, .bottom-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
-  const t=TITLES[v]||TITLES.home;document.getElementById('pageTitle').textContent=t[0];document.getElementById('pageSub').textContent=t[1];
+  const t=TITLES[v]||TITLES.home;document.getElementById('pageTitle').textContent=t[0];document.getElementById('pageTitle').title=t[1]||'';document.getElementById('pageSub').textContent=t[1];
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='dash'&&RECORDS.length)setTimeout(updateDashboard,60);if(v==='pdf')setTimeout(()=>{populateBulkPdfSelectors();bindBulkPdfSelectors();const n=document.getElementById('pdfDataNoticeText');if(n)n.textContent=RECORDS.length?`${RECORDS.length} registros disponibles desde ${FILES.length} archivo(s). El PDF usa estos datos sin volver a cargarlos.`:'No hay datos cargados. Andá a Inicio › Centro de datos para agregar los Excel.';},30);
   if(v==='settings')setTimeout(()=>{previewPdfStyle();previewLstStyle();previewGapsStyle();try{renderStyle();}catch(e){}},50);
@@ -5215,14 +5225,19 @@ window.nrIfPrint=function(iframe,url){
   const KEY='nora_control_v1';
   const DEF={
     title:'Resumen del control',
-    subtitle:'Control mensual de boletas y cuotas',
+    fullTitle:'Informe completo de Control',
+    missingTitle:'Boletas que no llegaron al control',
+    subtitle:'{{localidad}} - {{mes}} - {{año}}',
     footer:'Nora · Control de cobranza',
+    showTitle:true,showSubtitle:true,showGenerationDate:true,showFooter:true,showPageNumber:true,
     orient:'portrait',font:'helvetica',size:'normal',margin:'normal',rowH:'normal',
     showLocalities:true,showPercent:true,zebra:true,showLogo:false,showCollectors:true,showQuality:true,logo:'',
     missingAsPaid:false,principalLocality:''
   };
   let CFGC=Object.assign({},DEF);
   try{Object.assign(CFGC,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}
+  /* Migrar el subtítulo genérico antiguo para que el nuevo sea realmente editable y contextual. */
+  if(CFGC.subtitle==='Control mensual de boletas y cuotas')CFGC.subtitle='{{localidad}} - {{mes}} - {{año}}';
   let CONTROL=null;
 
   const $c=id=>document.getElementById(id);
@@ -5245,24 +5260,24 @@ window.nrIfPrint=function(iframe,url){
   const saveCfg=()=>{try{localStorage.setItem(KEY,JSON.stringify(CFGC));}catch(e){}};
   function fileDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
   function paintCfg(){
-    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+    ['title','fullTitle','missingTitle','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=CFGC[k];
     });
     const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
     const loc=$c('ctlPrincipalLocality');if(loc&&CONTROL){loc.value=CFGC.principalLocality||loc.value;}
     const ma=$c('ctlMissingAsPaid');if(ma)ma.value=CFGC.missingAsPaid?'1':'0';
-    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
+    ['showTitle','showSubtitle','showGenerationDate','showFooter','showPageNumber','showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=!!CFGC[k];
     });
   }
   function bindCfg(){
-    ['title','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
+    ['title','fullTitle','missingTitle','subtitle','footer','orient','font','size','margin','rowH'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
       if(el)el.addEventListener('input',()=>{CFGC[k]=el.value;saveCfg();});
       if(el)el?.addEventListener('change',()=>{CFGC[k]=el.value;saveCfg();});
     });
     const ln=$c('ctlLogoName');if(ln)ln.textContent=CFGC.logoName|| (CFGC.logo?'Logo cargado':'Sin logo propio');
-    ['showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
+    ['showTitle','showSubtitle','showGenerationDate','showFooter','showPageNumber','showLocalities','showPercent','zebra','showLogo','showCollectors','showQuality'].forEach(k=>{
       const el=$c('ctl'+k.charAt(0).toUpperCase()+k.slice(1));
       el?.addEventListener('change',()=>{CFGC[k]=el.checked;saveCfg();if(CONTROL)renderControl();});
     });
@@ -5284,6 +5299,7 @@ window.nrIfPrint=function(iframe,url){
     });
     $c('ctlResetCfg').onclick=()=>{CFGC=Object.assign({},DEF);saveCfg();paintCfg();if(CONTROL)renderControl();notify('Personalización restaurada','ok');};
     $c('ctlLoadBtn').onclick=()=>{try{window.setView('carga');}catch(e){}};
+    $c('ctlEditReports')?.addEventListener('click',()=>{try{window.setView('settings');setTimeout(()=>document.querySelector('[data-set="design"]')?.click(),80);setTimeout(()=>document.getElementById('controlPdfDesignCard')?.scrollIntoView({behavior:'smooth',block:'start'}),180);}catch(e){}});
     /* La carga de archivos NO existe en Control. Todo entra por Carga de Datos. */
     $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
     $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
@@ -5583,11 +5599,11 @@ window.nrIfPrint=function(iframe,url){
   function accent(){return rgb((window.CFG&&CFG.accent)||'#1f4e8c')}
   function drawHeader(doc,title,subtitle){
     const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),a=accent();
-    doc.setFont(CFGC.font,'bold');doc.setFontSize(16);doc.setTextColor(25,30,38);doc.text(title,M,28);
-    doc.setDrawColor(a[0],a[1],a[2]);doc.setLineWidth(1.5);doc.line(M,34,W-M,34);
+    if(CFGC.showTitle!==false&&String(title||'').trim()){doc.setFont(CFGC.font,'bold');doc.setFontSize(16);doc.setTextColor(25,30,38);doc.text(String(title),M,28,{maxWidth:W-2*M-35});}
+    if(CFGC.showTitle!==false){doc.setDrawColor(a[0],a[1],a[2]);doc.setLineWidth(1.5);doc.line(M,34,W-M,34);}
     doc.setFont(CFGC.font,'normal');doc.setFontSize(8.5);doc.setTextColor(105,112,122);
-    doc.text(subtitle||'',M,43);
-    doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
+    if(CFGC.showSubtitle!==false&&String(subtitle||'').trim())doc.text(String(subtitle),M,43,{maxWidth:W-2*M-(CFGC.showGenerationDate!==false?35:0)});
+    if(CFGC.showGenerationDate!==false)doc.text(new Date().toLocaleDateString('es-AR'),W-M,43,{align:'right'});
     if(CFGC.showLogo&&CFGC.logo){try{doc.addImage(CFGC.logo,String(CFGC.logo).startsWith('data:image/jpeg')?'JPEG':'PNG',W-M-30,8,30,15);}catch(e){}}
   }
   function currentReportPeriod(){
@@ -5596,11 +5612,12 @@ window.nrIfPrint=function(iframe,url){
     return {month,year:String(d.getFullYear())};
   }
   function reportLocality(){return nrm(CFGC.principalLocality)||'Localidad principal';}
-  function reportSubtitle(){const p=currentReportPeriod();return `${reportLocality()} - ${p.month} - ${p.year}`;}
+  function reportSubtitle(){if(CFGC.showSubtitle===false)return '';const p=currentReportPeriod();const raw=String(CFGC.subtitle||'').trim();if(!raw)return '';return raw.replace(/\{\{localidad\}\}/gi,reportLocality()).replace(/\{\{mes\}\}/gi,p.month).replace(/\{\{año\}\}|\{\{year\}\}/gi,p.year);}
   function reportFilename(reportName){const p=currentReportPeriod();return `${safeCtl(reportName)} - ${safeCtl(reportLocality())} - ${safeCtl(p.month)} - ${p.year}.pdf`;}
   function drawFooter(doc){
     const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=marginMm(),pages=doc.internal.getNumberOfPages();
-    for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont(CFGC.font,'normal');doc.setFontSize(7);doc.setTextColor(125,130,138);doc.text(CFGC.footer||'Nora · Control',M,H-9);doc.text('Página '+p+' de '+pages,W-M,H-9,{align:'right'});}
+    if(CFGC.showFooter===false&&CFGC.showPageNumber===false)return;
+    for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont(CFGC.font,'normal');doc.setFontSize(7);doc.setTextColor(125,130,138);if(CFGC.showFooter!==false&&String(CFGC.footer||'').trim())doc.text(String(CFGC.footer),M,H-9,{maxWidth:W-2*M-35});if(CFGC.showPageNumber!==false)doc.text('Página '+p+' de '+pages,W-M,H-9,{align:'right'});}
   }
   async function generateControlSummaryPdf(){
     const c=CONTROL,{jsPDF}=window.jspdf;
@@ -5646,7 +5663,7 @@ window.nrIfPrint=function(iframe,url){
     const c=CONTROL,{jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'});
     const W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Boletas que no llegaron al control',reportSubtitle());
+    drawHeader(doc,CFGC.missingTitle||'Boletas que no llegaron al control',reportSubtitle());
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.setTextColor(25,30,38);
     doc.text('Cantidad: '+money(c.missing.length),M,58);
     const body=sortControlMissing(c.missing).map(r=>[formatControlMissingNum(r.num),r.apellido,r.nombre,r.calle,r.nro,r.localidad,'No llegó']);
@@ -5660,7 +5677,7 @@ window.nrIfPrint=function(iframe,url){
   }
   async function generateControlFullPdf(){
     const c=CONTROL,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:CFGC.orient,unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),M=marginMm(),a=accent();
-    drawHeader(doc,'Informe completo de Control',reportSubtitle());
+    drawHeader(doc,CFGC.fullTitle||'Informe completo de Control',reportSubtitle());
     doc.setFont(CFGC.font,'bold');doc.setFontSize(11);doc.text('Resumen ejecutivo',M,58);
     const exec=[['Boletas vendidas',c.base.length],['Controladas',c.control.length],['Faltan llegar al control',c.missing.length],['Bajas',c.baja.length],['Cuotas cobradas',c.totalPaid],['Cuotas sin primera',c.paidWithoutFirst],['Cobertura',pct(c.control.length,c.base.length)],['Promedio cuotas',c.control.length?(c.totalPaid/c.control.length).toFixed(2):'0']];
     doc.autoTable({startY:63,head:[['Indicador','Valor']],body:exec,theme:'grid',styles:{font:CFGC.font,fontSize:fontSize(),cellPadding:rowPad()},headStyles:{fillColor:a,textColor:255},alternateRowStyles:CFGC.zebra?{fillColor:[247,248,250]}:{},margin:{left:M,right:M}});
@@ -6921,6 +6938,44 @@ const $=id=>document.getElementById(id);
   AppLog&&AppLog.write('Sección Control: dropzone y selector de planillas activados.','info');
 })();
 })();
+</script>
+
+<style id="nora-layout-report-fix-20261011">
+/* Cabecera de navegación compacta: los textos de ayuda quedan disponibles como tooltip. */
+.topbar-text #pageSub{display:none!important}
+.topbar-text{min-width:0;max-width:100%;gap:0!important}
+.topbar-text #pageTitle{font-size:clamp(17px,1.8vw,23px)!important;line-height:1.2!important;margin:0!important;overflow-wrap:anywhere}
+/* Control: los títulos no compiten con subtítulos largos ni con los botones. */
+.control-brand{min-width:0;flex:1 1 260px;gap:10px!important}
+.control-brand>div:last-child{min-width:0}
+.control-brand h2{font-size:clamp(17px,1.8vw,22px)!important;line-height:1.25!important;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.control-brand p{display:none!important}
+.control-actions{min-width:0;display:flex;flex-wrap:wrap;gap:7px!important}
+.control-actions button{max-width:100%;white-space:normal;line-height:1.25}
+.control-section-title{align-items:flex-start;flex-wrap:wrap;gap:8px!important}
+.control-section-title>div{min-width:0;flex:1 1 220px}
+.control-section-title h3{line-height:1.25;overflow-wrap:anywhere}
+.control-section-title small{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.35;margin-top:3px;max-width:100%}
+.control-editor-row{align-items:flex-end;flex-wrap:wrap}
+.control-editor-row .field{min-width:min(100%,220px);flex:1 1 220px}
+.control-report-visibility{display:flex;flex-wrap:wrap;gap:8px 14px}
+.control-report-visibility label{max-width:100%;white-space:normal;line-height:1.35}
+#controlPdfDesignCard .hint{line-height:1.45;overflow-wrap:anywhere}
+@media(max-width:700px){.control-hero{align-items:stretch!important}.control-actions{width:100%}.control-actions button{flex:1 1 145px}.control-editor-row .field{flex-basis:100%}.topbar-text #pageTitle{font-size:18px!important}}
+@media(prefers-reduced-motion:reduce){.control-actions button{transition:none!important;animation:none!important}}
+</style>
+<script id="nora-unify-report-editors-20261011">
+/* Reunir cabecera y pie compartidos en Diseño PDF, junto con los editores de cada informe. */
+(()=>{try{
+ const design=document.getElementById('pane-design');
+ const hf=document.getElementById('pane-headerfooter');
+ if(design&&hf){
+   const cards=[...hf.children];
+   cards.reverse().forEach(card=>design.insertBefore(card,design.firstElementChild));
+   hf.hidden=true;hf.style.display='none';
+   const tab=document.querySelector('[data-set="headerfooter"]');if(tab){tab.hidden=true;tab.style.display='none';}
+ }
+}catch(e){console.warn('No se pudieron unificar los editores de informes',e);}})();
 </script>
 </body>
 </html>
