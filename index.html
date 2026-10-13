@@ -6977,5 +6977,254 @@ const $=id=>document.getElementById(id);
  }
 }catch(e){console.warn('No se pudieron unificar los editores de informes',e);}})();
 </script>
+
+<style id="nora-ui-recovery-20261013">
+/* Ajustes visuales conservadores. No se modifica la lógica ni se agregan dependencias. */
+.topbar{display:flex!important;align-items:center!important;gap:8px!important;padding:7px 10px!important;margin-bottom:12px!important;min-height:0!important}
+.topbar-text{flex:1 1 auto!important;min-width:0!important}
+.topbar #pageTitle{font-size:clamp(15px,1.2vw,18px)!important;line-height:1.2!important;margin:0!important;overflow-wrap:anywhere}
+.topbar #pageSub{display:none!important}
+#view-control .control-hero .control-brand>div>p{display:none!important}
+.topbar-actions{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;min-width:0!important}
+.topbar-actions .iconbtn{width:32px!important;height:32px!important;min-height:32px!important;flex:0 0 auto!important}
+/* Los textos de los encabezados del control pueden ajustarse sin ensanchar los botones. */
+.control-hero{min-width:0}
+.control-brand{min-width:0;flex-wrap:wrap}
+.control-brand>div{min-width:0}
+.control-brand h2{font-size:clamp(16px,1.3vw,20px);line-height:1.25;overflow-wrap:anywhere}
+.control-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.control-actions button{max-width:100%;white-space:normal;line-height:1.25}
+.control-section-title{align-items:flex-start;flex-wrap:wrap;gap:8px!important}
+.control-section-title>div{min-width:0;flex:1 1 220px}
+.control-section-title h3{line-height:1.25;overflow-wrap:anywhere}
+.control-section-title small{white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+button,a,[role="button"],input,select,textarea{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent,#3978c5)!important;outline-offset:2px!important}
+@media(max-width:760px){.topbar{align-items:center!important;flex-wrap:wrap!important;padding:7px 8px!important}.topbar #pageTitle{font-size:16px!important}.topbar-actions{margin-left:auto!important;gap:4px!important}.topbar-actions .iconbtn{width:31px!important;height:31px!important;min-height:31px!important}.control-hero{align-items:stretch!important}.control-actions{width:100%}.control-actions button{flex:1 1 145px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+
+<style id="nora-toolbar-minimal-20261013">
+/* Inspiración visual: Tabler y AdminLTE (componentes sobrios, alineados y responsive).
+   Se limita a presentación; la lógica existente de Nora queda intacta. */
+.topbar { --nora-toolbar-height: 32px; }
+.topbar.tb-s { --nora-toolbar-height: 30px; }
+.topbar.tb-l { --nora-toolbar-height: 36px; }
+
+/* Barra global: sin título/subtítulo de sección, en una sola línea compacta. */
+.topbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  height: auto !important;
+  padding: 4px 8px !important;
+  margin: 0 0 10px !important;
+  flex-wrap: nowrap !important;
+  border-radius: 11px !important;
+  box-sizing: border-box !important;
+}
+.topbar-text { display: none !important; }
+.topbar .sb-burger {
+  flex: 0 0 var(--nora-toolbar-height) !important;
+  width: var(--nora-toolbar-height) !important;
+  min-width: var(--nora-toolbar-height) !important;
+  height: var(--nora-toolbar-height) !important;
+  min-height: var(--nora-toolbar-height) !important;
+  margin: 0 !important;
+}
+.topbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 1px 1px 3px !important;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.topbar-actions::-webkit-scrollbar { height: 3px; }
+.topbar-actions::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+.topbar-actions > .iconbtn,
+.topbar-actions > .nr-w,
+.topbar-actions > .sc,
+.topbar-actions > #nrTbEdit {
+  box-sizing: border-box !important;
+  flex: 0 0 var(--nora-toolbar-height) !important;
+  width: var(--nora-toolbar-height) !important;
+  min-width: var(--nora-toolbar-height) !important;
+  max-width: var(--nora-toolbar-height) !important;
+  height: var(--nora-toolbar-height) !important;
+  min-height: var(--nora-toolbar-height) !important;
+  max-height: var(--nora-toolbar-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden;
+  border-radius: 8px !important;
+  line-height: 1 !important;
+  vertical-align: middle;
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease, color .14s ease !important;
+}
+.topbar-actions > .iconbtn .icon,
+.topbar-actions > .nr-w .nr-i,
+.topbar-actions > .sc .nr-i,
+.topbar-actions > #nrTbEdit .nr-i {
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 auto !important;
+}
+.topbar-actions > .iconbtn:hover,
+.topbar-actions > .nr-w:hover,
+.topbar-actions > .sc:hover,
+.topbar-actions > #nrTbEdit:hover {
+  background: color-mix(in srgb, var(--accent) 11%, var(--panel2)) !important;
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line)) !important;
+  transform: translateY(-1px);
+}
+.topbar-actions > .iconbtn:focus-visible,
+.topbar-actions > .nr-w:focus-visible,
+.topbar-actions > .sc:focus-visible,
+.topbar-actions > #nrTbEdit:focus-visible,
+.topbar-actions > .tb-search:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+/* Buscador: misma altura que los botones; conserva Ctrl+K y abre el buscador completo. */
+.topbar-actions > .tb-search {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex: 0 1 172px !important;
+  width: 172px !important;
+  min-width: 112px !important;
+  max-width: 172px !important;
+  height: var(--nora-toolbar-height) !important;
+  min-height: var(--nora-toolbar-height) !important;
+  max-height: var(--nora-toolbar-height) !important;
+  padding: 0 8px !important;
+  margin: 0 !important;
+  gap: 6px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+.topbar-actions > .tb-search svg { width: 15px !important; height: 15px !important; flex: 0 0 auto !important; }
+.topbar-actions > .tb-search span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-actions > .tb-search kbd { flex: 0 0 auto; margin-left: auto; padding: 2px 4px !important; font-size: 9px !important; line-height: 1.1 !important; }
+/* Widgets opcionales: la vista predeterminada es minimalista, pero se respetan
+   los nombres/valores cuando el usuario los activa en Personalizar barra. */
+.topbar-actions > .nr-w:not(.iconbtn),
+.topbar-actions > .sc {
+  position: relative;
+  background: var(--panel2) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink) !important;
+}
+.topbar:not(.tb-nolbl) .topbar-actions > .nr-w,
+.topbar:not(.tb-nolbl) .topbar-actions > .sc {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: var(--nora-toolbar-height) !important;
+  max-width: 136px !important;
+  padding: 0 8px !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+}
+.topbar:not(.tb-nolbl) .topbar-actions > .nr-w .lbl,
+.topbar:not(.tb-nolbl) .topbar-actions > .sc .lbl {
+  display: inline-block !important;
+  min-width: 0;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.topbar:not(.tb-nolbl) .topbar-actions > .nr-w .tmr,
+.topbar:not(.tb-nolbl) .topbar-actions > .nr-w b { display: inline-block !important; }
+.topbar-actions > .nr-w .dot { width: 7px; height: 7px; }
+/* La personalización sigue operativa; el ajuste de texto no vuelve a aparecer como opción. */
+#nrTbDlgBg .row:has(input[data-v="title"]) { display: none !important; }
+
+/* Control: quitar por completo el título y el subtítulo redundantes. Los botones quedan como barra de acciones. */
+#view-control .control-brand { display: none !important; }
+#view-control .control-hero {
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+#view-control > .card:first-child {
+  padding: 8px !important;
+  margin-bottom: 12px !important;
+  border-radius: 11px !important;
+}
+#view-control .control-actions {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  flex-wrap: wrap !important;
+}
+#view-control .control-actions button {
+  box-sizing: border-box !important;
+  min-height: 31px !important;
+  height: 31px !important;
+  padding: 0 9px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  font-size: 11px !important;
+  border-radius: 7px !important;
+}
+#view-control .control-actions button .b-ic { width: 14px; height: 14px; flex: 0 0 auto; }
+#view-control .control-actions button:hover { transform: translateY(-1px); }
+
+@media (max-width: 820px) {
+  .topbar { padding: 4px 6px !important; min-height: 38px !important; }
+  .topbar-actions { gap: 4px !important; }
+  /* En móvil queda el botón de búsqueda con icono; el campo ancho es solo para escritorio. */
+  .topbar-actions > .tb-search { display: none !important; }
+  .topbar-actions > .tb-search kbd { display: none !important; }
+  #view-control .control-actions button { flex: 0 1 auto !important; }
+}
+@media (max-width: 520px) {
+  .topbar { --nora-toolbar-height: 30px !important; gap: 5px !important; border-radius: 9px !important; }
+  .topbar-actions > .tb-search { flex-basis: 32px !important; width: 32px !important; min-width: 32px !important; max-width: 32px !important; padding: 0 !important; justify-content: center !important; }
+  .topbar-actions > .tb-search span,
+  .topbar-actions > .tb-search kbd { display: none !important; }
+  #view-control > .card:first-child { padding: 6px !important; }
+  #view-control .control-actions { gap: 4px !important; }
+  #view-control .control-actions button { padding: 0 7px !important; font-size: 10.5px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-actions *, #view-control .control-actions button { transition: none !important; transform: none !important; scroll-behavior: auto !important; }
+}
+</style>
+<script id="nora-toolbar-labels-20261013">
+/* Texto corto y etiquetas accesibles; no altera las acciones originales de los botones. */
+(()=>{try{
+ const s=document.querySelector('.topbar-actions .tb-search');
+ if(s){const span=s.querySelector('span');if(span)span.textContent='Buscar';s.title='Buscar en toda Nora · Ctrl+K';s.setAttribute('aria-label','Buscar en toda Nora. Atajo: Ctrl+K');}
+ const labels={btnBack:'Volver a la sección anterior',btnForward:'Avanzar a la siguiente sección',btnForceUpdate:'Actualizar datos vinculados',btnConsole:'Abrir consola de registros',btnOmni:'Abrir búsqueda global',btnDensity:'Cambiar densidad de la interfaz',btnTheme:'Cambiar tema claro u oscuro',btnHelp:'Ver ayuda y atajos',nrTbEdit:'Personalizar barra de herramientas'};
+ Object.entries(labels).forEach(([id,label])=>{const el=document.getElementById(id);if(el){if(!el.title)el.title=label;if(!el.getAttribute('aria-label'))el.setAttribute('aria-label',label);}});
+}catch(e){console.warn('No se pudieron aplicar las etiquetas de la barra',e);}})();
+</script>
+
 </body>
 </html>
