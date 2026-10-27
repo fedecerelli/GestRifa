@@ -2123,7 +2123,26 @@ window.scheduleAutoBackup=scheduleAutoBackup;
 function _restartIntervalBackup(){if(_intervalBackupTimer){clearInterval(_intervalBackupTimer);_intervalBackupTimer=null;}if((CFG.backupMode||'change')==='interval'){const mins=Math.max(1,CFG.backupMinutes||30);_intervalBackupTimer=setInterval(()=>writeAutoBackup('intervalo '+mins+'min'),mins*60000);}}
 function updateBackupStatus(msg,showButton){const el=document.getElementById('backupStatus');const el2=document.getElementById('backupStatus2');const btn=document.getElementById('btnReconnectBackup');if(el)el.textContent=msg||'';if(el2)el2.textContent=msg||'';if(btn)btn.classList.toggle('hidden',!showButton);}
 function updateBackupStatus2(msg){const el=document.getElementById('backupStatus2');if(el)el.textContent=msg||'';}
-async function linkAutoBackup(){if(!window.showSaveFilePicker){notify('Navegador sin soporte. Usá Chrome/Edge.','warn');return;}try{const h=await window.showSaveFilePicker({suggestedName:'respaldo-nora.json',types:JSON_TYPES});backupFileHandle=h;await storeBackupHandle(h);updateBackupStatus('Activo en "'+h.name+'"',false);notify('Respaldo vinculado','ok');await writeAutoBackup('vinculación');}catch(e){if(e.name!=='AbortError')console.warn(e);}}
+async function linkAutoBackup(){
+  if(!window.showSaveFilePicker){
+    /* El almacenamiento local de Nora sigue funcionando; la API para escribir
+       de forma persistente en una ruta elegida no está implementada en todos
+       los navegadores. En ese caso generamos una copia descargable. */
+    try{
+      await mirrorToLocalStorage();
+      const state=await readAllState();
+      if(!Object.keys(state).length){notify('Todavía no hay datos guardados para respaldar.','warn');return;}
+      const payload={v:1,ts:Date.now(),state};
+      const result=await saveBlob(new Blob([JSON.stringify(payload)],{type:'application/json'}),'respaldo-nora.json',JSON_TYPES);
+      if(result==='cancel')return;
+      updateBackupStatus('Guardado local activo · copia externa descargada. Para actualizarla, descargá otra copia.',false);
+      updateBackupStatus2('Este navegador no permite escribir automáticamente en un archivo externo; Nora conserva los datos en el navegador.');
+      notify('Copia de respaldo descargada. Nora mantiene el guardado local automático.','ok');
+    }catch(e){console.warn('linkAutoBackup fallback',e);notify('No se pudo crear el respaldo. Exportá una copia desde Configuración.','err');}
+    return;
+  }
+  try{const h=await window.showSaveFilePicker({suggestedName:'respaldo-nora.json',types:JSON_TYPES});backupFileHandle=h;await storeBackupHandle(h);updateBackupStatus('Activo en "'+h.name+'"',false);notify('Respaldo vinculado','ok');await writeAutoBackup('vinculación');}catch(e){if(e.name!=='AbortError')console.warn(e);}
+}
 async function tryReconnectBackup(){const h=await getBackupHandle();if(!h)return;backupFileHandle=h;try{let perm='prompt';if(h.queryPermission)perm=await h.queryPermission({mode:'readwrite'});else perm='granted';if(perm==='granted'){updateBackupStatus('Activo en "'+h.name+'"',false);if((CFG.backupMode||'change')==='open')await writeAutoBackup('apertura');}else updateBackupStatus('Reconectar respaldo en "'+h.name+'"',true);}catch(e){}}
 async function reconnectBackupGesture(){if(!backupFileHandle)return;try{const perm=await backupFileHandle.requestPermission({mode:'readwrite'});if(perm==='granted'){updateBackupStatus('Respaldo reconectado',false);notify('Respaldo reconectado','ok');await writeAutoBackup('reconexión');}else{updateBackupStatus('Permiso denegado',true);notify('Permiso denegado','err');}}catch(e){console.warn(e);}}
 
@@ -2132,7 +2151,40 @@ let cobFileHandles=[];
 async function getCobHandles(){try{const db=await openDB();const rq=db.transaction(STORE,'readonly').objectStore(STORE).get('cobHandles');return await new Promise(r=>{rq.onsuccess=()=>r(rq.result||[]);rq.onerror=()=>r([]);});}catch(e){return[];}}
 async function storeCobHandles(list){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(list,'cobHandles');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}}
 function updateCobLinkStatus(msg,showBtn){const el=document.getElementById('cobLinkStatus');const el2=document.getElementById('cobLinkStatus2');const btn=document.getElementById('btnReconnectCobFiles');const btn2=document.getElementById('btnReconnectCobFiles2');if(el)el.textContent=msg||'';if(el2)el2.textContent=msg||'';if(btn)btn.classList.toggle('hidden',!showBtn);if(btn2)btn2.classList.toggle('hidden',!showBtn);}
-async function linkCobFiles(){if(!window.showOpenFilePicker){notify('Navegador sin soporte','warn');return;}try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xls']}}]});cobFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeCobHandles(cobFileHandles);updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados',false);notify(cobFileHandles.length+' archivos vinculados','ok');await reloadCobFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}}
+/* Selector de archivos estándar: alternativa para Firefox/Linux y otros navegadores sin File System Access API. */
+function noraPickFilesFallback(accept,multiple,onFiles){
+  return new Promise(resolve=>{
+    const input=document.createElement('input');
+    input.type='file';input.accept=accept||'';input.multiple=!!multiple;
+    input.setAttribute('aria-label','Seleccionar archivos para Nora');
+    input.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0';
+    const cleanup=()=>{if(input.parentNode)input.parentNode.removeChild(input);};
+    input.addEventListener('change',async()=>{
+      const files=Array.from(input.files||[]);
+      cleanup();
+      if(!files.length){resolve(false);return;}
+      try{await onFiles(files);resolve(true);}
+      catch(e){console.error('[Nora] No se pudieron importar los archivos seleccionados',e);notify('No se pudieron importar los archivos seleccionados. Revisá el formato e intentá de nuevo.','err');resolve(false);}
+    },{once:true});
+    input.addEventListener('cancel',()=>{cleanup();resolve(false);},{once:true});
+    document.body.appendChild(input);
+    try{input.click();}catch(e){cleanup();console.warn('[Nora] Selector de archivos no disponible',e);notify('No se pudo abrir el selector de archivos.','warn');resolve(false);}
+  });
+}
+
+async function linkCobFiles(){
+  if(!window.showOpenFilePicker){
+    await noraPickFilesFallback('.xlsx,.xls',true,async files=>{
+      updateCobLinkStatus('Importando archivos seleccionados…',false);
+      await handleFiles(files,true);
+      const msg=files.length+' archivo(s) importado(s) · selección manual para actualizar en este navegador';
+      updateCobLinkStatus(msg,false);
+      notify('Archivos importados. Cuando cambien, volvé a seleccionarlos para actualizar los datos.','ok');
+    });
+    return;
+  }
+  try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xls']}}]});cobFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeCobHandles(cobFileHandles);updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados',false);notify(cobFileHandles.length+' archivos vinculados','ok');await reloadCobFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}
+}
 async function reconnectCobFiles(){
   if(!cobFileHandles.length)cobFileHandles=await getCobHandles();
   if(!cobFileHandles.length){notify('No hay archivos vinculados','warn');return;}
@@ -2191,7 +2243,19 @@ let sorteoFileHandles=[];
 async function getSorteoHandles(){try{const db=await openDB();const rq=db.transaction(STORE,'readonly').objectStore(STORE).get('sorteoHandles');return await new Promise(r=>{rq.onsuccess=()=>r(rq.result||[]);rq.onerror=()=>r([]);});}catch(e){return[];}}
 async function storeSorteoHandles(list){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(list,'sorteoHandles');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}}
 function updateSorteoLinkStatus(msg,showBtn){const el=document.getElementById('sorteoLinkStatus');const el2=document.getElementById('sorteoLinkStatus2');const btn=document.getElementById('btnReconnectSorteoFiles');const btn2=document.getElementById('btnReconnectSorteoFiles2');if(el)el.textContent=msg||'';if(el2)el2.textContent=msg||'';if(btn)btn.classList.toggle('hidden',!showBtn);if(btn2)btn2.classList.toggle('hidden',!showBtn);}
-async function linkSorteoFiles(){if(!window.showOpenFilePicker){notify('Navegador sin soporte','warn');return;}try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]});sorteoFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeSorteoHandles(sorteoFileHandles);updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);notify('Vinculados','ok');await reloadSorteoFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}}
+async function linkSorteoFiles(){
+  if(!window.showOpenFilePicker){
+    await noraPickFilesFallback('.xlsx,.xlsm,.xls',true,async files=>{
+      if(typeof window.__sorteoLoadFiles!=='function')throw new Error('El módulo de Sorteos todavía no está listo.');
+      updateSorteoLinkStatus('Importando archivos de sorteo…',false);
+      await window.__sorteoLoadFiles(files,true);
+      updateSorteoLinkStatus(files.length+' archivo(s) importado(s) · selección manual para actualizar en este navegador',false);
+      notify('Sorteos importados. Cuando cambien, volvé a seleccionarlos para actualizar los datos.','ok');
+    });
+    return;
+  }
+  try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]});sorteoFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeSorteoHandles(sorteoFileHandles);updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);notify('Vinculados','ok');await reloadSorteoFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}
+}
 async function reconnectSorteoFiles(){
   if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
   if(!sorteoFileHandles.length){notify('No hay archivos de sorteo vinculados','warn');return {updated:0,failed:0};}
@@ -7225,6 +7289,80 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible,input:focus-v
  Object.entries(labels).forEach(([id,label])=>{const el=document.getElementById(id);if(el){if(!el.title)el.title=label;if(!el.getAttribute('aria-label'))el.setAttribute('aria-label',label);}});
 }catch(e){console.warn('No se pudieron aplicar las etiquetas de la barra',e);}})();
 </script>
+
+
+<style id="nora-cross-platform-ui-2026">
+/* Capa visual cross-platform inspirada en patrones públicos de dashboards accesibles.
+   Usa las variables/skins existentes y no necesita dependencias adicionales. */
+html{scroll-padding-top:calc(var(--safe-top,0px) + 72px);text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{min-width:320px;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.app{min-height:100vh;min-height:100dvh}
+.sidebar{height:100vh;height:100dvh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.content{min-width:0;width:100%;padding-inline:clamp(14px,2.1vw,30px)}
+.topbar-text{min-width:0}
+.topbar h1{overflow-wrap:anywhere}
+.card,.kpi,.data-manager-card,.profile-pill,.skin-btn,.omni-box{min-width:0}
+.card{transition:border-color .18s ease,box-shadow .18s ease}
+:root:not([data-skin]) .card{background:color-mix(in srgb,var(--panel) 97%,var(--accent) 3%)}
+:root:not([data-skin]) .card:hover{border-color:color-mix(in srgb,var(--line) 60%,var(--accent) 40%);box-shadow:0 5px 18px rgba(20,32,48,.055)}
+.kpi{transition:border-color .18s ease,transform .18s ease}
+:root:not([data-skin]) .kpi:hover{border-color:color-mix(in srgb,var(--line) 55%,var(--accent) 45%)}
+.nav button,.bottom-nav button{outline-offset:2px}
+:where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:where(button,input,select,textarea){font-family:inherit}
+input,select,textarea{max-width:100%}
+textarea{resize:vertical}
+.scrollx,.chartbox,.omni-results{overscroll-behavior:contain}
+table.mini{font-variant-numeric:tabular-nums}
+table.mini th{background:var(--panel);}
+.iconbtn{flex:0 0 auto}
+button:disabled{cursor:not-allowed;filter:saturate(.65)}
+/* El desenfoque es progresivo: navegadores sin backdrop-filter mantienen un panel legible. */
+@supports(backdrop-filter:blur(1px)){
+  .omni-overlay{backdrop-filter:blur(8px) saturate(125%);-webkit-backdrop-filter:blur(8px) saturate(125%)}
+}
+@supports not (color:color-mix(in srgb,white,black)){
+  :where(button,input,select,textarea,[tabindex]):focus-visible{outline-color:var(--accent)}
+  :root:not([data-skin]) .card:hover,:root:not([data-skin]) .kpi:hover{border-color:var(--accent)}
+}
+@media(min-width:821px) and (max-width:1120px){
+  body:not(.sb-mini){--sidebar-w:196px}
+  .content{padding-inline:18px}
+  .topbar{gap:8px}
+  .topbar-actions{gap:4px}
+}
+@media(max-width:820px){
+  .sidebar{display:none!important}
+  .content{padding-inline:clamp(10px,3vw,18px);padding-bottom:calc(var(--bottomnav-h,64px) + 30px + var(--safe-bot,0px))}
+  .bottom-nav{padding-bottom:calc(6px + var(--safe-bot,0px));padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+  .topbar{max-width:100%;min-width:0}
+  .topbar-actions{max-width:100%;scrollbar-width:thin}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .omni-overlay{padding-top:max(5vh,calc(var(--safe-top,0px) + 18px))}
+}
+@media(max-width:520px){
+  .card{padding:clamp(11px,3.2vw,15px)}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi{padding:10px}
+  .kpi .n{font-size:clamp(18px,5vw,22px)}
+  .row>.field{min-width:min(100%,150px)}
+  .skin-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .skin-group-grid .skin-btn{min-width:0}
+  .omni-box{border-radius:12px}
+  .omni-item{padding:10px 12px;align-items:flex-start}
+}
+@media(prefers-contrast:more){
+  .card,.kpi,.iconbtn,.nav button,.bottom-nav button{border-color:var(--ink)}
+  :where(button,input,select,textarea,a,[tabindex]):focus-visible{outline-width:3px}
+}
+@media(forced-colors:active){
+  .card,.kpi,.iconbtn,.nav button,.bottom-nav button{forced-color-adjust:auto;border:1px solid CanvasText}
+  :where(button,input,select,textarea,a,[tabindex]):focus-visible{outline:2px solid Highlight}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
 
 </body>
 </html>
