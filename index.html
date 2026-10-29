@@ -1544,6 +1544,7 @@ body.nx-hide-floats .nx-float{display:none}
       <button data-set="ident"><span data-icon="tag"></span><span>Identidad</span></button>
       <button data-set="ui"><span data-icon="grid"></span><span>Interfaz</span></button>
       <button data-set="data"><span data-icon="database"></span><span>Datos</span></button>
+      <button data-set="access"><span data-icon="shield"></span><span>Accesos y seguridad</span></button>
       <button data-set="profiles"><span data-icon="layers"></span><span>Perfiles</span></button>
     </div>
     <div>
@@ -1784,6 +1785,36 @@ body.nx-hide-floats .nx-float{display:none}
         </div>
         <div class="card"><h2><span class="h-ic" data-icon="save"></span>Preferencias</h2>
           <div class="row" style="gap:8px;flex-wrap:wrap"><button class="secondary" id="btnSaveCfg"><span class="b-ic" data-icon="save"></span>Guardar</button><span class="status-line" id="cfgStatus"></span></div>
+        </div>
+      </div>
+
+      <div class="set-pane" id="pane-access">
+        <div class="card od-access-card" id="noraAccessSettings">
+          <div class="od-access-head">
+            <div class="eyebrow">CUENTA Y PROTECCIÓN</div>
+            <h2><span class="h-ic" data-icon="shield"></span>Accesos y seguridad</h2>
+            <p class="hint">Administrá la autorización de Microsoft, la carpeta de OneDrive y el bloqueo de Nora desde un solo lugar.</p>
+          </div>
+          <section class="od-settings-section">
+            <h3><span class="b-ic" data-icon="cloud"></span>Microsoft OneDrive</h3>
+            <div class="row od-settings-actions" style="gap:8px;margin-bottom:12px">
+              <button type="button" class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>
+              <button type="button" class="ghost miniBtn od-btn-disc">Desconectar</button>
+            </div>
+            <div class="field"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
+            <div class="field" style="margin-top:10px"><label>Carpeta base de OneDrive (opcional)</label><input type="text" class="od-in-folder" placeholder="Vacío = raíz de OneDrive" autocomplete="off"><div class="hint">Podés dejarla vacía y explorar carpetas desde Carga de Datos.</div></div>
+            <div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>
+            <div class="field" style="margin-top:12px"><label>Dirección de redirección (registrala en Azure)</label><div class="row od-redirect-row" style="gap:8px"><input type="text" class="od-in-redir" readonly><button type="button" class="ghost miniBtn od-btn-copy">Copiar</button></div></div>
+            <div class="row" style="gap:8px;margin-top:12px"><button type="button" class="secondary miniBtn od-btn-save">Guardar configuración</button><span class="status-line od-status" aria-live="polite"></span></div>
+            <details class="od-help"><summary>Cómo configurar la aplicación de Microsoft</summary><ol class="hint od-setup-steps"><li>Entrá a <b>entra.microsoft.com</b> → Registros de aplicaciones → Nuevo registro.</li><li>Nombre: <b>Nora</b>. Elegí cuentas personales de Microsoft.</li><li>Agregá la URL que aparece arriba en la plataforma <b>Aplicación de página única (SPA)</b>.</li><li>Copiá el Id. de aplicación (cliente), pegalo acá y guardá.</li><li>Conectá Microsoft y aceptá el permiso de lectura solicitado.</li></ol></details>
+            <details class="od-help"><summary>Historial de sincronización</summary><div class="od-hist-list" style="margin-top:8px"></div></details>
+          </section>
+          <section class="od-settings-section">
+            <h3><span class="b-ic" data-icon="shield"></span>Bloqueo de Nora</h3>
+            <p class="hint">Pedí un PIN al abrir Nora y después de cinco minutos sin actividad.</p>
+            <div class="row od-settings-actions" style="gap:8px"><button type="button" class="secondary miniBtn od-btn-pin">Configurar o cambiar PIN</button><button type="button" class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div>
+            <div class="od-security-note"><b>Privacidad</b><br>El PIN bloquea la interfaz, pero no cifra por sí solo la base local del navegador. Protegé tu sesión de Windows y no compartas el perfil del navegador.</div>
+          </section>
         </div>
       </div>
 
@@ -5384,71 +5415,7 @@ function mobilePrint(blob,name){
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}
-<style id="nora-od-explorer-ui">
-/* Nora · Centro de archivos: explorador sobrio inspirado en gestores Linux */
-#view-carga .od-card{padding:20px;overflow:hidden}
-.od-manager-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.od-manager-kicker{font-size:10px;letter-spacing:.13em;font-weight:800;color:var(--accent);margin-bottom:5px}
-.od-manager-head h2{font-size:16px;margin:0 0 5px;display:flex;gap:8px;align-items:center}
-.od-manager-head p{max-width:760px;margin:0;line-height:1.5}
-.od-cloud-badge{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);background:var(--panel2);border-radius:12px}
-.od-cloud-glyph{width:35px;height:35px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--accent) 9%,var(--panel));font-size:10px;font-weight:850;color:var(--accent);letter-spacing:.04em}
-.od-cloud-badge b,.od-cloud-badge small{display:block}.od-cloud-badge b{font-size:12px}.od-cloud-badge small{font-size:10px;color:var(--sub);margin-top:2px}
-.od-main-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
-.od-linked-block{padding-top:14px}.od-linked-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.od-linked-head b{font-size:12px}.od-linked-head .hint{margin-top:3px}.od-selected-count{font-size:11px;white-space:nowrap;color:var(--sub);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-variant-numeric:tabular-nums}
-.od-selected-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px}.od-picked-item{min-width:0;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);background:var(--panel2);border-radius:10px}.od-picked-xls{flex:0 0 auto;width:30px;height:32px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:6px;color:var(--accent2);background:color-mix(in srgb,var(--accent2) 8%,var(--panel));font-size:8px;font-weight:900}.od-picked-text{min-width:0;flex:1}.od-picked-text b,.od-picked-text small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.od-picked-text b{font-size:11px}.od-picked-text small{font-size:9.5px;color:var(--sub);margin-top:3px}.od-picked-status{flex:0 0 auto;color:var(--accent2);font-size:9px}.od-picked-empty{padding:13px;border:1px dashed var(--line);border-radius:10px;color:var(--sub);font-size:11px;background:var(--panel2)}
-.od-config{margin-top:15px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel2) 48%,transparent)}.od-config>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;font-size:12px;font-weight:700}.od-config>summary::-webkit-details-marker{display:none}.od-config>summary:after{content:'⌄';margin-left:auto;color:var(--sub);font-size:17px}.od-config[open]>summary:after{content:'⌃'}.od-config-body{padding:0 14px 14px}.od-config-body .field label{font-size:10.5px}.od-check-options{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:11px}.od-check-options label{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:500;color:var(--ink)}.od-check-options input{accent-color:var(--accent)}.od-help{margin-top:10px}.od-help>summary{cursor:pointer;color:var(--sub);font-size:11px}.od-security-note{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:10.5px;line-height:1.55;color:var(--sub)}.od-security-note b{color:var(--ink)}.od-pin-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0;margin-top:12px;border-top:1px solid var(--line)}.od-setup-steps{line-height:1.7}
-.nora-od-picker-overlay{padding:12px;background:rgba(8,12,19,.56);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.nora-od-picker{width:min(1120px,100%);height:min(820px,94vh);max-height:94vh;padding:0!important;gap:0!important;border-radius:16px!important;overflow:hidden;box-shadow:0 28px 90px #0004;display:flex;flex-direction:column}
-.pk-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid var(--line);background:var(--panel)}.pk-title-group{min-width:0}.pk-title-group h2{font-size:17px;margin:0 0 4px}.pk-title-group p{font-size:11px;color:var(--sub);margin:0;line-height:1.45}.pk-eyebrow{font-size:9px;letter-spacing:.14em;font-weight:850;color:var(--accent);margin-bottom:5px}.pk-head-actions{display:flex;align-items:center;gap:10px}.pk-cloud-mark{height:33px;min-width:38px;padding:0 7px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;color:var(--accent);font-size:10px;font-weight:900;background:var(--panel2)}
-.pk-explorer{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;flex:1;background:var(--panel)}.pk-sidebar{min-height:0;overflow-y:auto;padding:13px 10px;background:var(--panel2);border-right:1px solid var(--line)}.pk-side-label{font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--sub);padding:6px 9px 8px}.pk-folders-label{margin-top:15px}.pk-place{display:flex;width:100%;align-items:center;gap:8px;min-width:0;padding:8px 9px;margin:2px 0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font-size:11px;font-weight:500}.pk-place:hover{background:var(--panel);border-color:var(--line)}.pk-place.active{background:color-mix(in srgb,var(--accent) 11%,var(--panel));border-color:color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent);font-weight:700}.pk-nav-glyph{width:17px;flex:0 0 17px;text-align:center;color:var(--sub);font-size:13px}.pk-place.active .pk-nav-glyph{color:var(--accent)}.pk-place>span:nth-child(2){min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-place small{font-size:9px;color:var(--sub);font-variant-numeric:tabular-nums}.pk-folder-place{padding-left:calc(9px + var(--pk-depth,0)*10px)}.pk-side-note{margin:20px 7px 4px;padding-top:12px;border-top:1px solid var(--line);color:var(--sub);font-size:9.5px;line-height:1.5}.pk-no-folders{padding:8px 9px;color:var(--sub);font-size:10px}
-.pk-main{display:flex;flex-direction:column;min-height:0;min-width:0;padding:14px 16px 10px;gap:9px}.pk-toolbar{display:flex;align-items:center;gap:8px}.pk-search{display:flex;align-items:center;gap:8px;min-width:0;flex:1;padding-left:11px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--sub)}.pk-search>span{font-size:22px;line-height:1}.pk-q{width:100%;height:37px!important;border:0!important;background:transparent!important;outline:none!important;box-shadow:none!important;padding:8px 10px 8px 0!important;font-size:12px!important}.pk-ref{height:37px}.pk-crumbs{display:flex;align-items:center;gap:6px;min-height:24px;flex-wrap:wrap;color:var(--sub);font-size:10px}.pk-crumbs button{padding:3px 5px;border:0;background:transparent;color:var(--sub);font-size:10px}.pk-crumbs button:last-child{color:var(--ink);font-weight:700}.pk-crumbs button:hover{color:var(--accent)}.pk-crumb-sep{opacity:.6}.pk-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.pk-bulk,.pk-actions-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-bulk button,.pk-ref{font-size:10px!important}.pk-only-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--sub);padding:4px 5px}.pk-only-label input{accent-color:var(--accent)}.pk-view-toggle{display:inline-flex;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}.pk-view-toggle button{padding:5px 8px;border:0;background:transparent;color:var(--sub);font-size:9px;border-radius:6px}.pk-view-toggle button.active{background:var(--panel);box-shadow:0 1px 3px #0001;color:var(--ink)}.pk-cnt{font-size:10px;font-weight:750;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
-.pk-list-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.pk-list[data-mode=list]{display:flex;flex-direction:column}.pk-list[data-mode=list]:before{content:'ARCHIVO                                      CARPETA                                MODIFICADO            TAMAÑO';position:sticky;top:0;z-index:1;display:block;padding:9px 43px 9px 43px;background:var(--panel2);border-bottom:1px solid var(--line);color:var(--sub);font-size:8px;font-weight:850;letter-spacing:.04em;white-space:pre;overflow:hidden}.pk-file-row{position:relative;display:flex;align-items:center;gap:10px;min-width:0;padding:8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer;transition:background .12s}.pk-file-row:last-child{border-bottom:0}.pk-file-row:hover{background:color-mix(in srgb,var(--accent) 5%,var(--panel))}.pk-file-row.is-selected{background:color-mix(in srgb,var(--accent) 7%,var(--panel))}.pk-file-row>input{width:14px;height:14px;flex:0 0 auto;accent-color:var(--accent)}.pk-file-icon{position:relative;width:29px;height:32px;display:grid;place-items:end center;padding-bottom:4px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:5px;background:color-mix(in srgb,var(--accent2) 8%,var(--panel));color:var(--accent2);font-size:7px;font-weight:900}.pk-file-fold{position:absolute;right:0;top:0;width:8px;height:8px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 3px 0 3px}.pk-file-main{min-width:100px;flex:1;display:flex;flex-direction:column;gap:3px}.pk-file-title{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}.pk-file-path{font-size:9.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-file-date,.pk-file-size{flex:0 0 auto;color:var(--sub);font-size:9.5px;white-space:nowrap;font-variant-numeric:tabular-nums}.pk-file-date{width:86px}.pk-file-size{width:60px;text-align:right}.pk-new{padding:3px 5px;border-radius:5px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));color:var(--accent);font-size:8px;letter-spacing:.05em}.pk-row-check{width:16px;height:16px;flex:0 0 auto;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;color:transparent}.pk-file-row:has(input:checked) .pk-row-check{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}.pk-file-row:has(input:checked) .pk-row-check:after{content:'✓';font-size:10px;font-weight:900}
-.pk-list[data-mode=grid]{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;align-content:start;padding:10px}.pk-list[data-mode=grid]:before{display:none}.pk-list[data-mode=grid] .pk-file-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto auto;align-content:start;gap:7px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}.pk-list[data-mode=grid] .pk-file-row>input{grid-column:1;grid-row:1}.pk-list[data-mode=grid] .pk-file-icon{grid-column:1;grid-row:2;width:34px;height:39px}.pk-list[data-mode=grid] .pk-file-main{grid-column:1/-1;grid-row:3;min-width:0}.pk-list[data-mode=grid] .pk-file-date{grid-column:2;grid-row:1;width:auto;justify-self:end}.pk-list[data-mode=grid] .pk-file-size{grid-column:2;grid-row:2;width:auto;text-align:right;align-self:center}.pk-list[data-mode=grid] .pk-new{grid-column:3;grid-row:1}.pk-list[data-mode=grid] .pk-row-check{grid-column:3;grid-row:2;justify-self:end}.pk-empty{grid-column:1/-1;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;text-align:center;padding:22px;color:var(--sub);font-size:11px}.pk-empty b{color:var(--ink);font-size:12px}.pk-empty-mark{display:grid;place-items:center;width:45px;height:50px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-weight:900;font-size:10px;color:var(--accent2)}.pk-status{min-height:13px;color:var(--sub);font-size:9.5px}.pk-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 17px;background:var(--panel2);border-top:1px solid var(--line)}.pk-safe-note{display:inline-flex;align-items:center;gap:7px;color:var(--sub);font-size:9.5px}.pk-safe-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block}.pk-foot>div{display:flex;gap:7px}.pk-foot button{min-height:34px;font-size:10.5px}.pk-foot .pk-ok{min-width:210px}
-#dataCenterFiles .file-pill button{display:none!important}#dataCenterLink,#dataCenterLinkSorteo,#dataCenterReload,#dataCenterForceUpdate{display:none!important}
-@media(max-width:760px){#view-carga .od-card{padding:14px}.pk-explorer{grid-template-columns:145px minmax(0,1fr)}.pk-sidebar{padding:10px 6px}.pk-main{padding:10px 8px}.pk-file-date{display:none}.pk-list[data-mode=list]:before{content:'ARCHIVO / CARPETA';padding-left:40px}.pk-foot{padding:10px}.pk-safe-note{max-width:150px}.pk-foot .pk-ok{min-width:0}}
-@media(max-width:560px){.pk-explorer{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.pk-sidebar{display:flex;align-items:center;gap:5px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:7px}.pk-side-label,.pk-folders-label,.pk-side-note{display:none}.pk-place{width:auto;flex:0 0 auto;max-width:160px;padding:7px 9px}.pk-folder-nav{display:flex;gap:5px}.pk-main{min-height:0}.pk-actions{align-items:flex-start}.pk-bulk{max-width:100%}.pk-cnt{font-size:9px}.pk-foot>div{margin-left:auto}.pk-foot .pk-ok{font-size:9px}}
-</style>
 
-
-<style id="nora-unified-file-center-v3">
-#view-carga .od-card{display:flex;flex-direction:column;gap:18px;padding:20px;overflow:visible}
-#view-carga .od-local-source,#view-carga .od-local-list-section{border:1px solid var(--line);border-radius:13px;padding:15px;background:color-mix(in srgb,var(--panel2) 54%,var(--panel));min-width:0}
-#view-carga .od-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;flex-wrap:wrap}
-#view-carga .od-section-head>b,#view-carga .od-section-head>div>b{font-size:13px;color:var(--ink)}
-#view-carga .od-local-count-slot{display:flex;align-items:center;gap:8px}
-#view-carga #dmCount{font-size:10px;white-space:nowrap}
-#view-carga #dataManagerDrop{margin-top:0!important;padding:21px 14px;border:1px dashed color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--panel) 70%,transparent);border-radius:10px;min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink)}
-#view-carga #dataManagerDrop:hover,#view-carga #dataManagerDrop.ready{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
-#view-carga #dataManagerDrop>b{font-size:12px}
-#view-carga #dataManagerDrop .hint{text-align:center;font-size:10px}
-#view-carga #dmStatus{margin:8px 0 0!important;font-size:10px}
-#view-carga .od-local-list-toolbar{margin-bottom:12px}
-#view-carga .od-local-list-toolbar>div{flex:1;min-width:180px}
-#view-carga #dmRefresh,#view-carga #dataCenterClear{min-height:32px;white-space:nowrap}
-#view-carga #dataCenterClear{border:1px solid var(--line);border-style:solid;color:var(--sub);font-size:10px}
-#view-carga #dataManagerList{margin-top:0!important;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,370px),1fr));gap:9px}
-#view-carga .data-manager-card{padding:12px;border-radius:10px;background:var(--panel);box-shadow:none}
-#view-carga .dm-file-name{font-size:12px;overflow-wrap:anywhere}
-#view-carga .dm-file-meta{font-size:10px;line-height:1.6;overflow-wrap:anywhere}
-#view-carga .dm-source-pill{display:inline-flex;align-items:center;vertical-align:baseline;padding:1px 6px;border-radius:5px;border:1px solid var(--line);font-size:9px;font-weight:750;letter-spacing:.015em;white-space:nowrap}
-#view-carga .dm-source-pill.cloud{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border-color:color-mix(in srgb,var(--accent) 28%,var(--line));color:var(--accent)}
-#view-carga .dm-source-pill.local{background:color-mix(in srgb,var(--accent2) 9%,var(--panel));border-color:color-mix(in srgb,var(--accent2) 25%,var(--line));color:var(--accent2)}
-#view-carga .dm-source-pill.legacy{color:var(--sub)}
-#view-carga .dm-dest{font-size:10px}
-#view-carga .od-main-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-#view-carga .od-main-actions button{min-height:35px}
-#view-carga .od-linked-block{margin-top:0}
-#view-carga .od-config{margin-top:0}
-#view-carga .od-manager-head{margin-bottom:0}
-#view-carga .od-card> .status-line{margin:0!important}
-#view-carga .od-refresh-list{order:3}
-#dataCenterActions>div:first-child{display:none!important}
-#dataCenterClear.hidden{display:none!important}
-.nora-od-picker .pk-folder-place{gap:7px}
-.nora-od-picker .pk-file-row{min-height:52px}
-@media(max-width:720px){#view-carga .od-card{padding:12px;gap:12px}#view-carga .od-local-source,#view-carga .od-local-list-section{padding:11px}#view-carga #dataManagerList{grid-template-columns:1fr}#view-carga .od-section-head{align-items:flex-start}#view-carga .od-local-list-toolbar>div{min-width:100%}}
-</style>
 
 </body></html>`);
   w.document.close();
@@ -7712,10 +7679,11 @@ function setStatus(msg,warn){
 }
 function refreshButtons(){
   const conn=hasTok(),ok=ready();
-  $$('.od-btn-connect').forEach(b=>{b.style.display='';b.textContent=conn?'Reconectar con Microsoft':'Conectar con Microsoft';});
-  $$('.od-btn-pick').forEach(b=>{b.disabled=!(ok&&conn)||busy;});
+  $$('.od-btn-connect').forEach(b=>{b.style.display='';b.textContent=conn?'Reconectar con Microsoft':'Conectar con Microsoft';b.disabled=busy;});
+  // El explorador siempre puede abrirse para explicar qué falta o mostrar la última lista guardada.
+  $$('.od-btn-pick').forEach(b=>{b.disabled=busy;});
   $$('.od-btn-sync').forEach(b=>{b.disabled=!(ok&&conn)||busy;});
-  $$('.od-btn-disc').forEach(b=>{b.style.display=conn?'':'none';});
+  $$('.od-btn-disc').forEach(b=>{b.style.display=conn?'':'none';b.disabled=busy;});
   renderSelectedFiles();
 }
 
@@ -7880,10 +7848,9 @@ async function refreshList(){
 }
 async function openPicker(){
   const cachedList=jget(K_LIST,null);
-  const refreshed=await refreshList();
-  if(!refreshed&&(!Array.isArray(cachedList)||!cachedList.some(i=>i&&i.id)))return;
-  let list=(refreshed?(jget(K_LIST,[])||[]):cachedList||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));
-  if(!list.length){setStatus('No encontré archivos Excel en la ubicación configurada de OneDrive.',true);return;}
+  const canRefresh=ready()&&hasTok();
+  const refreshed=canRefresh?await refreshList():false;
+  let list=(refreshed?(jget(K_LIST,[])||[]):(Array.isArray(cachedList)?cachedList:[])).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));
   const sel=getSel()||{ids:[],names:[],seen:[]};
   const chosen=new Set((sel.ids||[]).map(String));
   const legacyNames=new Set((!chosen.size?(sel.names||[]):[]).map(String));
@@ -7997,7 +7964,9 @@ async function openPicker(){
     close();await sync({manual:true});renderSelectedFiles();
   };
   buildFolderTree();draw();q('.pk-q').focus();
-  if(!refreshed)q('.pk-status').textContent='Sin conexión con Microsoft: se muestra la última lista guardada.';
+  const canSave=ready()&&hasTok()&&list.length>0;q('.pk-ok').disabled=!canSave;
+  if(!refreshed){q('.pk-status').textContent=(!ready()||!hasTok())?'Configurá y conectá Microsoft desde Configuración → Accesos y seguridad. '+(list.length?'Se muestra la última lista guardada.':''):('No se pudo actualizar OneDrive. '+(list.length?'Se conserva la última lista guardada.':'Revisá la conexión y volvé a intentar.'));}
+  else if(!list.length)q('.pk-status').textContent='La conexión funciona, pero no encontramos Excel en la ubicación configurada.';
 }
 
 function renderSelectedFiles(){
@@ -8127,22 +8096,11 @@ async function sync(opts){
 
 /* -------------------------------------------------------------- UI ----- */
 function cardHTML(full){
-  const pasos='<ol class="hint od-setup-steps"><li>Entrá a <b>entra.microsoft.com</b> → Registros de aplicaciones → Nuevo registro.</li><li>Nombre: <b>Nora</b>. Elegí cuentas personales de Microsoft.</li><li>Agregá la URL que aparece abajo en la plataforma <b>Aplicación de página única (SPA)</b>.</li><li>Copiá el Id. de aplicación (cliente), pegalo acá y guardá.</li><li>Conectá Microsoft y aceptá el permiso de lectura solicitado.</li></ol>';
   return '<div class="od-manager-head"><div><div class="od-manager-kicker">FUENTE EN LA NUBE</div><h2><span class="h-ic" data-icon="refresh"></span>Archivos y sincronización</h2><p class="hint">Administrá desde acá las planillas locales y las de OneDrive. Elegí una vez los Excel que Nora puede leer; los originales no se modifican ni se eliminan.</p></div><div class="od-cloud-badge"><span class="od-cloud-glyph">OD</span><span><b>Microsoft OneDrive</b><small>Solo lectura</small></span></div></div>'+
-  '<div class="status-line od-status" style="margin:12px 0"></div><div class="od-main-actions"><button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button><button class="secondary miniBtn od-btn-pick">Explorar OneDrive…</button><button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button><button class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
-  '<div class="od-linked-block"><div class="od-linked-head"><div><b>Planillas vinculadas</b><div class="hint">Estas son las fuentes en la nube que Nora mantiene actualizadas.</div></div><span class="od-selected-count">0 seleccionado(s)</span></div><div class="od-selected-files"><div class="od-picked-empty">Todavía no seleccionaste archivos de OneDrive.</div></div></div>'+
+  '<div class="status-line od-status" style="margin:12px 0" aria-live="polite"></div><div class="od-main-actions"><button type="button" class="secondary miniBtn od-btn-pick">Explorar OneDrive…</button><button type="button" class="primary miniBtn od-btn-sync">Sincronizar ahora</button><span class="od-settings-shortcut">Cuenta y PIN: Configuración → Accesos y seguridad</span></div>'+
   '<section class="od-local-source"><div class="od-section-head"><div><b>Archivos del equipo</b><div class="hint">Agregá Excel desde tu computadora. Se administran junto con OneDrive.</div></div><span class="od-local-count-slot"></span></div><div class="od-local-drop-mount"></div></section>'+
   '<section class="od-local-list-section"><div class="od-section-head od-local-list-toolbar"><div><b>Archivos disponibles en Nora</b><div class="hint">Asigná destinos o quitá el vínculo desde esta única lista.</div></div></div><div class="od-local-list-mount"></div></section>'+
-  '<details class="od-config" '+(!ready()?'open':'')+'><summary><span class="b-ic" data-icon="settings"></span>Configuración, acceso y seguridad</summary><div class="od-config-body">'+
-  '<div class="field"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>'+
-  '<div class="field" style="margin-top:9px"><label>Carpeta base de OneDrive (opcional)</label><input type="text" class="od-in-folder" placeholder="Vacío = raíz de OneDrive" autocomplete="off"><div class="hint">Podés dejarla vacía y explorar las carpetas disponibles desde el explorador.</div></div>'+
-  '<div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>'+
-  '<div class="field" style="margin-top:10px"><label>Dirección de redirección (registrala en Azure)</label><div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1"><button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
-  '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar configuración</button></div>'+
-  '<details class="od-help"><summary>Cómo configurar la aplicación de Microsoft</summary>'+pasos+'</details>'+
-  '<div class="od-security-note"><b>Privacidad</b><br>El permiso Files.Read permite leer los archivos de la cuenta conectada. El PIN de Nora bloquea la interfaz, pero no cifra por sí solo la base local del navegador. Protegé tu sesión de Windows y no compartas el perfil del navegador.</div>'+
-  '<div class="od-pin-setting"><div><b>Bloqueo con PIN</b><div class="hint">Bloquea Nora al abrirla y tras cinco minutos sin actividad.</div></div><div class="row" style="gap:7px"><button class="secondary miniBtn od-btn-pin">Configurar o cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
-  '<details class="od-help"><summary>Historial de sincronización</summary><div class="od-hist-list" style="margin-top:8px"></div></details></div></details>';
+  '';
 }
 
 function fillInputs(){
@@ -8179,7 +8137,7 @@ function saveCfg(){
 }
 
 function describeStatus(){
-  if(!ready())return setStatus('Falta configurar Microsoft. Abrí «Configuración, acceso y seguridad» y completá el ID de aplicación.');
+  if(!ready())return setStatus('Falta configurar Microsoft. Abrí Configuración → Accesos y seguridad y completá el ID de aplicación.');
   if(!hasTok())return setStatus('Falta iniciar sesión. Tocá «Conectar con Microsoft».');
   const last=(jget(K_ST,{})||{}).last;
   setStatus(last?'Última sincronización: '+new Date(last).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'}):'Conectado. Todavía no se sincronizó.');
@@ -8226,7 +8184,7 @@ function buildUI(){
   document.addEventListener('click',ev=>{
     const t=ev.target.closest&&ev.target.closest('button');if(!t)return;
     if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);else setStatus('Abrí Configuración, ingresá el ID de aplicación y guardá antes de conectar.',true);}
-    else if(t.classList.contains('od-btn-pick')){ev.preventDefault();if(ready()&&hasTok())openPicker();else setStatus('Primero configurá el ID y conectá con Microsoft.',true);}
+    else if(t.classList.contains('od-btn-pick')){ev.preventDefault();openPicker().catch(e=>{setStatus('No se pudo abrir el explorador de OneDrive: '+e.message,true);try{console.error('[OneDrive picker]',e);}catch(_){}});}
     else if(t.classList.contains('od-btn-pin')){ev.preventDefault();window.NoraLock&&NoraLock.setup();}
     else if(t.classList.contains('od-btn-nopin')){ev.preventDefault();window.NoraLock&&NoraLock.remove();}
     else if(t.classList.contains('od-btn-sync')){ev.preventDefault();sync({manual:true});}
@@ -8291,5 +8249,109 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
+<style id="nora-od-explorer-ui">
+/* Nora · Centro de archivos: explorador sobrio inspirado en gestores Linux */
+#view-carga .od-card{padding:20px;overflow:hidden}
+.od-manager-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.od-manager-kicker{font-size:10px;letter-spacing:.13em;font-weight:800;color:var(--accent);margin-bottom:5px}
+.od-manager-head h2{font-size:16px;margin:0 0 5px;display:flex;gap:8px;align-items:center}
+.od-manager-head p{max-width:760px;margin:0;line-height:1.5}
+.od-cloud-badge{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);background:var(--panel2);border-radius:12px}
+.od-cloud-glyph{width:35px;height:35px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--accent) 9%,var(--panel));font-size:10px;font-weight:850;color:var(--accent);letter-spacing:.04em}
+.od-cloud-badge b,.od-cloud-badge small{display:block}.od-cloud-badge b{font-size:12px}.od-cloud-badge small{font-size:10px;color:var(--sub);margin-top:2px}
+.od-main-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.od-linked-block{padding-top:14px}.od-linked-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.od-linked-head b{font-size:12px}.od-linked-head .hint{margin-top:3px}.od-selected-count{font-size:11px;white-space:nowrap;color:var(--sub);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-variant-numeric:tabular-nums}
+.od-selected-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px}.od-picked-item{min-width:0;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);background:var(--panel2);border-radius:10px}.od-picked-xls{flex:0 0 auto;width:30px;height:32px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:6px;color:var(--accent2);background:color-mix(in srgb,var(--accent2) 8%,var(--panel));font-size:8px;font-weight:900}.od-picked-text{min-width:0;flex:1}.od-picked-text b,.od-picked-text small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.od-picked-text b{font-size:11px}.od-picked-text small{font-size:9.5px;color:var(--sub);margin-top:3px}.od-picked-status{flex:0 0 auto;color:var(--accent2);font-size:9px}.od-picked-empty{padding:13px;border:1px dashed var(--line);border-radius:10px;color:var(--sub);font-size:11px;background:var(--panel2)}
+.od-config{margin-top:15px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel2) 48%,transparent)}.od-config>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;font-size:12px;font-weight:700}.od-config>summary::-webkit-details-marker{display:none}.od-config>summary:after{content:'⌄';margin-left:auto;color:var(--sub);font-size:17px}.od-config[open]>summary:after{content:'⌃'}.od-config-body{padding:0 14px 14px}.od-config-body .field label{font-size:10.5px}.od-check-options{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:11px}.od-check-options label{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:500;color:var(--ink)}.od-check-options input{accent-color:var(--accent)}.od-help{margin-top:10px}.od-help>summary{cursor:pointer;color:var(--sub);font-size:11px}.od-security-note{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:10.5px;line-height:1.55;color:var(--sub)}.od-security-note b{color:var(--ink)}.od-pin-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0;margin-top:12px;border-top:1px solid var(--line)}.od-setup-steps{line-height:1.7}
+.nora-od-picker-overlay{padding:12px;background:rgba(8,12,19,.56);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.nora-od-picker{width:min(1120px,100%);height:min(820px,94vh);max-height:94vh;padding:0!important;gap:0!important;border-radius:16px!important;overflow:hidden;box-shadow:0 28px 90px #0004;display:flex;flex-direction:column}
+.pk-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid var(--line);background:var(--panel)}.pk-title-group{min-width:0}.pk-title-group h2{font-size:17px;margin:0 0 4px}.pk-title-group p{font-size:11px;color:var(--sub);margin:0;line-height:1.45}.pk-eyebrow{font-size:9px;letter-spacing:.14em;font-weight:850;color:var(--accent);margin-bottom:5px}.pk-head-actions{display:flex;align-items:center;gap:10px}.pk-cloud-mark{height:33px;min-width:38px;padding:0 7px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;color:var(--accent);font-size:10px;font-weight:900;background:var(--panel2)}
+.pk-explorer{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;flex:1;background:var(--panel)}.pk-sidebar{min-height:0;overflow-y:auto;padding:13px 10px;background:var(--panel2);border-right:1px solid var(--line)}.pk-side-label{font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--sub);padding:6px 9px 8px}.pk-folders-label{margin-top:15px}.pk-place{display:flex;width:100%;align-items:center;gap:8px;min-width:0;padding:8px 9px;margin:2px 0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font-size:11px;font-weight:500}.pk-place:hover{background:var(--panel);border-color:var(--line)}.pk-place.active{background:color-mix(in srgb,var(--accent) 11%,var(--panel));border-color:color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent);font-weight:700}.pk-nav-glyph{width:17px;flex:0 0 17px;text-align:center;color:var(--sub);font-size:13px}.pk-place.active .pk-nav-glyph{color:var(--accent)}.pk-place>span:nth-child(2){min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-place small{font-size:9px;color:var(--sub);font-variant-numeric:tabular-nums}.pk-folder-place{padding-left:calc(9px + var(--pk-depth,0)*10px)}.pk-side-note{margin:20px 7px 4px;padding-top:12px;border-top:1px solid var(--line);color:var(--sub);font-size:9.5px;line-height:1.5}.pk-no-folders{padding:8px 9px;color:var(--sub);font-size:10px}
+.pk-main{display:flex;flex-direction:column;min-height:0;min-width:0;padding:14px 16px 10px;gap:9px}.pk-toolbar{display:flex;align-items:center;gap:8px}.pk-search{display:flex;align-items:center;gap:8px;min-width:0;flex:1;padding-left:11px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--sub)}.pk-search>span{font-size:22px;line-height:1}.pk-q{width:100%;height:37px!important;border:0!important;background:transparent!important;outline:none!important;box-shadow:none!important;padding:8px 10px 8px 0!important;font-size:12px!important}.pk-ref{height:37px}.pk-crumbs{display:flex;align-items:center;gap:6px;min-height:24px;flex-wrap:wrap;color:var(--sub);font-size:10px}.pk-crumbs button{padding:3px 5px;border:0;background:transparent;color:var(--sub);font-size:10px}.pk-crumbs button:last-child{color:var(--ink);font-weight:700}.pk-crumbs button:hover{color:var(--accent)}.pk-crumb-sep{opacity:.6}.pk-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.pk-bulk,.pk-actions-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-bulk button,.pk-ref{font-size:10px!important}.pk-only-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--sub);padding:4px 5px}.pk-only-label input{accent-color:var(--accent)}.pk-view-toggle{display:inline-flex;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}.pk-view-toggle button{padding:5px 8px;border:0;background:transparent;color:var(--sub);font-size:9px;border-radius:6px}.pk-view-toggle button.active{background:var(--panel);box-shadow:0 1px 3px #0001;color:var(--ink)}.pk-cnt{font-size:10px;font-weight:750;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pk-list-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.pk-list[data-mode=list]{display:flex;flex-direction:column}.pk-list[data-mode=list]:before{content:'ARCHIVO                                      CARPETA                                MODIFICADO            TAMAÑO';position:sticky;top:0;z-index:1;display:block;padding:9px 43px 9px 43px;background:var(--panel2);border-bottom:1px solid var(--line);color:var(--sub);font-size:8px;font-weight:850;letter-spacing:.04em;white-space:pre;overflow:hidden}.pk-file-row{position:relative;display:flex;align-items:center;gap:10px;min-width:0;padding:8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer;transition:background .12s}.pk-file-row:last-child{border-bottom:0}.pk-file-row:hover{background:color-mix(in srgb,var(--accent) 5%,var(--panel))}.pk-file-row.is-selected{background:color-mix(in srgb,var(--accent) 7%,var(--panel))}.pk-file-row>input{width:14px;height:14px;flex:0 0 auto;accent-color:var(--accent)}.pk-file-icon{position:relative;width:29px;height:32px;display:grid;place-items:end center;padding-bottom:4px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:5px;background:color-mix(in srgb,var(--accent2) 8%,var(--panel));color:var(--accent2);font-size:7px;font-weight:900}.pk-file-fold{position:absolute;right:0;top:0;width:8px;height:8px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 3px 0 3px}.pk-file-main{min-width:100px;flex:1;display:flex;flex-direction:column;gap:3px}.pk-file-title{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}.pk-file-path{font-size:9.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-file-date,.pk-file-size{flex:0 0 auto;color:var(--sub);font-size:9.5px;white-space:nowrap;font-variant-numeric:tabular-nums}.pk-file-date{width:86px}.pk-file-size{width:60px;text-align:right}.pk-new{padding:3px 5px;border-radius:5px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));color:var(--accent);font-size:8px;letter-spacing:.05em}.pk-row-check{width:16px;height:16px;flex:0 0 auto;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;color:transparent}.pk-file-row:has(input:checked) .pk-row-check{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}.pk-file-row:has(input:checked) .pk-row-check:after{content:'✓';font-size:10px;font-weight:900}
+.pk-list[data-mode=grid]{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;align-content:start;padding:10px}.pk-list[data-mode=grid]:before{display:none}.pk-list[data-mode=grid] .pk-file-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto auto;align-content:start;gap:7px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}.pk-list[data-mode=grid] .pk-file-row>input{grid-column:1;grid-row:1}.pk-list[data-mode=grid] .pk-file-icon{grid-column:1;grid-row:2;width:34px;height:39px}.pk-list[data-mode=grid] .pk-file-main{grid-column:1/-1;grid-row:3;min-width:0}.pk-list[data-mode=grid] .pk-file-date{grid-column:2;grid-row:1;width:auto;justify-self:end}.pk-list[data-mode=grid] .pk-file-size{grid-column:2;grid-row:2;width:auto;text-align:right;align-self:center}.pk-list[data-mode=grid] .pk-new{grid-column:3;grid-row:1}.pk-list[data-mode=grid] .pk-row-check{grid-column:3;grid-row:2;justify-self:end}.pk-empty{grid-column:1/-1;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;text-align:center;padding:22px;color:var(--sub);font-size:11px}.pk-empty b{color:var(--ink);font-size:12px}.pk-empty-mark{display:grid;place-items:center;width:45px;height:50px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-weight:900;font-size:10px;color:var(--accent2)}.pk-status{min-height:13px;color:var(--sub);font-size:9.5px}.pk-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 17px;background:var(--panel2);border-top:1px solid var(--line)}.pk-safe-note{display:inline-flex;align-items:center;gap:7px;color:var(--sub);font-size:9.5px}.pk-safe-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block}.pk-foot>div{display:flex;gap:7px}.pk-foot button{min-height:34px;font-size:10.5px}.pk-foot .pk-ok{min-width:210px}
+#dataCenterFiles .file-pill button{display:none!important}#dataCenterLink,#dataCenterLinkSorteo,#dataCenterReload,#dataCenterForceUpdate{display:none!important}
+@media(max-width:760px){#view-carga .od-card{padding:14px}.pk-explorer{grid-template-columns:145px minmax(0,1fr)}.pk-sidebar{padding:10px 6px}.pk-main{padding:10px 8px}.pk-file-date{display:none}.pk-list[data-mode=list]:before{content:'ARCHIVO / CARPETA';padding-left:40px}.pk-foot{padding:10px}.pk-safe-note{max-width:150px}.pk-foot .pk-ok{min-width:0}}
+@media(max-width:560px){.pk-explorer{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.pk-sidebar{display:flex;align-items:center;gap:5px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:7px}.pk-side-label,.pk-folders-label,.pk-side-note{display:none}.pk-place{width:auto;flex:0 0 auto;max-width:160px;padding:7px 9px}.pk-folder-nav{display:flex;gap:5px}.pk-main{min-height:0}.pk-actions{align-items:flex-start}.pk-bulk{max-width:100%}.pk-cnt{font-size:9px}.pk-foot>div{margin-left:auto}.pk-foot .pk-ok{font-size:9px}}
+</style>
+
+
+<style id="nora-unified-file-center-v3">
+#view-carga .od-card{display:flex;flex-direction:column;gap:18px;padding:20px;overflow:visible}
+#view-carga .od-local-source,#view-carga .od-local-list-section{border:1px solid var(--line);border-radius:13px;padding:15px;background:color-mix(in srgb,var(--panel2) 54%,var(--panel));min-width:0}
+#view-carga .od-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+#view-carga .od-section-head>b,#view-carga .od-section-head>div>b{font-size:13px;color:var(--ink)}
+#view-carga .od-local-count-slot{display:flex;align-items:center;gap:8px}
+#view-carga #dmCount{font-size:10px;white-space:nowrap}
+#view-carga #dataManagerDrop{margin-top:0!important;padding:21px 14px;border:1px dashed color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--panel) 70%,transparent);border-radius:10px;min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink)}
+#view-carga #dataManagerDrop:hover,#view-carga #dataManagerDrop.ready{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+#view-carga #dataManagerDrop>b{font-size:12px}
+#view-carga #dataManagerDrop .hint{text-align:center;font-size:10px}
+#view-carga #dmStatus{margin:8px 0 0!important;font-size:10px}
+#view-carga .od-local-list-toolbar{margin-bottom:12px}
+#view-carga .od-local-list-toolbar>div{flex:1;min-width:180px}
+#view-carga #dmRefresh,#view-carga #dataCenterClear{min-height:32px;white-space:nowrap}
+#view-carga #dataCenterClear{border:1px solid var(--line);border-style:solid;color:var(--sub);font-size:10px}
+#view-carga #dataManagerList{margin-top:0!important;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,370px),1fr));gap:9px}
+#view-carga .data-manager-card{padding:12px;border-radius:10px;background:var(--panel);box-shadow:none}
+#view-carga .dm-file-name{font-size:12px;overflow-wrap:anywhere}
+#view-carga .dm-file-meta{font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+#view-carga .dm-source-pill{display:inline-flex;align-items:center;vertical-align:baseline;padding:1px 6px;border-radius:5px;border:1px solid var(--line);font-size:9px;font-weight:750;letter-spacing:.015em;white-space:nowrap}
+#view-carga .dm-source-pill.cloud{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border-color:color-mix(in srgb,var(--accent) 28%,var(--line));color:var(--accent)}
+#view-carga .dm-source-pill.local{background:color-mix(in srgb,var(--accent2) 9%,var(--panel));border-color:color-mix(in srgb,var(--accent2) 25%,var(--line));color:var(--accent2)}
+#view-carga .dm-source-pill.legacy{color:var(--sub)}
+#view-carga .dm-dest{font-size:10px}
+#view-carga .od-main-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+#view-carga .od-main-actions button{min-height:35px}
+#view-carga .od-linked-block{margin-top:0}
+#view-carga .od-config{margin-top:0}
+#view-carga .od-manager-head{margin-bottom:0}
+#view-carga .od-card> .status-line{margin:0!important}
+#view-carga .od-refresh-list{order:3}
+#dataCenterActions>div:first-child{display:none!important}
+#dataCenterClear.hidden{display:none!important}
+.nora-od-picker .pk-folder-place{gap:7px}
+.nora-od-picker .pk-file-row{min-height:52px}
+@media(max-width:720px){#view-carga .od-card{padding:12px;gap:12px}#view-carga .od-local-source,#view-carga .od-local-list-section{padding:11px}#view-carga #dataManagerList{grid-template-columns:1fr}#view-carga .od-section-head{align-items:flex-start}#view-carga .od-local-list-toolbar>div{min-width:100%}}
+</style>
+<style id="nora-final-layout-fixes-20261029">
+/* Centro de archivos: evitar solapamientos y preservar los controles dentro de la tarjeta */
+#view-carga .od-card,#view-carga .od-card *{box-sizing:border-box}
+#view-carga .od-card{min-width:0;overflow:visible}
+#view-carga .od-manager-head,#view-carga .od-main-actions,#view-carga .od-local-source,#view-carga .od-local-list-section,#view-carga .od-section-head,#view-carga .od-local-list-toolbar{min-width:0;max-width:100%}
+#view-carga .od-main-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#view-carga .od-main-actions>button{flex:0 0 auto;max-width:100%;white-space:normal;min-height:35px}
+#view-carga .od-settings-shortcut{flex:1 1 220px;min-width:0;color:var(--sub);font-size:10.5px;line-height:1.4}
+#view-carga .od-local-source,#view-carga .od-local-list-section{width:100%;padding:clamp(10px,1.5vw,16px)}
+#view-carga .od-section-head>div{flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+#view-carga #dataManagerList{width:100%;max-width:100%;min-width:0;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));align-items:stretch;gap:9px}
+#view-carga #dataManagerList>*{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#view-carga .od-access-shortcut{color:var(--sub);font-size:10px}
+.od-access-card{display:flex;flex-direction:column;gap:14px}
+.od-access-head h2{margin:4px 0 6px}
+.od-settings-section{min-width:0;padding:15px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel2) 48%,var(--panel))}
+.od-settings-section h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px}
+.od-settings-section .field{min-width:0}
+.od-settings-section .row{min-width:0;flex-wrap:wrap}
+.od-settings-section .od-redirect-row{display:flex;align-items:center}
+.od-settings-section .od-redirect-row input{flex:1 1 260px;min-width:0}
+.od-settings-section .od-redirect-row button{flex:0 0 auto}
+.od-settings-section .od-status{flex:1 1 180px;min-width:0;margin:0}
+.od-settings-section .od-security-note{margin-top:12px}
+/* Barra superior: botones de acción conservan tamaño coherente, widgets ocupan el ancho que necesitan. */
+.topbar-actions{min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;align-items:center;scrollbar-width:thin;overscroll-behavior-x:contain}
+.topbar-actions>.iconbtn,.topbar-actions>#nrTbEdit{flex:0 0 var(--nora-toolbar-height,32px)!important;width:var(--nora-toolbar-height,32px)!important;min-width:var(--nora-toolbar-height,32px)!important;max-width:var(--nora-toolbar-height,32px)!important;padding:0!important}
+.topbar:not(.tb-nolbl) .topbar-actions>.nr-w,.topbar:not(.tb-nolbl) .topbar-actions>.sc{flex:0 0 auto!important;width:max-content!important;min-width:var(--nora-toolbar-height,32px)!important;max-width:min(240px,48vw)!important;padding:0 9px!important;justify-content:flex-start!important;overflow:visible!important;white-space:nowrap!important}
+.topbar:not(.tb-nolbl) .topbar-actions>.nr-w .lbl,.topbar:not(.tb-nolbl) .topbar-actions>.sc .lbl{display:inline-block!important;max-width:120px!important;min-width:0;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;flex:0 1 auto!important}
+.topbar:not(.tb-nolbl) .topbar-actions>.nr-w .nr-i,.topbar:not(.tb-nolbl) .topbar-actions>.sc .nr-i{flex:0 0 auto!important;width:16px!important;height:16px!important}
+.topbar-actions>.nr-w .ck,.topbar-actions>.nr-w .dt,.topbar-actions>.nr-w .t,.topbar-actions>.nr-w .v,.topbar-actions>.nr-w .tn,.topbar-actions>.nr-w .dn{flex:0 0 auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Aun sin etiquetas, hora/fecha/clima/valores necesitan espacio propio; los accesos personalizados siguen siendo cuadrados. */
+.topbar.tb-nolbl .topbar-actions>.nr-w:not(.sc){flex:0 0 auto!important;width:max-content!important;min-width:var(--nora-toolbar-height,32px)!important;max-width:min(220px,44vw)!important;padding:0 8px!important;overflow:visible!important;justify-content:flex-start!important}
+.topbar.tb-nolbl .topbar-actions>.nr-w.sc{flex:0 0 var(--nora-toolbar-height,32px)!important;width:var(--nora-toolbar-height,32px)!important;min-width:var(--nora-toolbar-height,32px)!important;max-width:var(--nora-toolbar-height,32px)!important;padding:0!important;overflow:hidden!important;justify-content:center!important}
+.topbar-actions>.nr-w{min-width:0!important}
+.topbar-actions>*{scroll-margin-inline:4px}
+@media(max-width:720px){#view-carga .od-main-actions>button{flex:1 1 150px}#view-carga .od-settings-shortcut{flex-basis:100%}.nora-od-picker{width:min(100%,900px)!important}}
+@media(max-width:560px){#view-carga .od-local-source,#view-carga .od-local-list-section{padding:10px}.od-settings-section{padding:11px}.od-settings-actions button{flex:1 1 160px}.topbar:not(.tb-nolbl) .topbar-actions>.nr-w,.topbar:not(.tb-nolbl) .topbar-actions>.sc{max-width:200px!important}}
+</style>
 </body>
 </html>
