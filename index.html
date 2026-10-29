@@ -7833,22 +7833,61 @@ async function listFolder(token){
 }
 
 async function download(it,token){
-  // Microsoft recomienda usar la URL preautenticada; /content redirige con 302
-  // y puede fallar por CORS en aplicaciones JavaScript.
+  // La URL de descarga de Graph es una anotación de instancia de corta duración.
+  // Microsoft documenta `?select=id,@microsoft.graph.downloadUrl` para clientes JS;
+  // otras respuestas/versiones pueden aceptar `$select`. Probamos ambas formas y
+  // una lectura completa del driveItem, sin recorrer carpetas ni pedir permisos extra.
   async function resolveUrl(){
-    if(it.url)return it.url;
-    const query=new URLSearchParams({'$select':'id,@microsoft.graph.downloadUrl'}).toString();
-    const detail=await gfetch(GRAPH+'/me/drive/items/'+encodeURIComponent(it.id)+'?'+query,token);
-    return detail['@microsoft.graph.downloadUrl']||'';
+    if(it.url){
+      try{const cached=new URL(it.url);if(cached.protocol==='https:')return cached.href;}catch(_){}
+      it.url='';
+    }
+    const base=GRAPH+'/me/drive/items/'+encodeURIComponent(it.id);
+    const attempts=[
+      {key:'select',value:'id,@microsoft.graph.downloadUrl'},
+      {key:'$select',value:'id,@microsoft.graph.downloadUrl'},
+      null
+    ];
+    const problems=[];
+    for(const attempt of attempts){
+      let endpoint=base;
+      if(attempt){const params=new URLSearchParams();params.set(attempt.key,attempt.value);endpoint+='?'+params.toString();}
+      try{
+        const detail=await gfetch(endpoint,token);
+        const raw=String(detail&&detail['@microsoft.graph.downloadUrl']||'').trim();
+        if(raw){
+          let parsed;try{parsed=new URL(raw);}catch(_){throw new Error('Microsoft devolvió una URL de descarga inválida.');}
+          if(parsed.protocol!=='https:')throw new Error('Microsoft devolvió una URL de descarga insegura.');
+          it.url=parsed.href;
+          return it.url;
+        }
+        problems.push(attempt?'La respuesta no incluyó la anotación de descarga ('+attempt.key+').':'La respuesta completa tampoco incluyó la anotación de descarga.');
+      }catch(e){
+        if(e.status===401||e.status===403||e.status===404)throw e;
+        problems.push(e.message||'Error al solicitar la URL de descarga.');
+      }
+    }
+    throw new Error('No se pudo obtener la URL temporal de descarga para «'+it.name+'». '+
+      'Microsoft respondió sin @microsoft.graph.downloadUrl después de probar las variantes compatibles. '+
+      (problems.length?'Detalle: '+problems.slice(0,2).join(' / '):'Volvé a conectar Microsoft y probá nuevamente.'));
   }
-  let url=await resolveUrl();
-  if(!url)throw new Error('Microsoft no entregó una URL de descarga para «'+it.name+'». Volvé a actualizar la lista.');
-  let r;
-  try{r=await fetch(url,{cache:'no-store'});}catch(e){throw new Error('No se pudo descargar «'+it.name+'» desde OneDrive: '+(e.message||'error de red'));}
-  // Las URL preautenticadas vencen. Renovar una sola vez si el servidor la rechazó.
+
+  let url=await resolveUrl(),r;
+  async function fetchBlob(target){
+    // No enviar Authorization a la URL preautenticada: evita un preflight CORS.
+    return fetch(target,{method:'GET',cache:'no-store',credentials:'omit',redirect:'follow'});
+  }
+  try{r=await fetchBlob(url);}catch(e){
+    // Las URLs preautenticadas a veces vencen; forzar una nueva desde Graph y reintentar.
+    it.url='';
+    try{url=await resolveUrl();r=await fetchBlob(url);}catch(retryError){
+      throw new Error('No se pudo descargar «'+it.name+'» desde OneDrive: '+(retryError.message||e.message||'error de red'));
+    }
+  }
+  // Si una URL venció o fue invalidada, solicitar otra y repetir una vez.
   if(!r.ok&&[401,403,404,410].includes(r.status)){
     it.url='';url=await resolveUrl();
-    if(url){try{r=await fetch(url,{cache:'no-store'});}catch(e){throw new Error('Falló la descarga renovada de «'+it.name+'».');}}
+    try{r=await fetchBlob(url);}catch(e){throw new Error('Falló la descarga renovada de «'+it.name+'»: '+(e.message||'error de red'));}
   }
   if(!r||!r.ok)throw new Error('Descarga de «'+it.name+'» rechazada por OneDrive (HTTP '+(r?r.status:'sin respuesta')+').');
   const blob=await r.blob();
