@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta http-equiv="Content-Security-Policy" id="nora-csp" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com https://*.1drv.com https://*.microsoftpersonalcontent.com https://*.sharepoint.com https://onedrive.live.com https://api.argentinadatos.com https://api.open-meteo.com https://commons.wikimedia.org https://dolarapi.com https://geocoding-api.open-meteo.com https://images.unsplash.com https://wa.me; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f4e8c">
@@ -7373,6 +7374,48 @@ button:disabled{cursor:not-allowed;filter:saturate(.65)}
    - Lee la carpeta indicada vía Microsoft Graph (permiso Files.Read)
    - Baja solo los Excel que cambiaron y los procesa con handleFiles()
    =================================================================== */
+/* ===== Bloqueo con PIN (PBKDF2-SHA256; al abrir y tras 5 min sin uso) ===== */
+(function(){
+const K='nora_lock_v1',IDLE=5*60*1000,enc=new TextEncoder();
+const get=()=>{try{return JSON.parse(localStorage.getItem(K)||'null');}catch(e){return null;}};
+const b64=b=>btoa(String.fromCharCode.apply(null,new Uint8Array(b)));
+const unb=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+async function hash(pin,salt){const k=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:150000},k,256));}
+let resolve,fails=0,timer,ov=null,hiddenAt=0;
+window.NoraLockReady=new Promise(r=>resolve=r);
+function box(title,fields,okTxt,onOk,cancel){
+  if(ov)ov.remove();
+  ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
+  ov.innerHTML='<div style="background:#1e293b;color:#f1f5f9;padding:24px;border-radius:14px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px"><div style="font-size:18px;font-weight:700">🔒 '+title+'</div>'+fields.map(f=>'<input type="password" inputmode="numeric" autocomplete="off" placeholder="'+f+'" style="padding:12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:16px">').join('')+'<div class="lk-err" style="color:#fca5a5;font-size:13px;min-height:16px"></div><button class="lk-ok" style="padding:12px;border:0;border-radius:8px;background:#38bdf8;color:#0f172a;font-weight:700;font-size:15px">'+okTxt+'</button>'+(cancel?'<button class="lk-no" style="padding:8px;border:0;background:none;color:#94a3b8">Cancelar</button>':'')+'</div>';
+  document.body.appendChild(ov);
+  const ins=[...ov.querySelectorAll('input')],err=ov.querySelector('.lk-err');ins[0].focus();
+  const go=async()=>{err.textContent='';const r=await onOk(ins.map(i=>i.value),m=>err.textContent=m);if(r===false)ins.forEach(i=>i.value='');};
+  ov.querySelector('.lk-ok').onclick=go;ins.forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')go();});
+  if(cancel)ov.querySelector('.lk-no').onclick=()=>{ov.remove();ov=null;};
+}
+const close=()=>{if(ov){ov.remove();ov=null;}};
+function ask(then){
+  box('Nora bloqueada',['PIN'],'Desbloquear',async([pin],say)=>{
+    const c=get();if(!c){close();then&&then();return true;}
+    if(fails)await new Promise(r=>setTimeout(r,Math.min(30,Math.pow(2,fails))*1000));
+    if(await hash(pin,unb(c.salt))===c.hash){fails=0;close();then&&then();return true;}
+    fails++;say('PIN incorrecto'+(fails>2?' · esperá unos segundos entre intentos':''));return false;});
+}
+function lock(){if(get()&&!ov)ask(()=>{resolve();bump();});}
+function bump(){clearTimeout(timer);if(get())timer=setTimeout(lock,IDLE);}
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,()=>{if(!ov)bump();},{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(get()&&hiddenAt&&Date.now()-hiddenAt>IDLE)lock();});
+window.NoraLock={
+  setup(){const doSet=()=>box('Nuevo PIN',['PIN (mín. 4 dígitos)','Repetir PIN'],'Guardar',async([a,b],say)=>{
+      if(a.length<4){say('Mínimo 4 caracteres');return false;}if(a!==b){say('Los PIN no coinciden');return false;}
+      const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(a,salt)}));
+      close();bump();try{window.notify&&notify('PIN guardado','ok');}catch(e){}return true;},true);
+    if(get())ask(doSet);else doSet();},
+  remove(){if(!get())return;ask(()=>{localStorage.removeItem(K);clearTimeout(timer);try{window.notify&&notify('PIN quitado','ok');}catch(e){}});},
+  isSet:()=>!!get()};
+if(get())ask(()=>{resolve();bump();});else resolve();
+})();
+
 (function(){
 'use strict';
 
@@ -7410,6 +7453,19 @@ function loadCfg(){
 let cfg=loadCfg();
 const ready=()=>!!(cfg.clientId&&cfg.clientId.trim());
 const hasTok=()=>!!jget(K_TOK,null);
+const K_SEL='nora_od_sel_v1',K_LIST='nora_od_list_v1',K_HIST='nora_od_hist_v1';
+const getSel=()=>jget(K_SEL,null), setSel=v=>jset(K_SEL,v);
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function renderHist(){const h=jget(K_HIST,[]);$$('.od-hist-list').forEach(e=>{e.innerHTML=h.length?h.map(x=>'<div class="hint" style="margin:3px 0">'+new Date(x.t).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})+' · '+esc(x.m)+'</div>').join(''):'<div class="hint">Sin cambios registrados todavía.</div>';});}
+function hist(m){const h=jget(K_HIST,[]);h.unshift({t:Date.now(),m});jset(K_HIST,h.slice(0,40));renderHist();}
+const curFiles=()=>(typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]);
+const snap=names=>{const o={};names.forEach(n=>{const f=curFiles().find(x=>x.name===n);o[n]=f&&f.records?new Map(f.records.map(r=>[String(r.num),String(r.situacion||'')])):null;});return o;};
+function diffMsg(name,prev,f){
+  const cur=new Map(((f&&f.records)||[]).map(r=>[String(r.num),String(r.situacion||'')]));
+  if(!prev)return name+': archivo nuevo ('+cur.size+' registros)';
+  let a=0,c=0,r=0;cur.forEach((v,k)=>{if(!prev.has(k))a++;else if(prev.get(k)!==v)c++;});prev.forEach((v,k)=>{if(!cur.has(k))r++;});
+  return(a||r||c)?name+': '+a+' nuevos, '+r+' quitados, '+c+' cambiaron de situación':'';
+}
 
 /* ---------------------------------------------------------- estado ---- */
 let statusMsg='', statusWarn=false, busy=false;
@@ -7567,6 +7623,37 @@ async function download(it,token){
   throw new Error('No se pudo descargar «'+it.name+'» ('+errs.join('; ')+')');
 }
 
+async function refreshList(){
+  const token=await getToken();if(!token){setStatus('Primero conectá con Microsoft.',true);return false;}
+  try{setStatus('Leyendo la carpeta…');const all=await listFolder(token);const m=new Map();
+    all.forEach(it=>{const p=m.get(it.name);if(!p||it.mtime>p.mtime)m.set(it.name,it);});
+    jset(K_LIST,[...m.values()].map(i=>({name:i.name,path:i.path,mtime:i.mtime,size:i.size})));describeStatus();return true;}
+  catch(e){setStatus('No se pudo leer la carpeta: '+e.message,true);return false;}
+}
+async function openPicker(){
+  if(!jget(K_LIST,null)&&!(await refreshList()))return;
+  const list=jget(K_LIST,[]).sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));
+  const sel=getSel()||{names:[],seen:[]},chosen=new Set(sel.names||[]),seen=new Set(sel.seen||[]),first=!getSel();
+  const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px';
+  ov.innerHTML='<div class="card" style="max-width:660px;width:100%;max-height:90vh;display:flex;flex-direction:column;gap:8px;overflow:hidden;margin:0"><h2>Elegir archivos a sincronizar</h2><input type="text" class="pk-q" placeholder="Buscar por nombre o carpeta…"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><button class="ghost miniBtn pk-all">Marcar visibles</button><button class="ghost miniBtn pk-none">Desmarcar visibles</button><button class="ghost miniBtn pk-ref">Actualizar lista</button><span class="hint pk-cnt"></span></div><div class="pk-list" style="overflow:auto;flex:1;border:1px solid rgba(128,128,128,.35);border-radius:8px"></div><div class="row" style="gap:8px;justify-content:flex-end"><button class="ghost miniBtn pk-cancel">Cancelar</button><button class="primary miniBtn pk-ok">Guardar y sincronizar</button></div></div>';
+  document.body.appendChild(ov);
+  const q=c=>ov.querySelector(c);let vis=[];
+  function draw(){
+    const t=q('.pk-q').value.trim().toLowerCase();
+    vis=list.filter(i=>!t||(i.name+' '+i.path).toLowerCase().includes(t));
+    q('.pk-list').innerHTML=vis.map((i,k)=>'<label style="display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-bottom:1px solid rgba(128,128,128,.2);cursor:pointer"><input type="checkbox" data-k="'+k+'" '+(chosen.has(i.name)?'checked':'')+'><span style="flex:1;min-width:0"><b style="word-break:break-word">'+esc(i.name)+'</b>'+(seen.has(i.name)||first?'':' <span class="tag">NUEVO</span>')+'<br><span class="hint">'+esc(i.path||'(carpeta principal)')+' · '+(i.mtime?new Date(i.mtime).toLocaleDateString('es-AR'):'')+' · '+Math.round((i.size||0)/1024)+' KB</span></span></label>').join('')||'<div class="hint" style="padding:12px">No hay coincidencias.</div>';
+    q('.pk-cnt').textContent=chosen.size+' elegido(s) de '+list.length;
+  }
+  ov.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;const n=vis[+k].name;e.target.checked?chosen.add(n):chosen.delete(n);q('.pk-cnt').textContent=chosen.size+' elegido(s) de '+list.length;});
+  q('.pk-q').oninput=draw;
+  q('.pk-all').onclick=()=>{vis.forEach(i=>chosen.add(i.name));draw();};
+  q('.pk-none').onclick=()=>{vis.forEach(i=>chosen.delete(i.name));draw();};
+  q('.pk-ref').onclick=async()=>{if(await refreshList()){ov.remove();openPicker();}};
+  q('.pk-cancel').onclick=()=>ov.remove();
+  q('.pk-ok').onclick=()=>{setSel({names:[...chosen],seen:list.map(i=>i.name)});ov.remove();sync({manual:true});};
+  draw();
+}
+
 /* ------------------------------------------------------- sincronizar --- */
 async function sync(opts){
   opts=opts||{};
@@ -7590,11 +7677,19 @@ async function sync(opts){
       else log('nombre repetido «'+it.name+'»: se ignora la copia de «'+it.path+'»','warn');
     });
     const items=Array.from(byName.values());
+    jset(K_LIST,items.map(i=>({name:i.name,path:i.path,mtime:i.mtime,size:i.size})));
+    const selObj=getSel();
+    if(!selObj){setStatus('Encontré '+items.length+' Excel en OneDrive. Tocá «Elegir archivos» para indicar cuáles sincronizar.',true);return;}
+    const selSet=new Set(selObj.names||[]);
+    const chosen=items.filter(i=>selSet.has(i.name));
+    const fresh=items.filter(i=>!selSet.has(i.name)&&!(selObj.seen||[]).includes(i.name)).length;
+    const nota=fresh?' · '+fresh+' archivo(s) nuevo(s) sin elegir':'';
+    if(!chosen.length){setStatus('No hay archivos elegidos. Tocá «Elegir archivos».'+nota,true);return;}
 
     const st=jget(K_ST,{files:{}});st.files=st.files||{};
     const have=new Set((typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]).map(f=>f.name));
     const sig=it=>it.etag+'|'+it.size;
-    const todo=items.filter(it=>!have.has(it.name)||!st.files[it.id]||st.files[it.id].sig!==sig(it));
+    const todo=chosen.filter(it=>!have.has(it.name)||!st.files[it.id]||st.files[it.id].sig!==sig(it));
 
     const ids=new Set(items.map(i=>i.id));
     const gone=Object.keys(st.files).filter(id=>!ids.has(id));
@@ -7606,11 +7701,11 @@ async function sync(opts){
     }
     if(!todo.length){
       st.last=Date.now();jset(K_ST,st);
-      setStatus('✔ Todo al día · '+items.length+' archivo(s) · '+hora()+(gone.length?' · '+gone.length+' ya no está(n) en OneDrive':''));
+      setStatus('✔ Todo al día · '+chosen.length+' elegido(s) · '+hora()+nota+(gone.length?' · '+gone.length+' ya no está(n) en OneDrive':''));
       return;
     }
 
-    const files=[],okItems=[],fails=[];
+    const files=[],okItems=[],fails=[],changes=[];
     let n=0;
     for(const it of todo){
       n++;setStatus('Descargando '+n+'/'+todo.length+': '+it.name);
@@ -7624,12 +7719,16 @@ async function sync(opts){
     }
     if(files.length){
       setStatus('Procesando '+files.length+' archivo(s)…');
+      const before=snap(okItems.map(i=>i.name));
       await window.handleFiles(files,!opts.manual);
+      okItems.forEach(it=>{const m=diffMsg(it.name,before[it.name],curFiles().find(x=>x.name===it.name));if(m)changes.push(m);});
       okItems.forEach(it=>{st.files[it.id]={sig:sig(it),name:it.name,mtime:it.mtime};});
     }
     st.last=Date.now();jset(K_ST,st);
-    if(files.length&&!opts.quiet)toast(files.length+' archivo(s) actualizado(s) desde OneDrive','ok');
-    setStatus((fails.length?'⚠ ':'✔ ')+files.length+' actualizado(s) · '+items.length+' en total · '+hora()+
+    if(changes.length){hist(changes.join(' | '));toast(esc(changes.slice(0,2).join(' · '))+(changes.length>2?' …':''),'ok');}
+    else if(files.length&&!opts.quiet)toast(files.length+' archivo(s) actualizado(s) desde OneDrive','ok');
+    if(fails.length)hist('Errores: '+fails.join(' | '));
+    setStatus((fails.length?'⚠ ':'✔ ')+files.length+' actualizado(s) · '+chosen.length+' elegido(s) · '+hora()+nota+
       (fails.length?' · '+fails.length+' con error (ver consola)':''),fails.length>0);
     log(files.length+' archivo(s) sincronizados'+(fails.length?', '+fails.length+' con error':''),fails.length?'error':'ok');
   }catch(e){
@@ -7660,7 +7759,7 @@ function cardHTML(full){
     return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive</h2>'+
       '<div class="row" style="gap:8px;flex-wrap:wrap">'+
       '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
-      '<button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button></div>'+
+      '<button class="secondary miniBtn od-btn-pick">Elegir archivos…</button><button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button></div>'+
       '<div class="hint od-status" style="margin-top:8px"></div>'+
       '<div class="hint" style="margin-top:4px">La configuración está en Ajustes → OneDrive.</div>';
   }
@@ -7670,6 +7769,7 @@ function cardHTML(full){
     '<div class="status-line od-status" style="margin:10px 0"></div>'+
     '<div class="row" style="gap:8px;flex-wrap:wrap">'+
     '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
+    '<button class="secondary miniBtn od-btn-pick">Elegir archivos…</button>'+
     '<button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button>'+
     '<button class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
     '<div class="field" style="margin-top:12px"><label>ID de aplicación (cliente) de Azure</label>'+
@@ -7683,6 +7783,8 @@ function cardHTML(full){
     '<div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1">'+
     '<button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
     '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar</button></div>'+
+    '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Historial de cambios</summary><div class="od-hist-list" style="margin-top:6px"></div></details>'+
+    '<div style="margin-top:12px"><b>Bloqueo con PIN</b><div class="hint">Pide un PIN al abrir Nora y tras 5 min sin uso.</div><div class="row" style="gap:8px;margin-top:6px"><button class="secondary miniBtn od-btn-pin">Configurar / cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
     pasos;
 }
 
@@ -7728,10 +7830,13 @@ function buildUI(){
   if(ca)ca.after(mk(true));
   if(cb)cb.after(mk(!ca));                 // si no existe Ajustes, la tarjeta completa va en Inicio
   if(!ca&&!cb){const dc=document.getElementById('dataCenterCard');if(dc)dc.after(mk(true));}
-  fillInputs();
+  fillInputs();renderHist();
   document.addEventListener('click',ev=>{
     const t=ev.target.closest&&ev.target.closest('button');if(!t)return;
     if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);}
+    else if(t.classList.contains('od-btn-pick')){ev.preventDefault();if(ready()&&hasTok())openPicker();else setStatus('Primero conectá con Microsoft.',true);}
+    else if(t.classList.contains('od-btn-pin')){ev.preventDefault();window.NoraLock&&NoraLock.setup();}
+    else if(t.classList.contains('od-btn-nopin')){ev.preventDefault();window.NoraLock&&NoraLock.remove();}
     else if(t.classList.contains('od-btn-sync')){ev.preventDefault();sync({manual:true});}
     else if(t.classList.contains('od-btn-disc')){ev.preventDefault();try{localStorage.removeItem(K_TOK);}catch(e){}describeStatus();toast('OneDrive desconectado','ok');}
     else if(t.classList.contains('od-btn-save')){ev.preventDefault();if(saveCfg())toast('Configuración de OneDrive guardada','ok');}
@@ -7748,6 +7853,7 @@ function buildUI(){
 /* ------------------------------------------------------------ inicio --- */
 async function autoStart(){
   if(!cfg.auto||!ready()||!hasTok())return;
+  await (window.NoraLockReady||Promise.resolve());
   await sync({boot:true,quiet:false});
 }
 
