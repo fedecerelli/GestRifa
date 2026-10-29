@@ -979,6 +979,12 @@ body.nx-hide-floats .nx-float{display:none}
 
 
 .data-manager-list{display:grid;gap:12px}.data-manager-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel2)}.data-manager-card.is-control{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}.dm-file-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.dm-file-name{font-weight:700;word-break:break-word}.dm-file-meta{font-size:11px;color:var(--sub);margin-top:4px}.dm-destinations{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.dm-dest{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:11px;cursor:pointer}.dm-dest input{accent-color:var(--accent)}.dm-dest.on{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 9%,var(--panel))}.dm-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.dm-empty{padding:25px;text-align:center;border:1px dashed var(--line);border-radius:13px;color:var(--sub)}@media(max-width:700px){.dm-dest{flex:1 1 140px;justify-content:flex-start}.data-manager-card{padding:11px}}
+
+/* Nora · mejoras */
+.pill.bad{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
+#nmDiagRoot details>summary,#nmAuditRoot details>summary{cursor:pointer}
+#nmAvisosRoot table input{width:100%;box-sizing:border-box;padding:4px 6px;font-size:12.5px}
+#nmAvisosRoot textarea{width:100%;box-sizing:border-box}
 </style>
 <style>
 /* Control v2 */
@@ -1078,6 +1084,7 @@ body.nx-hide-floats .nx-float{display:none}
         <button class="ghost miniBtn" id="dataCenterClear"><span class="b-ic" data-icon="trash"></span>Vaciar datos</button>
         <button class="ghost miniBtn" id="dataCenterLink"><span class="b-ic" data-icon="link"></span>Vincular cobranza</button>
         <button class="ghost miniBtn" id="dataCenterLinkSorteo"><span class="b-ic" data-icon="target"></span>Vincular sorteos (L -)</button>
+        <button class="ghost miniBtn" id="dataCenterDiag"><span class="b-ic" data-icon="shield"></span>Diagnóstico de sorteos</button>
         <button class="ghost miniBtn" id="dataCenterReload"><span class="b-ic" data-icon="refresh"></span>Releer todos los vinculados</button>
         <button class="ghost miniBtn" id="dataCenterForceUpdate"><span class="b-ic" data-icon="refresh"></span>Actualización infalible</button>
       </div>
@@ -1491,6 +1498,9 @@ body.nx-hide-floats .nx-float{display:none}
     <span class="chip" data-sp="files"><span class="b-ic" data-icon="folder"></span>Archivos</span>
     <span class="chip" data-sp="hist"><span class="b-ic" data-icon="clock"></span>Historial</span>
     <span class="chip" data-sp="tools"><span class="b-ic" data-icon="wrench"></span>Herramientas</span>
+    <span class="chip" data-sp="diag"><span class="b-ic" data-icon="shield"></span>Diagnóstico</span>
+    <span class="chip" data-sp="avisos"><span class="b-ic" data-icon="send"></span>Avisos</span>
+    <span class="chip" data-sp="audit"><span class="b-ic" data-icon="clock"></span>Auditoría</span>
   </div>
   <div class="sp" id="sp-month">
     <div class="card hidden" id="mEmpty"><h2>Empecemos</h2><p class="hint">Todavía no hay archivos de sorteo.</p><button class="primary" id="mGo"><span class="b-ic" data-icon="folder"></span>Cargar archivos</button></div>
@@ -1533,6 +1543,9 @@ body.nx-hide-floats .nx-float{display:none}
     <div class="card"><h2><span class="h-ic" data-icon="shield"></span>Verificar sorteo</h2><div class="row"><div class="field" style="max-width:220px"><input type="text" id="vCode" placeholder="XXXX-XXXX" maxlength="9"></div></div><div id="vRes" class="tres"></div></div>
     <div class="card"><h2><span class="h-ic" data-icon="download"></span>Exportar</h2><div class="row"><div class="field" style="max-width:280px"><button class="secondary" id="tReporte"><span class="b-ic" data-icon="download"></span>Reporte (.xlsx)</button></div><div class="field" style="max-width:250px"><button class="secondary" id="tXlsx">Ganadores (.xlsx)</button></div><div class="field" style="max-width:250px"><button class="secondary" id="tRestore"><span class="b-ic" data-icon="upload"></span>Restaurar…</button><input type="file" id="tRestoreF" accept=".json" class="hidden"></div></div></div>
   </div>
+  <div class="sp" id="sp-diag"><div id="nmDiagRoot"></div></div>
+  <div class="sp" id="sp-avisos"><div id="nmAvisosRoot"></div></div>
+  <div class="sp" id="sp-audit"><div id="nmAuditRoot"></div></div>
 </section>
 
 <section class="view" id="view-settings">
@@ -1778,7 +1791,7 @@ body.nx-hide-floats .nx-float{display:none}
             <button class="secondary" id="btnLinkCobFiles2"><span class="b-ic" data-icon="link"></span>Vincular cobranza</button>
             <button class="secondary" id="btnReconnectCobFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar cobranza</button>
             <button class="secondary" id="btnLinkSorteoFiles2"><span class="b-ic" data-icon="link"></span>Vincular sorteos</button>
-            <button class="secondary" id="btnReconnectSorteoFiles2" class="hidden"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
+            <button class="secondary hidden" id="btnReconnectSorteoFiles2"><span class="b-ic" data-icon="refresh"></span>Reconectar sorteos</button>
           </div>
           <div id="cobLinkStatus2" class="hint" style="margin-top:8px"></div>
           <div id="sorteoLinkStatus2" class="hint" style="margin-top:4px"></div>
@@ -1803,7 +1816,7 @@ body.nx-hide-floats .nx-float{display:none}
             </div>
             <div class="field"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
             <div class="field" style="margin-top:10px"><label>Carpeta base de OneDrive (opcional)</label><input type="text" class="od-in-folder" placeholder="Vacío = raíz de OneDrive" autocomplete="off"><div class="hint">Podés dejarla vacía y explorar carpetas desde Carga de Datos.</div></div>
-            <div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>
+            <div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo <small style="opacity:.75">(guarda el token en este navegador; usalo solo en un equipo propio)</small></label></div>
             <div class="field" style="margin-top:12px"><label>Dirección de redirección (registrala en Azure)</label><div class="row od-redirect-row" style="gap:8px"><input type="text" class="od-in-redir" readonly><button type="button" class="ghost miniBtn od-btn-copy">Copiar</button></div></div>
             <div class="row" style="gap:8px;margin-top:12px"><button type="button" class="secondary miniBtn od-btn-save">Guardar configuración</button><span class="status-line od-status" aria-live="polite"></span></div>
             <details class="od-help"><summary>Cómo configurar la aplicación de Microsoft</summary><ol class="hint od-setup-steps"><li>Entrá a <b>entra.microsoft.com</b> → Registros de aplicaciones → Nuevo registro.</li><li>Nombre: <b>Nora</b>. Elegí cuentas personales de Microsoft.</li><li>Agregá la URL que aparece arriba en la plataforma <b>Aplicación de página única (SPA)</b>.</li><li>Copiá el Id. de aplicación (cliente), pegalo acá y guardá.</li><li>Conectá Microsoft y aceptá el permiso de lectura solicitado.</li></ol></details>
@@ -3036,7 +3049,10 @@ function validateSchema(rows,hIdx,fileName){const errors=[];const headerRow=rows
 function findHeaderIndex(headerRow,names,fallback){const wanted=names.map(x=>String(x).trim().toLowerCase());const idx=headerRow.findIndex(h=>wanted.includes(String(h||'').trim().toLowerCase()));return idx>=0?idx:fallback;}
 function normalizeMonthText(v){if(v===null||v===undefined)return '';const s=String(v).trim();if(!s)return '';if(/^\d{4}[-\/]\d{1,2}$/.test(s)){const [y,m]=s.split(/[-\/]/);return String(y)+'-'+String(m).padStart(2,'0');}if(/^\d{1,2}[-\/]\d{4}$/.test(s)){const [m,y]=s.split(/[-\/]/);return String(y)+'-'+String(m).padStart(2,'0');}return cap(s);}
 
-function classifyFileName(name){const n=normalizeFileNameForRole(name);if(isControlFileName(n))return 'control';if(/^L\s*-/.test(n)&&!/^U\s*-/.test(n))return 'sorteo';if(/^U\s*-/.test(n))return 'cobranza';return 'general';}
+/* FIX: el prefijo "L -" / "U -" se evalúa sobre el nombre original (antes se normalizaba y se perdía el guion y la mayúscula). */
+function rolePrefixOf(name){const n=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();const m=n.match(/^([lu])\s*[-\u2010-\u2015\u2212_]/);return m?m[1]:'';}
+window.rolePrefixOf=rolePrefixOf;
+function classifyFileName(name){const pre=rolePrefixOf(name);if(pre==='l')return 'sorteo';if(isControlFileName(name))return 'control';if(pre==='u')return 'cobranza';return 'general';}
 function isSorteoFileName(name){return classifyFileName(name)==='sorteo';}
 function splitSearchTokens(q){return String(q||'').split(/[\s,;\n\r\t]+/).map(x=>x.trim().toLowerCase()).filter(Boolean);}
 function recordMatchesToken(r,t){const digits=t.replace(/\D/g,'');const fields=[r.num,r.apellido,r.nombre,r.calle,r.calleKey,r.nroCalle,r.localidad,r.situacion,r.mes,r.source,r.sourceType].map(x=>String(x??'').toLowerCase());if(digits&&/^\d+$/.test(t))return fields[0].includes(digits)||fields.some(x=>x.includes(t));return fields.join(' ').includes(t)||(r._raw?Object.values(r._raw).join(' ').toLowerCase().includes(t):false);}
@@ -3063,6 +3079,7 @@ function normalizeFileNameForRole(name){
   return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim();
 }
 function isControlFileName(name){
+  if(typeof rolePrefixOf==='function'&&rolePrefixOf(name)==='l')return false;
   const n=normalizeFileNameForRole(name);
   return /control/.test(n) || /(^|\s|[-_])ctrl(?:$|\s|[-_])/.test(n);
 }
@@ -4104,7 +4121,7 @@ const ctl=(m,f)=>((S.control[m]=S.control[m]||{})[f]=S.control[m][f]||{});
 const month=()=>$('cMonth').value;
 const sortedDraws=()=>[...S.draws].sort((a,b)=>b.date.localeCompare(a.date));
 const uid=()=>'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function tab(t){if(!['month','files','hist','tools'].includes(t))t='month';S.cfg.tab=t;document.querySelectorAll('#sTabs .chip').forEach(c=>c.classList.toggle('active',c.dataset.sp===t));document.querySelectorAll('.sp').forEach(p=>p.classList.toggle('active',p.id==='sp-'+t));if(t==='month')renderMonth();if(t==='hist')renderHist();}
+function tab(t){if(!['month','files','hist','tools','diag','avisos','audit'].includes(t))t='month';S.cfg.tab=t;document.querySelectorAll('#sTabs .chip').forEach(c=>c.classList.toggle('active',c.dataset.sp===t));document.querySelectorAll('.sp').forEach(p=>p.classList.toggle('active',p.id==='sp-'+t));if(t==='month')renderMonth();if(t==='hist')renderHist();try{if(window.noraTabRender)window.noraTabRender(t);}catch(e){console.warn('noraTabRender',e);}}
 window.tab=tab;
 $('sTabs').onclick=e=>{const c=e.target.closest('.chip');if(c)tab(c.dataset.sp);};
 const dz=$('sDz'),fi=$('sFile');
@@ -4166,7 +4183,7 @@ async function syncSorteoIntoDataCenter(files){
   }
   rebuildRecords();renderFilesList();refreshSelects();populateBulkPdfSelectors();updateDashboard();syncDataCenterUI();renderDataManager();await saveState();renderHome();
 }
-async function loadFiles(files,silent){const ok=[],err=[];const validFiles=files.filter(f=>isSorteoFileName(f.name));files.filter(f=>!isSorteoFileName(f.name)).forEach(f=>err.push(f.name+': no participa del sorteo porque no comienza con L -'));files=validFiles;if(!files.length){$('sFilesMsg').className='status-line warn';$('sFilesMsg').textContent=err.join(' | ')||'No hay archivos L - para sorteo.';if(!silent&&err.length)notify(err.join(' · '),'warn');return;}$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}if(ok.length){try{await syncSorteoIntoDataCenter(files);}catch(e){AppLog.error('Integración sorteo → Centro de datos: '+(e.message||e));}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
+async function loadFiles(files,silent){const ok=[],err=[];const validFiles=files.filter(f=>isSorteoFileName(f.name));files.filter(f=>!isSorteoFileName(f.name)).forEach(f=>err.push(f.name+': no participa del sorteo porque no comienza con L -'));files=validFiles;if(!files.length){$('sFilesMsg').className='status-line warn';$('sFilesMsg').textContent=err.join(' | ')||'No hay archivos L - para sorteo.';try{err.forEach(e=>AppLog.error('Sorteo: '+e));window.noraDiagLog&&window.noraDiagLog(err);}catch(_){}if(!silent&&err.length)notify(err.join(' · '),'warn');return;}$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}if(ok.length){try{await syncSorteoIntoDataCenter(files);}catch(e){AppLog.error('Integración sorteo → Centro de datos: '+(e.message||e));}}try{if(err.length){err.forEach(e=>AppLog.error('Sorteo: '+e));window.noraDiagLog&&window.noraDiagLog(err);}}catch(_){}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
 function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} números duplicados dentro del archivo</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="date" data-start="${i}" value="${esc(f.inicioSorteo||'')}"></div><div class="field"><label>Finaliza sorteo</label><input type="date" data-end="${i}" value="${esc(f.finSorteo||'')}"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=async()=>{const f=S.files[+x.dataset.del];if(!f)return;if(!confirm('¿Desvincular '+f.name+' de Nora? Se quitará de Sorteos y de la lista activa, pero el Excel original permanecerá en su ubicación.'))return;const name=f.name;const key=sorteoSourceKey(name);if(typeof FILES!=='undefined'&&Array.isArray(FILES)){const before=FILES.length;FILES=FILES.filter(v=>sorteoSourceKey(v&&v.name)!==key);if(FILES.length!==before){rebuildRecords();if(FILES.length)await saveState();else await clearState();try{renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();if(FILES.length){refreshPreview();updateDashboard();}else{['controls','previewCard','genCard','dashFiltersCard','filesActions'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}}catch(e){}}}if(window.NoraSourceExclusions?.exclude)window.NoraSourceExclusions.exclude(name);else await unlinkSorteoSource(name,true);});}
@@ -8520,5 +8537,404 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 @keyframes noraOdPulse{0%,100%{opacity:1}50%{opacity:.35}}
 @media(prefers-reduced-motion:reduce){.od-status-dot.is-active{animation:none}.od-operation-progress-bar{transition:none}}
 </style>
+<script id="nora-mejoras">
+/* ===== NORA · mejoras: reparación, diagnóstico, validación, auditoría, avisos, cambios y respaldo ===== */
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const note=(m,k)=>{try{window.notify&&window.notify(m,k||'')}catch(e){}};
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
+const fmtTs=ts=>new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+const hash32=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36);};
+const S=()=>window.S||{files:[],draws:[],control:{},cfg:{}};
+const month=()=>($('cMonth')&&$('cMonth').value)||new Date().toISOString().slice(0,7);
+
+/* ---------- almacenamiento propio (no contamina el respaldo espejo) ---------- */
+function kvOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('nora_mejoras_db',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function kvGet(k,d){try{const db=await kvOpen();return await new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result===undefined?d:q.result);q.onerror=()=>res(d);});}catch(e){return d;}}
+async function kvSet(k,v){try{const db=await kvOpen();const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){console.warn('kvSet',e);}}
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+/* ---------- 3) auditoría ---------- */
+let AUDIT=[];
+async function auditLoad(){AUDIT=await kvGet('audit',[])||[];}
+function audit(type,detail,extra){AUDIT.push({ts:Date.now(),type,detail,extra:extra||null});if(AUDIT.length>800)AUDIT=AUDIT.slice(-800);kvSet('audit',AUDIT);if($('sp-audit')?.classList.contains('active'))renderAudit();}
+window.noraAudit=audit;
+let INCIDENTS=lsGet('nora_incidents_v1',[]);
+window.noraDiagLog=errs=>{(errs||[]).forEach(e=>INCIDENTS.push({ts:Date.now(),msg:String(e)}));INCIDENTS=INCIDENTS.slice(-60);lsSet('nora_incidents_v1',INCIDENTS);audit('incidencia',(errs||[]).join(' | ').slice(0,300));if($('sp-diag')?.classList.contains('active'))renderDiag();};
+
+/* ---------- reparación de clasificación (archivos ya guardados con el error viejo) ---------- */
+async function repairSorteos(manual){
+  const out={fixed:[],reloaded:[],needReread:[]};
+  if(typeof FILES==='undefined'||!Array.isArray(FILES))return out;
+  const inS=new Set((S().files||[]).map(f=>f.name));
+  const toLoad=[];
+  FILES.forEach(f=>{
+    if(typeof classifyFileName!=='function'||classifyFileName(f.name)!=='sorteo')return;
+    let changed=false;
+    if(f.sourceType!=='sorteo'){f.sourceType='sorteo';(f.records||[]).forEach(r=>{r.sourceType='sorteo';});changed=true;}
+    if(f.kind==='control'){f.kind='data';changed=true;}
+    if(changed){
+      const d=Array.isArray(f.destinations)?f.destinations.slice():[];
+      if(!d.includes('sorteos'))d.push('sorteos');
+      f.destinations=d;out.fixed.push(f.name);
+    }
+    const wants=(f.destinations||[]).includes('sorteos');
+    if(wants&&!inS.has(f.name)){
+      if(f.raw&&f.raw.byteLength){toLoad.push(new File([f.raw],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));}
+      else out.needReread.push(f.name);
+    }
+  });
+  if(toLoad.length&&typeof window.__sorteoLoadFiles==='function'){
+    try{await window.__sorteoLoadFiles(toLoad,true);out.reloaded=toLoad.map(f=>f.name);}catch(e){AppLog.error('Reparación de sorteos: '+(e.message||e));}
+  }
+  if(out.fixed.length||out.reloaded.length){
+    try{rebuildRecords();await saveState();renderFilesList();syncDataCenterUI();renderDataManager();}catch(e){}
+    audit('reparacion','Reclasificados '+out.fixed.length+' archivo(s) L - · reintegrados '+out.reloaded.length+(out.needReread.length?' · sin copia local: '+out.needReread.length:''));
+  }
+  if(manual||out.fixed.length){
+    if(out.fixed.length||out.reloaded.length)note('Sorteos reparados: '+out.fixed.length+' reclasificados, '+out.reloaded.length+' integrados'+(out.needReread.length?' · '+out.needReread.length+' requieren "Actualizar / releer"':''),'ok');
+    else if(manual)note(out.needReread.length?out.needReread.length+' archivo(s) sin copia local: usá "Actualizar / releer".':'No había nada para reparar.',out.needReread.length?'warn':'ok');
+  }
+  return out;
+}
+window.noraRepairSorteos=repairSorteos;
+
+/* ---------- análisis profundo de un Excel L - ---------- */
+const deepCache=new Map();
+function analyzeBuffer(buf){
+  const r={sheets:[],hasDatos:false,header:false,nCols:0,rows:0,withNums:0,noNums:0,noNumsSample:[],maxLen:0,minLen:99};
+  const wb=XLSX.read(buf,{type:'array'});
+  r.sheets=wb.SheetNames.slice();
+  const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');
+  if(!sn)return r;
+  r.hasDatos=true;
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
+  const h=rows.findIndex(x=>(x[1]+'').trim().toLowerCase()==='apellido');
+  if(h<0)return r;
+  r.header=true;
+  const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];
+  hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});
+  r.nCols=nCols.length;
+  for(let i=h+1;i<rows.length;i++){
+    const row=rows[i],ape=(row[1]+'').trim(),nom=(row[2]+'').trim();
+    if(!ape&&!nom)continue;
+    r.rows++;
+    const nums=[];nCols.forEach(c=>{const d=(row[c]+'').replace(/\D/g,'');if(d)nums.push(d);});
+    if(nums.length){r.withNums++;nums.forEach(n=>{r.maxLen=Math.max(r.maxLen,n.length);r.minLen=Math.min(r.minLen,n.length);});}
+    else{r.noNums++;if(r.noNumsSample.length<6)r.noNumsSample.push((ape+' '+nom).trim()+' (fila '+(i+1)+')');}
+  }
+  return r;
+}
+function getDeep(f){
+  if(!f||!f.raw||!f.raw.byteLength)return null;
+  const k=f.name+'|'+f.raw.byteLength;
+  if(!deepCache.has(k)){try{deepCache.set(k,analyzeBuffer(f.raw));}catch(e){deepCache.set(k,{error:e.message||String(e)});}}
+  return deepCache.get(k);
+}
+
+/* ---------- 1) diagnóstico por archivo ---------- */
+function diagForFile(f){
+  const issues=[],ok=[];
+  const cls=typeof classifyFileName==='function'?classifyFileName(f.name):'?';
+  const dests=(typeof getFileDestinations==='function')?getFileDestinations(f):(f.destinations||[]);
+  const inS=(S().files||[]).find(x=>x.name===f.name);
+  const looksL=/^\s*l\b/i.test(f.name);
+  if(cls==='sorteo')ok.push('Nombre reconocido como sorteo (L -)');
+  else if(looksL)issues.push({sev:'err',t:'El nombre parece de sorteo pero no empieza con "L -". Renombralo como "L - Localidad.xlsx".'});
+  else if(cls==='control')ok.push('Reconocido como planilla Control');
+  else return {cls,dests,inS,issues:[],ok:['No es un archivo de sorteo (no requiere "L -")'],skip:true};
+  if(cls==='sorteo'){
+    if(!dests.includes('sorteos'))issues.push({sev:'err',t:'El destino "Sorteos" no está tildado.',fix:'tick'});
+    else ok.push('Destino "Sorteos" tildado');
+    if(!inS)issues.push({sev:'err',t:'No está integrado al módulo Sorteos.',fix:f.raw&&f.raw.byteLength?'reload':'reread'});
+    else ok.push('Integrado en Sorteos · '+inS.people.length+' participantes');
+    const d=getDeep(f);
+    if(d){
+      if(d.error)issues.push({sev:'err',t:'No se pudo abrir el Excel: '+d.error});
+      else{
+        if(!d.hasDatos)issues.push({sev:'err',t:'Falta la solapa "Datos" (solapas: '+d.sheets.join(', ')+').'});
+        else if(!d.header)issues.push({sev:'err',t:'No se encontró la cabecera "Apellido" en la columna B de la solapa Datos.'});
+        else if(!d.nCols)issues.push({sev:'err',t:'No hay columnas "N°" / "N° 1"… en la cabecera.'});
+        else if(!d.withNums)issues.push({sev:'err',t:'Ninguna fila tiene número asignado.'});
+        else ok.push('Estructura correcta · '+d.nCols+' columna(s) N° · '+d.withNums+' fila(s) con número');
+        if(d.noNums)issues.push({sev:'warn',t:d.noNums+' participante(s) sin número (no participan): '+d.noNumsSample.join('; ')+(d.noNums>d.noNumsSample.length?'…':'')});
+      }
+    }else if(!f.raw)issues.push({sev:'info',t:'Sin copia del Excel guardada: usá "Actualizar / releer" para análisis completo.'});
+    if(f.source==='onedrive')ok.push('Origen OneDrive'+(f.sourcePath?' · '+f.sourcePath:''));
+  }
+  return {cls,dests,inS,issues,ok};
+}
+async function fixAction(name,fix){
+  const f=FILES.find(x=>x.name===name);if(!f)return;
+  if(fix==='tick'){f.destinations=[...new Set([...(f.destinations||[]),'sorteos'])];await saveState();syncDataCenterUI();renderDataManager();await repairSorteos(true);}
+  else if(fix==='reload')await repairSorteos(true);
+  else if(fix==='reread'){if(typeof window.reloadSorteoFiles==='function'){note('Releyendo archivos vinculados…');await window.reloadSorteoFiles(false);}else note('Usá "Actualizar / releer" en la pestaña Archivos.','warn');}
+  renderDiag();
+}
+
+/* ---------- 2) prevalidación ---------- */
+function holdersOf(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
+function validateAll(){
+  const s=S(),res=[],m=month();
+  const global=[];
+  (s.files||[]).forEach(f=>{
+    const it={name:f.name,title:f.title,items:[]};
+    const h=holdersOf(f);
+    const dups=Object.entries(h).filter(([k,v])=>v.length>1);
+    if(dups.length)it.items.push({sev:'warn',t:dups.length+' número(s) repetido(s) dentro del archivo (ej: '+dups.slice(0,4).map(d=>d[0]).join(', ')+').'});
+    let maxLen=0,minLen=99;f.people.forEach(p=>p.nums.forEach(n=>{maxLen=Math.max(maxLen,n.length);minLen=Math.min(minLen,n.length);}));
+    if(maxLen>f.cifras)it.items.push({sev:'err',t:'Hay números de '+maxLen+' cifras pero el archivo está en '+f.cifras+' cifras: se recortan y pueden coincidir mal.'});
+    else if(maxLen&&maxLen<f.cifras)it.items.push({sev:'warn',t:'Configurado en '+f.cifras+' cifras pero el mayor número tiene '+maxLen+'. ¿Debería ser '+maxLen+'?'});
+    if(minLen!==99&&maxLen&&minLen!==maxLen)it.items.push({sev:'info',t:'Largos de número mezclados ('+minLen+' a '+maxLen+' cifras).'});
+    const src=(typeof FILES!=='undefined')?FILES.find(x=>x.name===f.name):null;const d=src?getDeep(src):null;
+    if(d&&!d.error&&d.noNums)it.items.push({sev:'warn',t:d.noNums+' participante(s) sin número: '+d.noNumsSample.slice(0,3).join('; ')+(d.noNums>3?'…':'')});
+    if(!f.inicioSorteo||!f.finSorteo)it.items.push({sev:'info',t:'Sin fechas de inicio/fin de sorteo.'});
+    else if(f.inicioSorteo>f.finSorteo)it.items.push({sev:'err',t:'La fecha de inicio es posterior a la de fin.'});
+    const c=((s.control||{})[m]||{})[f.name]||{};
+    const dr=(s.draws||[]).find(x=>x.id===c.drawKey)||[...(s.draws||[])].sort((a,b)=>b.date.localeCompare(a.date)).find(x=>x.date.slice(0,7)===m);
+    if(!dr)it.items.push({sev:'warn',t:'No hay quiniela cargada para '+m+'.'});
+    else{const filled=dr.nums.filter(Boolean).length;if(filled<20)it.items.push({sev:'err',t:'La quiniela "'+dr.name+'" tiene '+filled+'/20 números.'});}
+    if(!it.items.length)it.items.push({sev:'ok',t:'Sin observaciones.'});
+    res.push(it);
+  });
+  const byNum={};
+  (s.files||[]).forEach(f=>Object.keys(holdersOf(f)).forEach(k=>{(byNum[f.cifras+':'+k]=byNum[f.cifras+':'+k]||[]).push(f.title||f.name);}));
+  const shared=Object.entries(byNum).filter(([k,v])=>v.length>1);
+  if(shared.length)global.push({sev:'info',t:shared.length+' número(s) existen en más de un archivo (normal si cada localidad sortea por separado). Ej: '+shared.slice(0,3).map(([k,v])=>k.split(':')[1]+' → '+v.join(' / ')).join('; ')});
+  return {res,global};
+}
+const sevPill=sv=>`<span class="pill ${sv==='ok'?'ok':sv==='err'?'bad':sv==='warn'?'warn':''}">${sv==='ok'?'OK':sv==='err'?'Error':sv==='warn'?'Aviso':'Info'}</span>`;
+
+/* ---------- 6) detección de cambios ---------- */
+let SNAP={};let lastSig='';let CHANGES=[];
+function snapOf(f){const map={};f.people.forEach(p=>p.nums.forEach(n=>{map[keyOf(n,f.cifras)]=(p.ape+', '+p.nom).trim();}));return map;}
+async function detectChanges(initial){
+  const s=S();if(!s.files)return;
+  const sig=hash32(JSON.stringify([s.files.map(f=>[f.name,f.people.length,f.cifras,f.title,f.inicioSorteo,f.finSorteo]),s.draws.map(d=>[d.id,d.name,d.date,d.nums.join(',')]),s.control]));
+  const newSnap={};let anyChange=false;
+  for(const f of s.files){
+    const cur=snapOf(f);newSnap[f.name]=cur;
+    const prev=SNAP[f.name];
+    if(!prev){if(!initial){audit('archivo','Archivo incorporado: '+f.name+' · '+f.people.length+' participantes · '+Object.keys(cur).length+' números');anyChange=true;}continue;}
+    const added=[],removed=[],mod=[];
+    Object.keys(cur).forEach(k=>{if(!(k in prev))added.push(k+' · '+cur[k]);else if(prev[k]!==cur[k])mod.push(k+' · '+prev[k]+' → '+cur[k]);});
+    Object.keys(prev).forEach(k=>{if(!(k in cur))removed.push(k+' · '+prev[k]);});
+    if(added.length||removed.length||mod.length){
+      anyChange=true;
+      const ev={ts:Date.now(),file:f.name,title:f.title,added:added.length,removed:removed.length,modified:mod.length,sample:{added:added.slice(0,40),removed:removed.slice(0,40),modified:mod.slice(0,40)}};
+      CHANGES.push(ev);CHANGES=CHANGES.slice(-40);
+      audit('cambios',f.name+': +'+added.length+' altas · −'+removed.length+' bajas · ≈'+mod.length+' modificados',ev.sample);
+      note('Cambios en '+(f.title||f.name)+': +'+added.length+' / −'+removed.length+' / ≈'+mod.length,'warn');
+    }
+  }
+  Object.keys(SNAP).forEach(n=>{if(!newSnap[n]){audit('archivo','Archivo quitado de Sorteos: '+n);anyChange=true;}});
+  SNAP=newSnap;
+  if(anyChange||initial){await kvSet('snap',SNAP);await kvSet('changes',CHANGES);}
+  /* auditoría de quinielas y generaciones */
+  const draws=Object.fromEntries((s.draws||[]).map(d=>[d.id,hash32(d.name+'|'+d.date+'|'+d.nums.join(','))]));
+  const prevDraws=await kvGet('draws',null);
+  if(prevDraws){
+    (s.draws||[]).forEach(d=>{
+      if(!(d.id in prevDraws))audit('quiniela','Quiniela guardada: '+d.name+' · '+d.date+' · '+d.nums.join(' '));
+      else if(prevDraws[d.id]!==draws[d.id])audit('quiniela','Quiniela modificada: '+d.name+' · '+d.date+' · '+d.nums.join(' '));
+    });
+    Object.keys(prevDraws).forEach(id=>{if(!(id in draws))audit('quiniela','Quiniela eliminada (id '+id+')');});
+  }
+  await kvSet('draws',draws);
+  const gens=await kvGet('gens',{});const ng={};
+  Object.entries(s.control||{}).forEach(([mm,files])=>Object.entries(files||{}).forEach(([fn,c])=>{
+    ['jpg','pdf','xlsx','txt','wa'].forEach(w=>{if(typeof c[w]==='number'){const key=mm+'|'+fn+'|'+w;ng[key]=c[w];if(gens[key]!==c[w]&&Object.keys(gens).length+1>0&&prevDraws){
+      const code=c.snap&&c.snap.code?' · código '+c.snap.code:'';
+      audit('generacion',w.toUpperCase()+' generado · '+fn+' · '+mm+(c.snap?' · '+c.snap.q+' '+c.snap.date:'')+code+' · '+(c.snap?c.snap.w.length:0)+' ganadores',c.snap?{w:c.snap.w}:null);}}});
+  }));
+  await kvSet('gens',ng);
+  lastSig=sig;
+}
+let _dc=null;
+function scheduleDetect(){clearTimeout(_dc);_dc=setTimeout(()=>{detectChanges(false).catch(e=>console.warn('detectChanges',e));},900);}
+
+/* ---------- vistas ---------- */
+function btn(label,attrs,cls){return `<button class="${cls||'secondary'} miniBtn" ${attrs||''}>${label}</button>`;}
+async function renderDiag(){
+  const root=$('nmDiagRoot');if(!root)return;
+  const rows=(typeof FILES!=='undefined'?FILES:[]).map(f=>({f,d:diagForFile(f)}));
+  const relevant=rows.filter(x=>!x.d.skip);
+  const bad=relevant.filter(x=>x.d.issues.some(i=>i.sev==='err')).length;
+  const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate().catch(()=>null):null;
+  const persisted=navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted().catch(()=>false):false;
+  const mb=n=>(n/1048576).toFixed(1)+' MB';
+  const pct=est&&est.quota?Math.round(est.usage/est.quota*100):0;
+  const val=validateAll();
+  let odDup='';
+  try{const list=lsGet('nora_od_list_v1',[])||[];const seen={};list.forEach(i=>{const k=norm(i.name);(seen[k]=seen[k]||[]).push(i.path||i.folder||'');});const dd=Object.entries(seen).filter(([k,v])=>v.length>1);
+    if(dd.length)odDup=`<div class="status-line warn" style="margin-top:8px">Hay ${dd.length} nombre(s) repetido(s) en carpetas distintas de OneDrive (${esc(dd.slice(0,3).map(x=>x[0]).join(', '))}). Nora identifica los archivos por nombre: el último pisa al anterior. Dejá un solo archivo por nombre.</div>`;}catch(e){}
+  root.innerHTML=`
+  <div class="card"><h2><span class="h-ic" data-icon="shield"></span>Diagnóstico por archivo <span class="tag">${relevant.length} L - / Control</span> ${bad?`<span class="pill bad">${bad} con errores</span>`:'<span class="pill ok">sin errores</span>'}</h2>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">${btn('<span class="b-ic" data-icon="refresh"></span>Reparar / reintegrar sorteos','id="nmRepair"','primary')}${btn('Actualizar / releer vinculados','id="nmReread"')}${btn('Re-analizar','id="nmRefresh"')}</div>
+    <div class="hint">Explica por qué un archivo no aparece: nombre, destino tildado, integración y estructura del Excel.</div>
+    ${odDup}
+    <div style="margin-top:10px">${relevant.length?relevant.map(({f,d})=>`<div class="qcard"><div class="top"><b>${esc(f.name)}</b> ${d.issues.some(i=>i.sev==='err')?'<span class="pill bad">Con problemas</span>':d.issues.some(i=>i.sev==='warn')?'<span class="pill warn">Con avisos</span>':'<span class="pill ok">Correcto</span>'}</div>
+      <div class="meta" style="margin-top:6px">${d.ok.map(t=>`<span class="pill ok">${esc(t)}</span>`).join('')}</div>
+      ${d.issues.map(i=>`<div class="hint" style="margin-top:6px">${sevPill(i.sev)} ${esc(i.t)} ${i.fix?btn(i.fix==='tick'?'Tildar y cargar':i.fix==='reload'?'Integrar ahora':'Releer','data-fix="'+i.fix+'" data-fname="'+esc(f.name)+'"'):''}</div>`).join('')}</div>`).join(''):'<div class="hint">No hay archivos cargados. Cargá o sincronizá tus Excel "L - …".</div>'}</div>
+    ${INCIDENTS.length?`<details style="margin-top:10px"><summary><b>Últimas incidencias de lectura (${INCIDENTS.length})</b></summary>${INCIDENTS.slice(-12).reverse().map(i=>`<div class="hint">${fmtTs(i.ts)} · ${esc(i.msg)}</div>`).join('')}<div style="margin-top:6px">${btn('Borrar incidencias','id="nmClearInc"')}</div></details>`:''}
+  </div>
+  <div class="card"><h2><span class="h-ic" data-icon="check"></span>Prevalidación de sorteos <span class="tag">${esc(month())}</span></h2>
+    ${val.res.length?val.res.map(r=>`<div class="qcard"><b>${esc(r.title||r.name)}</b>${r.items.map(i=>`<div class="hint" style="margin-top:4px">${sevPill(i.sev)} ${esc(i.t)}</div>`).join('')}</div>`).join(''):'<div class="hint">Todavía no hay archivos en Sorteos.</div>'}
+    ${val.global.map(i=>`<div class="hint" style="margin-top:8px">${sevPill(i.sev)} ${esc(i.t)}</div>`).join('')}
+  </div>
+  <div class="card"><h2><span class="h-ic" data-icon="refresh"></span>Cambios detectados en los Excel</h2>
+    ${CHANGES.length?CHANGES.slice().reverse().slice(0,8).map(c=>`<details class="qcard"><summary><b>${esc(c.title||c.file)}</b> · ${fmtTs(c.ts)} · <span class="pill ok">+${c.added}</span> <span class="pill bad">−${c.removed}</span> <span class="pill warn">≈${c.modified}</span></summary>
+      ${['added','removed','modified'].map(k=>c.sample[k].length?`<div class="hint" style="margin-top:6px"><b>${k==='added'?'Altas':k==='removed'?'Bajas':'Modificados'}</b><br>${c.sample[k].map(esc).join('<br>')}${c[k]>c.sample[k].length?'<br>…':''}</div>`:'').join('')}</details>`).join(''):'<div class="hint">Cada vez que un Excel cambie entre sincronizaciones, acá vas a ver las altas, bajas y números modificados.</div>'}
+  </div>
+  <div class="card"><h2><span class="h-ic" data-icon="database"></span>Almacenamiento y respaldo</h2>
+    <div class="hint">${est?`Uso del navegador: <b>${mb(est.usage)}</b> de ${mb(est.quota)} (${pct}%) · ${persisted?'almacenamiento persistente concedido':'almacenamiento no persistente (el navegador podría limpiarlo)'}`:'Este navegador no informa el uso de almacenamiento.'}</div>
+    ${est?`<div class="batch-progress" style="margin:6px 0"><div class="batch-progress-bar" style="width:${Math.min(100,pct)}%"></div></div>`:''}
+    ${pct>=70?'<div class="status-line warn">El almacenamiento supera el 70%. Hacé un respaldo y quitá archivos que no uses.</div>':''}
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">${btn('Pedir almacenamiento persistente','id="nmPersist"')}${btn('<span class="b-ic" data-icon="download"></span>Exportar respaldo completo','id="nmExport"','primary')}${btn('<span class="b-ic" data-icon="upload"></span>Importar respaldo','id="nmImport"')}<input type="file" id="nmImportFile" accept=".json,application/json" style="display:none"></div>
+    <label class="hint" style="display:block;margin-top:6px"><input type="checkbox" id="nmWithRaw" checked> Incluir los Excel originales (archivo más pesado, restaura todo sin releer)</label>
+    <div class="hint">El respaldo incluye datos, sorteos, configuración, auditoría y avisos. No incluye el token de OneDrive ni el PIN.</div>
+  </div>`;
+  try{paintIcons(root);}catch(e){}
+  root.querySelector('#nmRepair').onclick=async()=>{await repairSorteos(true);renderDiag();};
+  root.querySelector('#nmReread').onclick=async()=>{if(window.reloadSorteoFiles){note('Releyendo…');await window.reloadSorteoFiles(false);}if(window.reloadCobFiles){try{await window.reloadCobFiles(true);}catch(e){}}renderDiag();};
+  root.querySelector('#nmRefresh').onclick=()=>{deepCache.clear();renderDiag();};
+  root.querySelector('#nmClearInc')?.addEventListener('click',()=>{INCIDENTS=[];lsSet('nora_incidents_v1',[]);renderDiag();});
+  root.querySelectorAll('[data-fix]').forEach(b=>b.onclick=()=>fixAction(b.dataset.fname,b.dataset.fix));
+  root.querySelector('#nmPersist').onclick=async()=>{try{const ok=await navigator.storage.persist();note(ok?'Almacenamiento persistente concedido':'El navegador no lo concedió (suele requerir instalar la app o usar el sitio seguido)',ok?'ok':'warn');}catch(e){note('No disponible','warn');}renderDiag();};
+  root.querySelector('#nmExport').onclick=()=>exportBackup(root.querySelector('#nmWithRaw').checked);
+  root.querySelector('#nmImport').onclick=()=>root.querySelector('#nmImportFile').click();
+  root.querySelector('#nmImportFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importBackup(f);};
+}
+
+function renderAudit(){
+  const root=$('nmAuditRoot');if(!root)return;
+  const types=[...new Set(AUDIT.map(a=>a.type))];
+  const q=(root.querySelector('#nmAq')?.value||'').toLowerCase();
+  const ty=root.querySelector('#nmAt')?.value||'';
+  const list=AUDIT.slice().reverse().filter(a=>(!ty||a.type===ty)&&(!q||(a.detail+' '+a.type).toLowerCase().includes(q)));
+  const keepQ=root.querySelector('#nmAq')?.value||'';
+  root.innerHTML=`<div class="card"><h2><span class="h-ic" data-icon="clock"></span>Auditoría de sorteos <span class="tag">${AUDIT.length} eventos</span></h2>
+    <div class="hint">Registra cargas y cambios de archivos, quinielas guardadas/modificadas/eliminadas, y cada PDF/JPG/XLSX generado con su código y ganadores. Los datos quedan en este navegador.</div>
+    <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap;align-items:end"><div class="field" style="max-width:260px"><input type="text" id="nmAq" placeholder="Buscar…" value="${esc(keepQ)}"></div><div class="field" style="max-width:200px"><select id="nmAt"><option value="">Todos los tipos</option>${types.map(t=>`<option value="${esc(t)}"${t===ty?' selected':''}>${esc(t)}</option>`).join('')}</select></div>${btn('<span class="b-ic" data-icon="download"></span>Exportar CSV','id="nmAcsv"')}${btn('Vaciar registro','id="nmAclr"')}</div>
+    <div class="scrollx" style="margin-top:10px"><table class="mini"><thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>${list.slice(0,300).map(a=>`<tr><td style="white-space:nowrap">${fmtTs(a.ts)}</td><td><span class="pill">${esc(a.type)}</span></td><td>${esc(a.detail)}</td></tr>`).join('')||'<tr><td colspan="3">Sin eventos.</td></tr>'}</tbody></table></div>
+    ${list.length>300?`<div class="hint">Mostrando 300 de ${list.length}. Exportá el CSV para ver todo.</div>`:''}</div>`;
+  try{paintIcons(root);}catch(e){}
+  root.querySelector('#nmAq').oninput=()=>{renderAudit();const i=$('nmAq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}};
+  root.querySelector('#nmAt').onchange=renderAudit;
+  root.querySelector('#nmAcsv').onclick=()=>{const lines=[['fecha','tipo','detalle'].join(';')].concat(AUDIT.map(a=>[new Date(a.ts).toISOString(),a.type,'"'+String(a.detail).replace(/"/g,'""')+'"'].join(';')));dl(new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),'auditoria-nora.csv');};
+  root.querySelector('#nmAclr').onclick=()=>{if(confirm('¿Vaciar todo el registro de auditoría? No se puede deshacer.')){AUDIT=[];kvSet('audit',[]);audit('auditoria','Registro vaciado por el usuario');renderAudit();}};
+}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
+
+/* ---------- 5) avisos a ganadores ---------- */
+const AV_KEY='nora_avisos_v1',AV_TPL='nora_avisos_tpl_v1',AV_PH='nora_avisos_contactos_v1';
+const DEF_TPL='Hola {nombre}, ¡felicitaciones! Tu número {numero} salió en el puesto {puesto} del sorteo {quiniela} del {fecha} ({localidad} - {institucion}).';
+function fdateLong(iso){const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function winnersAll(){
+  const s=S(),m=month(),out=[];
+  const sorted=[...(s.draws||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  (s.files||[]).forEach(f=>{
+    const c=((s.control||{})[m]||{})[f.name]||{};
+    const d=(s.draws||[]).find(x=>x.id===c.drawKey)||sorted.find(x=>x.date.slice(0,7)===m)||sorted[0];
+    if(!d)return;
+    const n=Math.max(1,Math.min(20,+(c.n||(s.cfg||{}).n)||20));
+    const h=holdersOf(f);
+    let rows=d.nums.map((num,i)=>{const k=keyOf(num,f.cifras);const orig=(h[k]||[])[0]||null;const np=orig&&norm(orig.sit)==='no presentados';return {pos:i+1,num:k,p:np?null:orig};});
+    if(!(s.cfg||{}).unsold)rows=rows.filter(x=>x.p);
+    rows.slice(0,n).filter(x=>x.p).forEach(x=>out.push({f,d,pos:x.pos,num:x.num,p:x.p,id:[f.name,d.id,x.num].join('|')}));
+  });
+  return out;
+}
+const normPhone=v=>{let d=String(v||'').replace(/\D/g,'');if(!d)return '';d=d.replace(/^00/,'');if(d.startsWith('54'))return d;d=d.replace(/^0/,'');if(d.length===10)return '549'+d;return d;};
+const fill=(tpl,w)=>tpl.replace(/{nombre}/g,w.p.nom||'').replace(/{apellido}/g,w.p.ape||'').replace(/{numero}/g,w.num).replace(/{puesto}/g,w.pos).replace(/{quiniela}/g,w.d.name).replace(/{fecha}/g,fdateLong(w.d.date)).replace(/{localidad}/g,w.f.loc||'').replace(/{institucion}/g,w.f.ins||'').replace(/{titulo}/g,w.f.title||'');
+function renderAvisos(){
+  const root=$('nmAvisosRoot');if(!root)return;
+  const tpl=lsGet(AV_TPL,DEF_TPL),st=lsGet(AV_KEY,{}),ph=lsGet(AV_PH,{});
+  const ws=winnersAll();
+  const pend=ws.filter(w=>!(st[w.id]&&st[w.id].status==='enviado')).length;
+  root.innerHTML=`<div class="card"><h2><span class="h-ic" data-icon="send"></span>Aviso a ganadores <span class="tag">${esc(month())}</span> <span class="pill ${pend?'warn':'ok'}">${ws.length-pend}/${ws.length} enviados</span></h2>
+    <div class="hint">Los Excel no traen teléfono: cargalo una vez y Nora lo recuerda por persona. WhatsApp y el correo se abren de a uno (no se envían solos); marcá "Enviado" para llevar el control o usá "Siguiente pendiente".</div>
+    <div class="field" style="margin-top:8px"><label>Plantilla ({nombre} {apellido} {numero} {puesto} {quiniela} {fecha} {localidad} {institucion})</label><textarea id="nmTpl" rows="3">${esc(tpl)}</textarea></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">${btn('Siguiente pendiente (WhatsApp)','id="nmNext"','primary')}${btn('Copiar lista de pendientes','id="nmCopy"')}${btn('Restablecer estados','id="nmReset"')}</div>
+    ${ws.length?`<div class="scrollx"><table class="mini"><thead><tr><th>Puesto</th><th>N°</th><th>Ganador</th><th>Sorteo</th><th>Teléfono</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody>${ws.map((w,i)=>{const key=norm(w.p.ape+'|'+w.p.nom),c=ph[key]||{},s1=st[w.id]||{status:'pendiente'};return `<tr data-i="${i}"><td>${w.pos}</td><td>${esc(w.num)}</td><td>${esc(w.p.ape)}, ${esc(w.p.nom)}</td><td>${esc(w.f.title)}<br><small>${esc(w.d.name)}</small></td><td><input type="tel" data-k="${esc(key)}" data-f="phone" value="${esc(c.phone||'')}" placeholder="11 2345 6789" style="min-width:130px"></td><td><input type="email" data-k="${esc(key)}" data-f="email" value="${esc(c.email||'')}" placeholder="correo@…" style="min-width:140px"></td><td><span class="pill ${s1.status==='enviado'?'ok':s1.status==='error'?'bad':'pend'}">${esc(s1.status)}</span>${s1.ts?'<br><small>'+fmtTs(s1.ts)+'</small>':''}</td><td style="white-space:nowrap">${btn('WhatsApp','data-a="wa"')} ${btn('Correo','data-a="mail"')} ${btn('✔','data-a="ok" title="Marcar enviado"')} ${btn('↺','data-a="redo" title="Reintentar / volver a pendiente"')}</td></tr>`;}).join('')}</tbody></table></div>`:'<div class="hint">No hay ganadores para este mes: cargá la quiniela y los archivos en la pestaña "Mes".</div>'}</div>`;
+  try{paintIcons(root);}catch(e){}
+  const wsById=ws;
+  const setSt=(w,status)=>{const s2=lsGet(AV_KEY,{});s2[w.id]={status,ts:Date.now()};lsSet(AV_KEY,s2);audit('aviso',(status==='enviado'?'Aviso enviado: ':status==='error'?'Aviso con error: ':'Aviso '+status+': ')+w.p.ape+', '+w.p.nom+' · N° '+w.num+' · '+w.f.title+' · '+w.d.name);};
+  root.querySelector('#nmTpl').onchange=e=>lsSet(AV_TPL,e.target.value||DEF_TPL);
+  root.querySelectorAll('input[data-k]').forEach(inp=>inp.onchange=()=>{const p2=lsGet(AV_PH,{});const k=inp.dataset.k;p2[k]=p2[k]||{};p2[k][inp.dataset.f]=inp.value.trim();lsSet(AV_PH,p2);});
+  const getTpl=()=>root.querySelector('#nmTpl').value||DEF_TPL;
+  const contactOf=w=>(lsGet(AV_PH,{})[norm(w.p.ape+'|'+w.p.nom)])||{};
+  const openWa=w=>{const c=contactOf(w),ph2=normPhone(c.phone);if(!ph2){note('Falta el teléfono de '+w.p.ape+', '+w.p.nom,'warn');setSt(w,'error');renderAvisos();return false;}window.open('https://wa.me/'+ph2+'?text='+encodeURIComponent(fill(getTpl(),w)),'_blank','noopener');setSt(w,'abierto');renderAvisos();return true;};
+  root.querySelectorAll('button[data-a]').forEach(b=>b.onclick=()=>{const w=wsById[+b.closest('tr').dataset.i];if(!w)return;const a=b.dataset.a;
+    if(a==='wa')openWa(w);
+    else if(a==='mail'){const c=contactOf(w);if(!c.email){note('Falta el correo de '+w.p.ape+', '+w.p.nom,'warn');return;}location.href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Sorteo '+w.f.title+' · '+w.d.name)+'&body='+encodeURIComponent(fill(getTpl(),w));setSt(w,'abierto');renderAvisos();}
+    else if(a==='ok'){setSt(w,'enviado');renderAvisos();}
+    else if(a==='redo'){setSt(w,'pendiente');renderAvisos();}});
+  root.querySelector('#nmNext').onclick=()=>{const s2=lsGet(AV_KEY,{});const w=ws.find(x=>!(s2[x.id]&&['enviado','abierto'].includes(s2[x.id].status)))||ws.find(x=>!(s2[x.id]&&s2[x.id].status==='enviado'));if(!w){note('No quedan pendientes','ok');return;}openWa(w);};
+  root.querySelector('#nmCopy').onclick=async()=>{const s2=lsGet(AV_KEY,{});const txt=ws.filter(w=>!(s2[w.id]&&s2[w.id].status==='enviado')).map(w=>`${w.pos}. ${w.num} · ${w.p.ape}, ${w.p.nom} · ${w.f.title}`).join('\n');try{await navigator.clipboard.writeText(txt);note('Lista copiada','ok');}catch(e){note('No se pudo copiar','err');}};
+  root.querySelector('#nmReset').onclick=()=>{if(confirm('¿Volver todos los avisos a pendiente?')){const s2=lsGet(AV_KEY,{});ws.forEach(w=>delete s2[w.id]);lsSet(AV_KEY,s2);renderAvisos();}};
+}
+
+/* ---------- 7) respaldo completo ---------- */
+function ab2b64(buf){const u=new Uint8Array(buf);let s='';const C=0x8000;for(let i=0;i<u.length;i+=C)s+=String.fromCharCode.apply(null,u.subarray(i,i+C));return btoa(s);}
+function b642ab(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer;}
+const LS_SKIP=/(_tok_|nora_lock|cobranza_mirror|nora_od_state|nora_sync_sig)/;
+async function exportBackup(withRaw){
+  try{
+    note('Preparando respaldo…');
+    const state=await readAllState();
+    const ls={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^(nora_|cobranza_suite_cfg|nx_note_)/.test(k)&&!LS_SKIP.test(k))ls[k]=localStorage.getItem(k);}
+    const kv={audit:AUDIT,snap:SNAP,changes:CHANGES};
+    const payload={v:2,app:'nora',ts:Date.now(),withRaw:!!withRaw,state,kv,ls};
+    const json=JSON.stringify(payload,function(k,v){
+      if(v instanceof ArrayBuffer)return withRaw?{__ab:ab2b64(v)}:null;
+      if(ArrayBuffer.isView(v))return withRaw?{__ab:ab2b64(v.buffer.slice(v.byteOffset,v.byteOffset+v.byteLength))}:null;
+      return v;});
+    dl(new Blob([json],{type:'application/json'}),'respaldo-nora-completo-'+new Date().toISOString().slice(0,10)+'.json');
+    audit('respaldo','Respaldo completo exportado ('+(json.length/1048576).toFixed(1)+' MB'+(withRaw?'':', sin Excel originales')+')');
+    note('Respaldo exportado','ok');
+  }catch(e){console.error(e);note('No se pudo exportar: '+(e.message||e),'err');}
+}
+async function importBackup(file){
+  try{
+    const text=await file.text();
+    const j=JSON.parse(text,(k,v)=>(v&&typeof v==='object'&&typeof v.__ab==='string')?b642ab(v.__ab):v);
+    const state=j&&j.state;
+    if(!state||typeof state!=='object'){note('El archivo no parece un respaldo de Nora.','err');return;}
+    const keys=Object.keys(state);
+    if(!confirm('Vas a reemplazar los datos actuales de Nora por el respaldo del '+(j.ts?fmtTs(j.ts):'?')+' ('+keys.length+' bloques'+(j.v===2?'':', formato anterior')+').\nSe recomienda exportar un respaldo antes. ¿Continuar?'))return;
+    const db=await openDB();const tx=db.transaction(STORE,'readwrite');const os=tx.objectStore(STORE);
+    keys.forEach(k=>{if(['backupHandle','cobHandles','sorteoHandles'].includes(k))return;os.put(state[k],k);});
+    await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=()=>b(tx.error);});
+    if(j.ls){Object.entries(j.ls).forEach(([k,v])=>{if(!LS_SKIP.test(k)){try{localStorage.setItem(k,v);}catch(e){}}});}
+    if(j.kv){await kvSet('audit',j.kv.audit||[]);await kvSet('snap',j.kv.snap||{});await kvSet('changes',j.kv.changes||[]);}
+    try{localStorage.removeItem('cobranza_mirror_v4');}catch(e){}
+    note('Respaldo importado. Recargando…','ok');setTimeout(()=>location.reload(),900);
+  }catch(e){console.error(e);note('No se pudo importar: '+(e.message||e),'err');}
+}
+
+/* ---------- integración con las pestañas ---------- */
+window.noraTabRender=t=>{if(t==='diag')renderDiag();else if(t==='avisos')renderAvisos();else if(t==='audit')renderAudit();};
+document.addEventListener('click',e=>{if(e.target.closest('#dataCenterDiag')){try{setView('sorteos');window.tab('diag');}catch(err){console.warn(err);}}});
+const origSched=window.scheduleAutoBackup;
+if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{scheduleDetect();}catch(e){}return origSched.apply(this,arguments);};}
+
+/* ---------- arranque ---------- */
+(async()=>{
+  await auditLoad();SNAP=await kvGet('snap',{})||{};CHANGES=await kvGet('changes',[])||[];
+  let tries=0;
+  const wait=()=>new Promise(res=>{const t=setInterval(()=>{tries++;if((document.readyState==='complete'&&typeof window.__sorteoLoadFiles==='function'&&window.S&&typeof FILES!=='undefined')||tries>40){clearInterval(t);res();}},400);});
+  await wait();await new Promise(r=>setTimeout(r,1800));
+  try{const r=await repairSorteos(false);if(r.needReread.length)note(r.needReread.length+' archivo(s) L - sin copia local: usá Sorteos › Diagnóstico › "Actualizar / releer".','warn');}catch(e){console.warn('repair',e);}
+  try{await detectChanges(!Object.keys(SNAP).length);}catch(e){console.warn('detect',e);}
+  if(navigator.storage&&navigator.storage.estimate){try{const est=await navigator.storage.estimate();if(est.quota&&est.usage/est.quota>=.8)note('El almacenamiento de Nora supera el 80%. Hacé un respaldo (Sorteos › Diagnóstico).','warn');}catch(e){}}
+})();
+})();
+
+</script>
 </body>
 </html>
