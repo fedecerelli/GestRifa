@@ -2964,6 +2964,7 @@ async function saveState(opts={}){
         name:f.name,
         kind:f.kind||f.sourceType||'data',
         sourceType:f.sourceType||f.kind||'data',
+        source:f.source||'',sourceId:f.sourceId||'',sourcePath:f.sourcePath||'',sourceSig:f.sourceSig||'',
         destinations:getFileDestinations(f),
         raw:f.raw||null,
         records:(f.records||[]).map(r=>({...r,fcarga:r.fcarga instanceof Date?r.fcarga.toISOString():r.fcarga}))
@@ -2977,7 +2978,12 @@ async function saveState(opts={}){
 }
 
 async function loadState(){try{const db=await openDB();const req=db.transaction(STORE,'readonly').objectStore(STORE).get('main');return await new Promise((a,b)=>{req.onsuccess=()=>a(req.result);req.onerror=b;});}catch(e){return null;}}
-async function clearState(){try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete('main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}scheduleAutoBackup();}
+async function clearState(){
+  try{const db=await openDB();const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete('main');await new Promise((a,b)=>{tx.oncomplete=a;tx.onerror=b;});}catch(e){}
+  // No dejar que el espejo antiguo restaure archivos que el usuario ya quitó de Nora.
+  try{const raw=localStorage.getItem(MIRROR_KEY);if(raw){const mir=JSON.parse(raw);if(mir&&mir.state&&typeof mir.state==='object'){delete mir.state.main;if(Object.keys(mir.state).length){mir.ts=Date.now();localStorage.setItem(MIRROR_KEY,JSON.stringify(mir));}else localStorage.removeItem(MIRROR_KEY);}else localStorage.removeItem(MIRROR_KEY);}}catch(e){try{localStorage.removeItem(MIRROR_KEY);}catch(_){}}
+  scheduleAutoBackup();
+}
 
 let RECORDS=[];let FILES=[];
 // La carga centralizada se inicializa DESPUÉS de crear FILES. Nunca acceder antes: evita el TDZ 'Cannot access FILES before initialization'.
@@ -3011,7 +3017,7 @@ function syncDataCenterUI(){
   const controlCount=FILES.filter(f=>f.kind==='control'||f.sourceType==='control').length;
   if(count)count.textContent=`${FILES.length} archivo(s) · ${RECORDS.length} registro(s) · ${controlCount} Control`;
   if(st)st.textContent=FILES.length?`${RECORDS.length} registros disponibles para todo el sistema${controlCount?' · '+controlCount+' planilla(s) Control detectada(s)':''}.`:'Sin datos cargados.';
-  if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{const __rm=FILES[+b.dataset.dcRemove]?.name;FILES.splice(+b.dataset.dcRemove,1);if(__rm&&window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
+  if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}" title="Quitar de Nora; no borra el Excel original" aria-label="Quitar ${esc(f.name)} de Nora">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{const __removed=FILES[+b.dataset.dcRemove];const __rm=__removed?.name;if(__rm)window.NoraSourceExclusions?.exclude(__rm);FILES.splice(+b.dataset.dcRemove,1);if(__rm&&window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
   if(actions)actions.classList.toggle('hidden',!FILES.length);
 }
 function initDataCenterCommunication(){const input=document.getElementById('dcCommTemplate');if(!input)return;const key='nora_comm_template_v1';const def='{localidad} · {institucion} · {fecha} · N° {numero} · {apellido}, {nombre}';try{input.value=localStorage.getItem(key)||def;}catch(e){input.value=def;}const getText=()=>{const r=DV.allSorted&&DV.allSorted.length?DV.allSorted[0]:RECORDS[0];const vals={localidad:r?.localidad||window.S?.files?.[0]?.loc||'',institucion:r?.source||window.S?.files?.[0]?.title||'',fecha:new Date().toLocaleDateString('es-AR'),numero:r?.num||'',apellido:r?.apellido||'',nombre:r?.nombre||''};return input.value.replace(/\{(localidad|institucion|fecha|numero|apellido|nombre)\}/g,(_,k)=>vals[k]||'');};document.getElementById('dcCommSave')?.addEventListener('click',()=>{try{localStorage.setItem(key,input.value);}catch(e){}notify('Plantilla guardada','ok');});document.getElementById('dcCommWhatsApp')?.addEventListener('click',()=>{const text=getText();window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');});document.getElementById('dcCommEmail')?.addEventListener('click',()=>{const subject='Nora Suite';window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(getText());});}
@@ -3039,13 +3045,18 @@ async function handleFiles(files,silent,opts){
   let added=[],replaced=[],allErrors=[],controlFiles=[];
   for(const file of files){
     try{
+      const __source=opts?.source||'local';
+      const __sourceMeta=__source==='onedrive'
+        ? (opts?.remoteItems||[]).find(x=>x.name===file.name)
+        : (__source==='legacy-auto'?(opts?.sourceItems||[]).find(x=>x.name===file.name):null);
+      const __sourceProps={source:__source,sourceId:__sourceMeta?.id||'',sourcePath:__sourceMeta?.path||'',sourceSig:__sourceMeta?.sig||__sourceMeta?.etag||''};
       if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:'Formato no admitido. Usá .xlsx, .xls o .xlsm.'}]});continue;}
       if(isControlFileName(file.name)){
         controlFiles.push(file);
         const idx=FILES.findIndex(f=>f.name===file.name);
         const prevEntry=FILES.find(f=>f.name===file.name);
         const rawControl=await file.arrayBuffer();
-        const entry={name:file.name,records:[],sourceType:'control',kind:'control',destinations:['control'],raw:rawControl};
+        const entry={...__sourceProps,name:file.name,records:[],sourceType:'control',kind:'control',destinations:['control'],raw:rawControl};
         if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
         continue;
       }
@@ -3057,7 +3068,7 @@ async function handleFiles(files,silent,opts){
       if(result.errors.length){allErrors.push({file:file.name,errors:result.errors});if(!result.records.length)continue;}
       if(!result.records.length){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:'Sin filas válidas'}]});continue;}
       const idx=FILES.findIndex(f=>f.name===file.name);
-      const prevEntry=FILES.find(f=>f.name===file.name); const entry={name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:normalizeDestinationsForFile({name:file.name,kind:'data',sourceType:classifyFileName(file.name)},prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name))),raw:buf};
+      const prevEntry=FILES.find(f=>f.name===file.name); const entry={...__sourceProps,name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:normalizeDestinationsForFile({name:file.name,kind:'data',sourceType:classifyFileName(file.name)},prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name))),raw:buf};
       if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
     }catch(err){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:err.message||String(err)}]});}
   }
@@ -3107,7 +3118,7 @@ function renderDataManager(){
     const isSort=isSorteoFileName(f.name);
     const isU=/^U\s*-/.test(normalizeFileNameForRole(f.name));
     const n=(f.records||[]).filter(r=>!r._excluded).length,dest=getFileDestinations(f);
-    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta">${isCtl?'Planilla de Control · SOLO Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}"><span class="b-ic" data-icon="trash"></span>Eliminar archivo</button></div></div>`;
+    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta">${isCtl?'Planilla de Control · SOLO Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}" title="Quita el archivo de Nora; no borra el Excel original"><span class="b-ic" data-icon="trash"></span>Quitar de Nora</button></div></div>`;
   }).join('');
   list.querySelectorAll('[data-dm-dest]').forEach(ch=>ch.onchange=async()=>{
     const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f||ch.disabled)return;
@@ -3119,7 +3130,7 @@ function renderDataManager(){
   });
   list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=isSorteoFileName(f.name)?['sorteos']:['dashboard'];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
-  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Eliminar '+FILES[i].name+' de Carga de Datos?'))return;const __rm=FILES[i].name;FILES.splice(i,1);if(window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Quitar '+FILES[i].name+' de Nora? El archivo original en su ubicación no se borra.'))return;const __rm=FILES[i].name;window.NoraSourceExclusions?.exclude(__rm);FILES.splice(i,1);if(window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   paintIcons();
 }
 function initDataManager(){
@@ -3181,7 +3192,7 @@ function bindBulkPdfSelectors(){
   const mes=document.getElementById('bulkPdfMonth');if(mes&&!mes.dataset.bound){mes.dataset.bound='1';mes.addEventListener('change',()=>{const box=document.getElementById('bulkPdfStatus');if(box)box.textContent='Mes seleccionado: '+(mes.value||'—');});}
 }
 function updateStatusLine(added,replaced,errors){const st=document.getElementById('status');const parts=[];if(added.length)parts.push('Agregados: '+added.join(', '));if(replaced.length)parts.push('Reemplazados: '+replaced.join(', '));if(errors.length)parts.push(errors.length+' con problemas');st.className=errors.length?'status-line err':'status-line ok';st.textContent=RECORDS.length+' registros desde '+FILES.length+' archivo(s). '+parts.join(' · ');document.getElementById('sideStatus').innerHTML='<b>'+RECORDS.length+'</b> registros<br>'+FILES.length+' archivo(s)';}
-function renderFilesList(){const fl=document.getElementById('filesList');if(!fl)return;fl.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const act=(f.records||[]).filter(r=>!r._excluded).length;const ex=(f.records||[]).length-act;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':act+' reg.'}${ex?` <span style="color:var(--danger)">(−${ex})</span>`:''} <button data-remove="${i}">✕</button></span>`;}).join('');fl.querySelectorAll('[data-remove]').forEach(b=>b.onclick=async()=>{FILES.splice(parseInt(b.dataset.remove),1);rebuildRecords();renderFilesList();refreshSelects();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('filesActions').classList.add('hidden');document.getElementById('dashEmpty').classList.remove('hidden');document.getElementById('dashBody').classList.add('hidden');dz.classList.remove('ready');document.getElementById('status').textContent='Sin archivo.';document.getElementById('sideStatus').innerHTML='Sin datos.';}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
+function renderFilesList(){const fl=document.getElementById('filesList');if(!fl)return;fl.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const act=(f.records||[]).filter(r=>!r._excluded).length;const ex=(f.records||[]).length-act;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':act+' reg.'}${ex?` <span style="color:var(--danger)">(−${ex})</span>`:''} <button data-remove="${i}" title="Quitar de Nora; no borra el Excel original" aria-label="Quitar ${esc(f.name)} de Nora">✕</button></span>`;}).join('');fl.querySelectorAll('[data-remove]').forEach(b=>b.onclick=async()=>{const __i=parseInt(b.dataset.remove);const __rm=FILES[__i]?.name;if(__rm)window.NoraSourceExclusions?.exclude(__rm);FILES.splice(__i,1);rebuildRecords();renderFilesList();refreshSelects();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('filesActions').classList.add('hidden');document.getElementById('dashEmpty').classList.remove('hidden');document.getElementById('dashBody').classList.add('hidden');dz.classList.remove('ready');document.getElementById('status').textContent='Sin archivo.';document.getElementById('sideStatus').innerHTML='Sin datos.';}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
 document.getElementById('btnClearFiles').onclick=async()=>{if(!confirm('¿Vaciar todos los archivos, incluida la Planilla Control?'))return;FILES=[];RECORDS=[];try{window.noraControlClear?.();}catch(e){}await clearState();renderFilesList();updateStatusLine([],[],[]);['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('filesActions').classList.add('hidden');document.getElementById('dashEmpty').classList.remove('hidden');document.getElementById('dashBody').classList.add('hidden');dz.classList.remove('ready');document.getElementById('status').textContent='Sin archivo.';notify('Vaciado','ok');renderHome();};
 function uniq(field){return[...new Set(RECORDS.map(r=>field==='mes'?normalizeMonthText(r[field]):r[field]).filter(Boolean))].sort((a,b)=>field==='mes'?((parseMonthKey(a)-parseMonthKey(b))||a.localeCompare(b,'es')):a.localeCompare(b,'es'));}
 function fillSelect(id,values){const sel=document.getElementById(id);if(!sel)return;const prev=sel.value;sel.innerHTML='<option value="">Todos</option>'+values.map(v=>`<option value="${v}">${v}</option>`).join('');if(values.includes(prev))sel.value=prev;}
@@ -3948,6 +3959,7 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
       name:f.name,
       kind:f.kind||f.sourceType||'data',
       sourceType:f.sourceType||f.kind||'data',
+      source:f.source||'',sourceId:f.sourceId||'',sourcePath:f.sourcePath||'',sourceSig:f.sourceSig||'',
       destinations:normalizeDestinationsForFile(f,Array.isArray(f.destinations)&&f.destinations.length?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data')),
       raw:f.raw||null,
       records:(f.records||[]).map(r=>{
@@ -4764,6 +4776,47 @@ applyP();try{renderSkinGrid()}catch(e){}
 })();
 </script>
 <script>
+/* Fuentes heredadas: permite quitar un archivo de Nora sin tocar el Excel original.
+   La exclusión solo afecta las fuentes automáticas antiguas (HTML/manifiesto), nunca OneDrive. */
+(function(){
+  const KEY='nora_source_exclusions_v1';
+  const norm=n=>String(n||'').trim().toLocaleLowerCase('es-AR');
+  const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x.filter(v=>typeof v==='string'):[];}catch(e){return[];}};
+  const write=a=>{try{localStorage.setItem(KEY,JSON.stringify([...new Set(a.map(norm).filter(Boolean))]));}catch(e){}};
+  function unlinkCloudByName(name){
+    const n=norm(name);if(!n)return;
+    const parse=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d;}catch(e){return d;}};
+    const cloudList=parse('nora_od_list_v1',[]),st=parse('nora_od_state_v1',{files:{}}),sel=parse('nora_od_sel_v1',null);
+    const ids=new Set((Array.isArray(cloudList)?cloudList:[]).filter(x=>norm(x.name)===n&&x.id).map(x=>String(x.id)));
+    Object.keys(st.files||{}).forEach(id=>{if(norm(st.files[id]?.name)===n){ids.add(String(id));delete st.files[id];}});
+    if(sel){sel.ids=(Array.isArray(sel.ids)?sel.ids:[]).filter(id=>!ids.has(String(id)));sel.names=(Array.isArray(sel.names)?sel.names:[]).filter(x=>norm(x)!==n);try{localStorage.setItem('nora_od_sel_v1',JSON.stringify(sel));}catch(e){}}
+    try{localStorage.setItem('nora_od_state_v1',JSON.stringify(st));}catch(e){}
+    // Evitar que la sincronización automática anterior vuelva a importar esa misma planilla.
+    try{const k='nora_sync_sig_v1',sig=JSON.parse(localStorage.getItem(k)||'{}');Object.keys(sig).forEach(x=>{if(norm(x)===n)delete sig[x];});localStorage.setItem(k,JSON.stringify(sig));}catch(e){}
+  }
+  function purgeExcludedRestored(){
+    try{
+      if(typeof FILES==='undefined'||!Array.isArray(FILES))return;
+      const excluded=read();if(!excluded.length)return;
+      const before=FILES.length;
+      // Solo purgar vínculos antiguos/no clasificados. Una fuente local u OneDrive añadida conscientemente se conserva.
+      FILES=FILES.filter(f=>!(excluded.includes(norm(f.name))&&(!f.source||f.source==='legacy-auto')));
+      if(FILES.length===before)return;
+      rebuildRecords();try{renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();}catch(e){}
+      if(FILES.length){try{refreshPreview();updateDashboard();}catch(e){}saveState();}
+      else{clearState();try{['controls','previewCard','genCard','dashFiltersCard','filesActions'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}catch(e){}}
+    }catch(e){console.warn('NoraSourceExclusions.purge',e);}
+  }
+  window.NoraSourceExclusions={
+    isExcluded(name){return read().includes(norm(name));},
+    exclude(name){const n=norm(name);if(n){write(read().concat(n));unlinkCloudByName(name);}},
+    allow(name){const n=norm(name);write(read().filter(x=>x!==n));},
+    clearAll(){write([]);},
+    list(){return read().slice();}
+  };
+  window.addEventListener('nora:restored',purgeExcludedRestored);
+  setTimeout(purgeExcludedRestored,0);
+})();
 (function(){
   const SK='nora_sync_sig_v1',CK='nora_sync_cfg_v1';
   const cfg=Object.assign({mode:'auto',every:5},(()=>{try{return JSON.parse(localStorage.getItem(CK)||'{}')}catch(e){return{}}})());
@@ -4788,11 +4841,12 @@ applyP();try{renderSkinGrid()}catch(e){}
 
   async function sources(){
     const out=[];
-    (window.NORA_EMBED||[]).forEach(e=>out.push({name:e.name,sig:e.sig,get:async()=>b64File(e.name,e.b64)}));
+    (window.NORA_EMBED||[]).forEach(e=>{if(!window.NoraSourceExclusions?.isExcluded(e.name))out.push({name:e.name,sig:e.sig,get:async()=>b64File(e.name,e.b64)});});
     if(location.protocol!=='file:'){
       try{
         const r=await fetch('datos/manifest.json?t='+Date.now(),{cache:'no-store'});
         if(r.ok){(await r.json()).files.forEach(f=>{
+          if(window.NoraSourceExclusions?.isExcluded(f.name))return;
           const it={name:f.name,sig:f.sig,get:async()=>{const x=await fetch('datos/'+encodeURIComponent(f.name)+'?v='+f.sig,{cache:'no-store'});
             if(!x.ok)throw new Error('HTTP '+x.status);return new File([await x.blob()],f.name);}};
           const i=out.findIndex(o=>o.name===f.name);if(i>=0)out[i]=it;else out.push(it);});}
@@ -4805,7 +4859,7 @@ applyP();try{renderSkinGrid()}catch(e){}
     if(busy)return;busy=true;pending=null;say('Actualizando datos…','spin');
     try{
       const files=[];for(const f of list)files.push(await f.get());
-      await window.handleFiles(files,true);
+      await window.handleFiles(files,true,{source:'legacy-auto',sourceItems:list});
       const s=sigs();list.forEach(f=>s[f.name]=f.sig);localStorage.setItem(SK,JSON.stringify(s));
       say('Datos actualizados · '+hora());
       if(window.notify)notify(list.length+' archivo(s) actualizado(s) automáticamente','ok');
@@ -7367,6 +7421,37 @@ button:disabled{cursor:not-allowed;filter:saturate(.65)}
 }
 </style>
 
+<style id="nora-lock-css">
+body.nora-is-locked> :not(.nora-lock-overlay){visibility:hidden!important;pointer-events:none!important}
+.nora-lock-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(10,15,24,.66);backdrop-filter:blur(15px) saturate(125%);-webkit-backdrop-filter:blur(15px) saturate(125%);font-family:var(--font-ui,system-ui,sans-serif);color:var(--ink,#171b22)}
+.nora-lock-card{width:min(100%,390px);padding:30px;border:1px solid color-mix(in srgb,var(--line,#e0e3e9) 82%,transparent);border-radius:22px;background:var(--panel,#fff);box-shadow:0 28px 90px rgba(0,0,0,.32);display:flex;flex-direction:column;gap:17px;animation:noraLockIn .2s ease-out}
+.nora-lock-brand{display:flex;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--line,#e0e3e9)}
+.nora-lock-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent,#1f4e8c) 12%,var(--panel2,#f7f8fa));color:var(--accent,#1f4e8c);border:1px solid color-mix(in srgb,var(--accent,#1f4e8c) 20%,var(--line,#e0e3e9));flex:0 0 auto}
+.nora-lock-mark svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nora-lock-brand-name{display:block;font-size:16px;font-weight:750;letter-spacing:-.03em;color:var(--ink,#171b22)}
+.nora-lock-brand-sub{display:block;margin-top:3px;color:var(--sub,#5b6572);font-size:9px;font-weight:750;letter-spacing:.13em}
+.nora-lock-title{font-size:21px;line-height:1.25;letter-spacing:-.035em;margin:0;color:var(--ink,#171b22)}
+.nora-lock-desc{margin:-8px 0 0;color:var(--sub,#5b6572);font-size:12.5px;line-height:1.55}
+.nora-lock-fields{display:flex;flex-direction:column;gap:12px}
+.nora-lock-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nora-lock-field label{font-size:11px;color:var(--sub,#5b6572);font-weight:650;text-transform:none;letter-spacing:0}
+.nora-lock-input-row{display:flex;gap:6px;align-items:center}
+.nora-lock-input{min-width:0;width:100%;height:48px;padding:0 13px;border:1px solid var(--line,#e0e3e9);border-radius:12px;background:var(--panel2,#f7f8fa);color:var(--ink,#171b22);font:inherit;font-size:16px;letter-spacing:.12em;outline:none;transition:border-color .15s,box-shadow .15s}
+.nora-lock-input:focus{border-color:var(--accent,#1f4e8c);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#1f4e8c) 15%,transparent)}
+.nora-lock-toggle{height:40px;padding:0 10px;border:1px solid var(--line,#e0e3e9);border-radius:10px;background:var(--panel,#fff);color:var(--sub,#5b6572);font-size:11px;font-weight:650}
+.nora-lock-error{min-height:16px;color:var(--danger,#b3261e);font-size:12px;line-height:1.4}
+.nora-lock-submit{height:46px;width:100%;border:0;border-radius:12px;background:var(--accent,#1f4e8c);color:var(--accent-ink,#fff);font-size:13px;font-weight:750}
+.nora-lock-cancel{height:38px;width:100%;border:1px solid var(--line,#e0e3e9);border-radius:11px;background:transparent;color:var(--sub,#5b6572);font-size:12px;font-weight:650}
+.nora-lock-foot{margin:0;text-align:center;font-size:10.5px;line-height:1.5;color:var(--sub,#5b6572)}
+@keyframes noraLockIn{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:460px){.nora-lock-card{padding:23px 19px;border-radius:18px}.nora-lock-title{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.nora-lock-card{animation:none}}
+.nora-od-picker-overlay{position:fixed;inset:0;z-index:9000;background:rgba(10,15,24,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:18px}
+.nora-od-picker{width:min(100%,820px);max-height:min(850px,92vh);display:flex;flex-direction:column;gap:14px;overflow:hidden;margin:0!important;padding:22px!important;border-radius:18px!important;box-shadow:0 24px 80px #0003}
+.pk-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.pk-head h2{font-size:20px;letter-spacing:-.03em;margin:0 0 5px}.pk-head p{margin:0;color:var(--sub);font-size:12px;line-height:1.5;max-width:620px}.pk-eyebrow{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--accent);margin-bottom:5px}.pk-head .pk-x{width:34px;height:34px;flex:0 0 auto;font-size:20px;padding:0}
+.pk-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,230px);gap:9px}.pk-q{width:100%;height:42px}.pk-folder{width:100%;height:42px}.pk-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.pk-bulk{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-only-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--sub);padding:4px 7px}.pk-only-label input{accent-color:var(--accent)}.pk-cnt{font-size:11px;font-weight:650;color:var(--sub);font-variant-numeric:tabular-nums}.pk-list-wrap{flex:1;min-height:130px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.pk-file-row{display:flex;align-items:center;gap:11px;padding:12px 13px;border-bottom:1px solid var(--line);cursor:pointer;min-width:0;transition:background .12s}.pk-file-row:last-child{border-bottom:0}.pk-file-row:hover{background:color-mix(in srgb,var(--accent) 5%,var(--panel2))}.pk-file-row>input{width:16px;height:16px;flex:0 0 auto;accent-color:var(--accent)}.pk-file-icon{width:36px;height:40px;display:grid;place-items:center;flex:0 0 auto;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent2) 45%,var(--line));background:color-mix(in srgb,var(--accent2) 10%,var(--panel));color:var(--accent2);font-size:9px;font-weight:850;letter-spacing:.02em}.pk-file-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}.pk-file-title{font-size:12px;font-weight:700;overflow-wrap:anywhere;color:var(--ink)}.pk-file-path,.pk-file-meta{font-size:10px;line-height:1.4;color:var(--sub);overflow-wrap:anywhere}.pk-file-meta{font-variant-numeric:tabular-nums}.pk-new{color:var(--accent);font-size:9px;letter-spacing:.07em}.pk-row-check{width:17px;height:17px;flex:0 0 auto;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center}.pk-file-row:has(input:checked) .pk-row-check{border-color:var(--accent);background:var(--accent)}.pk-file-row:has(input:checked) .pk-row-check:after{content:'✓';color:var(--accent-ink);font-size:11px;font-weight:800}.pk-empty{min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;text-align:center;padding:22px;color:var(--sub);font-size:12px}.pk-empty b{color:var(--ink);font-size:13px}.pk-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.pk-safe-note{display:inline-flex;align-items:center;gap:7px;color:var(--sub);font-size:10px}.pk-safe-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block}.pk-foot>div{display:flex;gap:7px}.pk-foot button{min-height:36px}.pk-status{min-height:14px;color:var(--sub);font-size:11px}.od-security-note{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:11px;line-height:1.55;color:var(--sub)}.od-security-note b{color:var(--ink)}
+@media(max-width:620px){.nora-od-picker-overlay{padding:8px}.nora-od-picker{max-height:96vh;padding:14px!important;border-radius:14px!important}.pk-tools{grid-template-columns:1fr}.pk-actions{align-items:flex-start}.pk-bulk{gap:4px}.pk-bulk button{font-size:10px}.pk-foot{align-items:flex-start}.pk-safe-note{max-width:180px}.pk-foot>div{margin-left:auto}}
+</style>
 <script id="nora-onedrive">
 /* ===================================================================
    NORA · Sincronización automática con OneDrive (solo lectura)
@@ -7385,17 +7470,23 @@ let resolve,fails=0,timer,ov=null,hiddenAt=0;
 window.NoraLockReady=new Promise(r=>resolve=r);
 function box(title,fields,okTxt,onOk,cancel){
   if(ov)ov.remove();
-  ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
-  ov.innerHTML='<div style="background:#1e293b;color:#f1f5f9;padding:24px;border-radius:14px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px"><div style="font-size:18px;font-weight:700">🔒 '+title+'</div>'+fields.map(f=>'<input type="password" inputmode="numeric" autocomplete="off" placeholder="'+f+'" style="padding:12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:16px">').join('')+'<div class="lk-err" style="color:#fca5a5;font-size:13px;min-height:16px"></div><button class="lk-ok" style="padding:12px;border:0;border-radius:8px;background:#38bdf8;color:#0f172a;font-weight:700;font-size:15px">'+okTxt+'</button>'+(cancel?'<button class="lk-no" style="padding:8px;border:0;background:none;color:#94a3b8">Cancelar</button>':'')+'</div>';
+  document.body.classList.add('nora-is-locked');ov=document.createElement('div');ov.className='nora-lock-overlay';
+  const desc=title.toLowerCase().includes('nuevo pin')?'Definí un PIN para bloquear el acceso a la interfaz de Nora.':'Ingresá tu PIN para continuar.';
+  ov.innerHTML='<section class="nora-lock-card" role="dialog" aria-modal="true" aria-labelledby="nora-lock-title">'+
+    '<div class="nora-lock-brand"><span class="nora-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v2"></path></svg></span><span><span class="nora-lock-brand-name">Nora</span><span class="nora-lock-brand-sub">GESTIÓN · ESPACIO PRIVADO</span></span></div>'+
+    '<h2 id="nora-lock-title" class="nora-lock-title">'+title+'</h2><p class="nora-lock-desc">'+desc+'</p><div class="nora-lock-fields">'+fields.map((f,i)=>'<div class="nora-lock-field"><label for="nora-lock-input-'+i+'">'+f+'</label><div class="nora-lock-input-row"><input id="nora-lock-input-'+i+'" class="nora-lock-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="'+f+'" placeholder="'.concat(i===0?'••••••':'Repetí el PIN')+'"><button type="button" class="nora-lock-toggle" data-lk-toggle="'+i+'">Mostrar</button></div></div>').join('')+'</div>'+
+    '<div class="nora-lock-error" role="status" aria-live="polite"></div><button type="button" class="nora-lock-submit">'+okTxt+'</button>'+(cancel?'<button type="button" class="nora-lock-cancel">Cancelar</button>':'')+
+    '<p class="nora-lock-foot">El PIN bloquea esta pantalla. Para proteger los datos locales, mantené segura tu cuenta del dispositivo.</p></section>';
   document.body.appendChild(ov);
-  const ins=[...ov.querySelectorAll('input')],err=ov.querySelector('.lk-err');ins[0].focus();
-  const go=async()=>{err.textContent='';const r=await onOk(ins.map(i=>i.value),m=>err.textContent=m);if(r===false)ins.forEach(i=>i.value='');};
-  ov.querySelector('.lk-ok').onclick=go;ins.forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')go();});
-  if(cancel)ov.querySelector('.lk-no').onclick=()=>{ov.remove();ov=null;};
+  const ins=[...ov.querySelectorAll('input')],err=ov.querySelector('.nora-lock-error');ins[0].focus();
+  const go=async()=>{err.textContent='';const btn=ov&&ov.querySelector('.nora-lock-submit');if(btn)btn.disabled=true;try{const r=await onOk(ins.map(i=>i.value),m=>err.textContent=m);if(r===false)ins.forEach(i=>i.value='');}finally{if(btn&&ov)btn.disabled=false;}};
+  ov.querySelector('.nora-lock-submit').onclick=go;ins.forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')go();});
+  ov.querySelectorAll('[data-lk-toggle]').forEach(b=>b.onclick=()=>{const i=ins[+b.dataset.lkToggle];if(!i)return;i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Mostrar':'Ocultar';i.focus();});
+  if(cancel)ov.querySelector('.nora-lock-cancel').onclick=()=>{ov.remove();ov=null;document.body.classList.remove('nora-is-locked');};
 }
-const close=()=>{if(ov){ov.remove();ov=null;}};
+const close=()=>{if(ov){ov.remove();ov=null;}document.body.classList.remove('nora-is-locked');};
 function ask(then){
-  box('Nora bloqueada',['PIN'],'Desbloquear',async([pin],say)=>{
+  box('Nora bloqueada',['PIN de acceso'],'Desbloquear',async([pin],say)=>{
     const c=get();if(!c){close();then&&then();return true;}
     if(fails)await new Promise(r=>setTimeout(r,Math.min(30,Math.pow(2,fails))*1000));
     if(await hash(pin,unb(c.salt))===c.hash){fails=0;close();then&&then();return true;}
@@ -7406,8 +7497,8 @@ function bump(){clearTimeout(timer);if(get())timer=setTimeout(lock,IDLE);}
 ['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,()=>{if(!ov)bump();},{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(get()&&hiddenAt&&Date.now()-hiddenAt>IDLE)lock();});
 window.NoraLock={
-  setup(){const doSet=()=>box('Nuevo PIN',['PIN (mín. 4 dígitos)','Repetir PIN'],'Guardar',async([a,b],say)=>{
-      if(a.length<4){say('Mínimo 4 caracteres');return false;}if(a!==b){say('Los PIN no coinciden');return false;}
+  setup(){const doSet=()=>box('Nuevo PIN',['PIN nuevo (6 a 12 dígitos)','Repetir PIN'],'Guardar PIN',async([a,b],say)=>{
+      if(!/^\d{6,12}$/.test(a)){say('Usá entre 6 y 12 dígitos.');return false;}if(a!==b){say('Los PIN no coinciden');return false;}
       const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(a,salt)}));
       close();bump();try{window.notify&&notify('PIN guardado','ok');}catch(e){}return true;},true);
     if(get())ask(doSet);else doSet();},
@@ -7439,6 +7530,21 @@ const MAX_DEPTH=3;
 
 const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const K_REMEMBER='nora_od_remember_session_v1';
+let volatileToken=null;
+function readToken(){
+  try{const live=sessionStorage.getItem(K_TOK);if(live){volatileToken=JSON.parse(live);return volatileToken;}}catch(e){}
+  try{const saved=localStorage.getItem(K_TOK);if(!saved)return volatileToken;const token=JSON.parse(saved);volatileToken=token;
+    if(jget(K_REMEMBER,false)===true)return token;
+    try{sessionStorage.setItem(K_TOK,saved);localStorage.removeItem(K_TOK);}catch(e){}
+    return token;
+  }catch(e){return volatileToken;}
+}
+function writeToken(token){
+  volatileToken=token;const raw=JSON.stringify(token);
+  try{if(jget(K_REMEMBER,false)===true){localStorage.setItem(K_TOK,raw);sessionStorage.removeItem(K_TOK);}else{sessionStorage.setItem(K_TOK,raw);localStorage.removeItem(K_TOK);}}catch(e){}
+}
+function clearToken(){volatileToken=null;try{localStorage.removeItem(K_TOK);}catch(e){}try{sessionStorage.removeItem(K_TOK);}catch(e){}}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const $$=sel=>Array.from(document.querySelectorAll(sel));
 const log=(m,t)=>{try{if(window.AppLog)AppLog.write('OneDrive: '+m,t||'info');}catch(e){}};
@@ -7452,10 +7558,10 @@ function loadCfg(){
 }
 let cfg=loadCfg();
 const ready=()=>!!(cfg.clientId&&cfg.clientId.trim());
-const hasTok=()=>!!jget(K_TOK,null);
+const hasTok=()=>!!readToken();
 const K_SEL='nora_od_sel_v1',K_LIST='nora_od_list_v1',K_HIST='nora_od_hist_v1';
 const getSel=()=>jget(K_SEL,null), setSel=v=>jset(K_SEL,v);
-const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function renderHist(){const h=jget(K_HIST,[]);$$('.od-hist-list').forEach(e=>{e.innerHTML=h.length?h.map(x=>'<div class="hint" style="margin:3px 0">'+new Date(x.t).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})+' · '+esc(x.m)+'</div>').join(''):'<div class="hint">Sin cambios registrados todavía.</div>';});}
 function hist(m){const h=jget(K_HIST,[]);h.unshift({t:Date.now(),m});jset(K_HIST,h.slice(0,40));renderHist();}
 const curFiles=()=>(typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]);
@@ -7489,7 +7595,7 @@ async function startLogin(silent){
   if(!ready()){setStatus('Falta el ID de aplicación. Completalo en Ajustes → OneDrive.',true);return;}
   const verifier=rnd(48),state=rnd(12);
   const challenge=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
-  jset(K_PKCE,{verifier,state,silent:!!silent,t:Date.now()});
+  try{sessionStorage.setItem(K_PKCE,JSON.stringify({verifier,state,silent:!!silent,t:Date.now()}));}catch(e){jset(K_PKCE,{verifier,state,silent:!!silent,t:Date.now()});}
   const p=new URLSearchParams({
     client_id:cfg.clientId.trim(),response_type:'code',redirect_uri:REDIRECT,
     response_mode:'query',scope:SCOPE,state,code_challenge:challenge,code_challenge_method:'S256'
@@ -7508,9 +7614,9 @@ async function tokenRequest(params){
   }catch(e){const er=new Error('Sin conexión con Microsoft');er.offline=true;throw er;}
   const j=await r.json().catch(()=>({}));
   if(!r.ok||!j.access_token){const er=new Error(j.error_description||j.error||('HTTP '+r.status));er.code=j.error;throw er;}
-  const old=jget(K_TOK,{})||{};
+  const old=readToken()||{};
   const t={at:j.access_token,exp:Date.now()+(j.expires_in||3600)*1000-90000,rt:j.refresh_token||old.rt||''};
-  jset(K_TOK,t);
+  writeToken(t);
   return t;
 }
 
@@ -7518,10 +7624,10 @@ async function tokenRequest(params){
 async function handleRedirect(){
   const q=new URLSearchParams(location.search);
   if(!q.has('state')||!(q.has('code')||q.has('error')))return false;
-  const pk=jget(K_PKCE,null);
+  let pk=null;try{pk=JSON.parse(sessionStorage.getItem(K_PKCE)||'null');}catch(e){}if(!pk)pk=jget(K_PKCE,null);
   try{history.replaceState(null,'',REDIRECT);}catch(e){}
   if(!pk||pk.state!==q.get('state'))return false;          // no es una respuesta nuestra
-  try{localStorage.removeItem(K_PKCE);}catch(e){}
+  try{sessionStorage.removeItem(K_PKCE);}catch(e){}try{localStorage.removeItem(K_PKCE);}catch(e){}
   if(q.has('error')){
     const err=q.get('error');
     if(pk.silent&&/login_required|interaction_required|consent_required/.test(err)){
@@ -7540,14 +7646,14 @@ async function handleRedirect(){
 
 /* Devuelve un access token válido, o null si hay que volver a iniciar sesión. */
 async function getToken(){
-  const t=jget(K_TOK,null);
+  const t=readToken();
   if(!t)return null;
   if(t.at&&Date.now()<t.exp)return t.at;
   if(!t.rt)return null;
   try{return (await tokenRequest({grant_type:'refresh_token',refresh_token:t.rt})).at;}
   catch(e){
     if(e.offline)throw e;
-    try{localStorage.removeItem(K_TOK);}catch(_){}
+    clearToken();
     return null;
   }
 }
@@ -7627,31 +7733,109 @@ async function refreshList(){
   const token=await getToken();if(!token){setStatus('Primero conectá con Microsoft.',true);return false;}
   try{setStatus('Leyendo la carpeta…');const all=await listFolder(token);const m=new Map();
     all.forEach(it=>{const p=m.get(it.name);if(!p||it.mtime>p.mtime)m.set(it.name,it);});
-    jset(K_LIST,[...m.values()].map(i=>({name:i.name,path:i.path,mtime:i.mtime,size:i.size})));describeStatus();return true;}
+    jset(K_LIST,[...m.values()].map(i=>({id:i.id,name:i.name,path:i.path,mtime:i.mtime,size:i.size,etag:i.etag||''})));describeStatus();return true;}
   catch(e){setStatus('No se pudo leer la carpeta: '+e.message,true);return false;}
 }
 async function openPicker(){
-  if(!jget(K_LIST,null)&&!(await refreshList()))return;
-  const list=jget(K_LIST,[]).sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));
-  const sel=getSel()||{names:[],seen:[]},chosen=new Set(sel.names||[]),seen=new Set(sel.seen||[]),first=!getSel();
-  const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px';
-  ov.innerHTML='<div class="card" style="max-width:660px;width:100%;max-height:90vh;display:flex;flex-direction:column;gap:8px;overflow:hidden;margin:0"><h2>Elegir archivos a sincronizar</h2><input type="text" class="pk-q" placeholder="Buscar por nombre o carpeta…"><div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><button class="ghost miniBtn pk-all">Marcar visibles</button><button class="ghost miniBtn pk-none">Desmarcar visibles</button><button class="ghost miniBtn pk-ref">Actualizar lista</button><span class="hint pk-cnt"></span></div><div class="pk-list" style="overflow:auto;flex:1;border:1px solid rgba(128,128,128,.35);border-radius:8px"></div><div class="row" style="gap:8px;justify-content:flex-end"><button class="ghost miniBtn pk-cancel">Cancelar</button><button class="primary miniBtn pk-ok">Guardar y sincronizar</button></div></div>';
+  const cachedList=jget(K_LIST,null);
+  if((!Array.isArray(cachedList)||cachedList.some(i=>!i.id))&&!(await refreshList()))return;
+  let list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));
+  const sel=getSel()||{ids:[],names:[],seen:[]};
+  const chosen=new Set((sel.ids||[]).map(String));
+  const legacyNames=new Set((!chosen.size?(sel.names||[]):[]).map(String));
+  const seenIds=new Set((sel.seenIds||[]).map(String));
+  const seenNames=new Set((sel.seen||[]).map(String));
+  const first=!getSel();
+  const ov=document.createElement('div');ov.className='nora-od-picker-overlay';
+  ov.innerHTML='<section class="nora-od-picker card" role="dialog" aria-modal="true" aria-labelledby="pk-title">'+
+    '<header class="pk-head"><div><div class="pk-eyebrow">FUENTES DE DATOS</div><h2 id="pk-title">Elegir archivos</h2><p>Marcá las planillas que Nora debe leer. Los originales de OneDrive no se modifican ni se eliminan.</p></div><button type="button" class="iconbtn pk-x" aria-label="Cerrar">×</button></header>'+
+    '<div class="pk-tools"><input type="search" class="pk-q" placeholder="Buscar por nombre o carpeta…" aria-label="Buscar archivos" autocomplete="off">'+
+    '<select class="pk-folder" aria-label="Filtrar por carpeta"><option value="">Todas las carpetas</option></select></div>'+
+    '<div class="pk-actions"><div class="pk-bulk"><button type="button" class="secondary miniBtn pk-all">Marcar visibles</button><button type="button" class="ghost miniBtn pk-none">Desmarcar visibles</button><button type="button" class="ghost miniBtn pk-ref">Actualizar lista</button><label class="pk-only-label"><input type="checkbox" class="pk-only"> Solo seleccionados</label></div><div class="pk-cnt" aria-live="polite"></div></div>'+
+    '<div class="pk-list-wrap"><div class="pk-list"></div></div>'+
+    '<footer class="pk-foot"><span class="pk-safe-note"><span class="pk-safe-dot"></span>Solo lectura · sin borrar archivos originales</span><div><button type="button" class="secondary miniBtn pk-cancel">Cancelar</button> <button type="button" class="primary miniBtn pk-ok">Guardar selección</button></div></footer>'+
+    '<div class="pk-status" aria-live="polite"></div></section>';
   document.body.appendChild(ov);
   const q=c=>ov.querySelector(c);let vis=[];
-  function draw(){
-    const t=q('.pk-q').value.trim().toLowerCase();
-    vis=list.filter(i=>!t||(i.name+' '+i.path).toLowerCase().includes(t));
-    q('.pk-list').innerHTML=vis.map((i,k)=>'<label style="display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-bottom:1px solid rgba(128,128,128,.2);cursor:pointer"><input type="checkbox" data-k="'+k+'" '+(chosen.has(i.name)?'checked':'')+'><span style="flex:1;min-width:0"><b style="word-break:break-word">'+esc(i.name)+'</b>'+(seen.has(i.name)||first?'':' <span class="tag">NUEVO</span>')+'<br><span class="hint">'+esc(i.path||'(carpeta principal)')+' · '+(i.mtime?new Date(i.mtime).toLocaleDateString('es-AR'):'')+' · '+Math.round((i.size||0)/1024)+' KB</span></span></label>').join('')||'<div class="hint" style="padding:12px">No hay coincidencias.</div>';
-    q('.pk-cnt').textContent=chosen.size+' elegido(s) de '+list.length;
+  const folderOf=i=>i.path||'';
+  function fillFolders(){
+    const f=q('.pk-folder'),prev=f.value;
+    const folders=[...new Set(list.map(folderOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    f.innerHTML='<option value="">Todas las carpetas</option>'+folders.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+    if(folders.includes(prev))f.value=prev;
   }
-  ov.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;const n=vis[+k].name;e.target.checked?chosen.add(n):chosen.delete(n);q('.pk-cnt').textContent=chosen.size+' elegido(s) de '+list.length;});
-  q('.pk-q').oninput=draw;
-  q('.pk-all').onclick=()=>{vis.forEach(i=>chosen.add(i.name));draw();};
-  q('.pk-none').onclick=()=>{vis.forEach(i=>chosen.delete(i.name));draw();};
-  q('.pk-ref').onclick=async()=>{if(await refreshList()){ov.remove();openPicker();}};
-  q('.pk-cancel').onclick=()=>ov.remove();
-  q('.pk-ok').onclick=()=>{setSel({names:[...chosen],seen:list.map(i=>i.name)});ov.remove();sync({manual:true});};
-  draw();
+  function draw(){
+    const t=q('.pk-q').value.trim().toLocaleLowerCase('es-AR'),folder=q('.pk-folder').value,only=q('.pk-only').checked;
+    vis=list.filter(i=>{
+      const matchText=!t||(i.name+' '+i.path).toLocaleLowerCase('es-AR').includes(t);
+      const matchFolder=!folder||folderOf(i)===folder;
+      const checked=chosen.has(String(i.id))||legacyNames.has(i.name);
+      return matchText&&matchFolder&&(!only||checked);
+    });
+    q('.pk-list').innerHTML=vis.map((i,k)=>{
+      const id=String(i.id||'');const checked=chosen.has(id)||legacyNames.has(i.name);
+      const fresh=!(seenIds.has(id)||seenNames.has(i.name)||first);
+      const date=i.mtime?new Date(i.mtime).toLocaleDateString('es-AR'):'Sin fecha';
+      const size=(i.size||0)>=1048576?((i.size||0)/1048576).toLocaleString('es-AR',{maximumFractionDigits:1})+' MB':Math.max(1,Math.round((i.size||0)/1024))+' KB';
+      return '<label class="pk-file-row"><input type="checkbox" data-k="'+k+'" '+(checked?'checked':'')+'><span class="pk-file-icon" aria-hidden="true">XLS</span><span class="pk-file-main"><span class="pk-file-title">'+esc(i.name)+'</span><span class="pk-file-path">'+esc(i.path||'Carpeta principal')+'</span><span class="pk-file-meta">'+esc(date)+' · '+esc(size)+(fresh?' · <b class="pk-new">NUEVO</b>':'')+'</span></span><span class="pk-row-check" aria-hidden="true"></span></label>';
+    }).join('')||'<div class="pk-empty"><b>No encontramos coincidencias</b><span>Probá con otro nombre o cambiá el filtro de carpeta.</span></div>';
+    const selectedNow=list.filter(i=>chosen.has(String(i.id))||legacyNames.has(i.name)).length;
+    q('.pk-cnt').textContent=selectedNow+' seleccionados · '+vis.length+' visibles de '+list.length;
+    q('.pk-all').disabled=!vis.length;q('.pk-none').disabled=!vis.length;
+  }
+  ov.addEventListener('change',e=>{
+    const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;
+    const it=vis[+k];if(!it)return;const id=String(it.id||'');
+    if(e.target.checked){chosen.add(id);legacyNames.delete(it.name);}else{chosen.delete(id);legacyNames.delete(it.name);}
+    draw();
+  });
+  q('.pk-q').oninput=draw;q('.pk-folder').onchange=draw;q('.pk-only').onchange=draw;
+  q('.pk-all').onclick=()=>{vis.forEach(i=>{chosen.add(String(i.id||''));legacyNames.delete(i.name);});draw();};
+  q('.pk-none').onclick=()=>{vis.forEach(i=>{chosen.delete(String(i.id||''));legacyNames.delete(i.name);});draw();};
+  q('.pk-ref').onclick=async()=>{
+    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando la lista de OneDrive…';
+    const ok=await refreshList();
+    if(ok){list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));fillFolders();draw();q('.pk-status').textContent='Lista actualizada.';}
+    else q('.pk-status').textContent='No se pudo actualizar. Revisá la conexión y volvé a intentar.';
+    q('.pk-ref').disabled=false;
+  };
+  const close=()=>ov.remove();q('.pk-x').onclick=close;q('.pk-cancel').onclick=close;
+  ov.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+  q('.pk-ok').onclick=async()=>{
+    const validIds=list.filter(i=>chosen.has(String(i.id||''))||legacyNames.has(i.name)).map(i=>String(i.id||''));
+    const validItems=list.filter(i=>validIds.includes(String(i.id||'')));
+    const previous=getSel()||{ids:[],names:[]};
+    const previousIds=new Set((previous.ids||[]).map(String));
+    const previousNames=new Set(previous.names||[]);
+    const nextIds=new Set(validIds);
+    const removedIds=new Set([...previousIds].filter(id=>!nextIds.has(id)));
+    // Migración segura: si la versión anterior guardaba solo nombres, desvinculamos por nombre.
+    const removedNames=new Set([...previousNames].filter(name=>!validItems.some(i=>i.name===name)));
+    const st=jget(K_ST,{files:{}})||{};st.files=st.files||{};
+    Object.keys(st.files).forEach(id=>{
+      if(!nextIds.has(String(id))){
+        if(st.files[id]?.name)removedNames.add(st.files[id].name);
+        delete st.files[id];
+      }
+    });
+    if(typeof FILES!=='undefined'&&Array.isArray(FILES)){
+      const before=FILES.length;
+      FILES=FILES.filter(f=>{
+        if(f.source==='onedrive')return nextIds.has(String(f.sourceId||''));
+        if(!f.source&&removedNames.has(f.name))return false;
+        return true;
+      });
+      if(FILES.length!==before){
+        rebuildRecords();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
+        if(FILES.length)await saveState();else await clearState();
+      }
+    }
+    setSel({ids:validIds,names:validItems.map(i=>i.name),seenIds:list.map(i=>String(i.id||'')),seen:list.map(i=>i.name)});
+    jset(K_ST,st);
+    removedNames.forEach(name=>window.NoraSourceExclusions?.exclude(name));
+    close();await sync({manual:true});
+  };
+  fillFolders();draw();q('.pk-q').focus();
 }
 
 /* ------------------------------------------------------- sincronizar --- */
@@ -7677,19 +7861,27 @@ async function sync(opts){
       else log('nombre repetido «'+it.name+'»: se ignora la copia de «'+it.path+'»','warn');
     });
     const items=Array.from(byName.values());
-    jset(K_LIST,items.map(i=>({name:i.name,path:i.path,mtime:i.mtime,size:i.size})));
+    jset(K_LIST,items.map(i=>({id:i.id,name:i.name,path:i.path,mtime:i.mtime,size:i.size,etag:i.etag||''})));
     const selObj=getSel();
     if(!selObj){setStatus('Encontré '+items.length+' Excel en OneDrive. Tocá «Elegir archivos» para indicar cuáles sincronizar.',true);return;}
-    const selSet=new Set(selObj.names||[]);
-    const chosen=items.filter(i=>selSet.has(i.name));
-    const fresh=items.filter(i=>!selSet.has(i.name)&&!(selObj.seen||[]).includes(i.name)).length;
+    const selSet=new Set((selObj.ids||[]).map(String));
+    const legacyNames=new Set(!selSet.size?(selObj.names||[]):[]);
+    const isChosen=i=>selSet.has(String(i.id))||legacyNames.has(i.name);
+    const chosen=items.filter(isChosen);
+    const seenIds=new Set((selObj.seenIds||[]).map(String));
+    const seenNames=new Set(selObj.seen||[]);
+    const fresh=items.filter(i=>!isChosen(i)&&!seenIds.has(String(i.id))&&!seenNames.has(i.name)).length;
     const nota=fresh?' · '+fresh+' archivo(s) nuevo(s) sin elegir':'';
     if(!chosen.length){setStatus('No hay archivos elegidos. Tocá «Elegir archivos».'+nota,true);return;}
 
     const st=jget(K_ST,{files:{}});st.files=st.files||{};
     const have=new Set((typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]).map(f=>f.name));
     const sig=it=>it.etag+'|'+it.size;
-    const todo=chosen.filter(it=>!have.has(it.name)||!st.files[it.id]||st.files[it.id].sig!==sig(it));
+    const todo=chosen.filter(it=>{
+      const current=curFiles().find(f=>f.name===it.name);
+      const isSameCloudItem=current&&current.source==='onedrive'&&String(current.sourceId||'')===String(it.id);
+      return !have.has(it.name)||!isSameCloudItem||!st.files[it.id]||st.files[it.id].sig!==sig(it);
+    });
 
     const ids=new Set(items.map(i=>i.id));
     const gone=Object.keys(st.files).filter(id=>!ids.has(id));
@@ -7720,9 +7912,10 @@ async function sync(opts){
     if(files.length){
       setStatus('Procesando '+files.length+' archivo(s)…');
       const before=snap(okItems.map(i=>i.name));
-      await window.handleFiles(files,!opts.manual);
-      okItems.forEach(it=>{const m=diffMsg(it.name,before[it.name],curFiles().find(x=>x.name===it.name));if(m)changes.push(m);});
-      okItems.forEach(it=>{st.files[it.id]={sig:sig(it),name:it.name,mtime:it.mtime};});
+      await window.handleFiles(files,!opts.manual,{source:'onedrive',remoteItems:okItems});
+      const imported=okItems.filter(it=>curFiles().some(x=>x.name===it.name&&x.source==='onedrive'&&String(x.sourceId||'')===String(it.id)));
+      imported.forEach(it=>{const m=diffMsg(it.name,before[it.name],curFiles().find(x=>x.name===it.name));if(m)changes.push(m);});
+      imported.forEach(it=>{st.files[it.id]={sig:sig(it),name:it.name,mtime:it.mtime,path:it.path};});
     }
     st.last=Date.now();jset(K_ST,st);
     if(changes.length){hist(changes.join(' | '));toast(esc(changes.slice(0,2).join(' · '))+(changes.length>2?' …':''),'ok');}
@@ -7735,7 +7928,7 @@ async function sync(opts){
     if(e.offline){setStatus('Sin conexión · se muestran los últimos datos guardados.',true);}
     else if(e.status===404){setStatus('No encontré la carpeta «'+(cfg.folder||'(raíz)')+'» en tu OneDrive. Revisá el nombre en Ajustes.',true);}
     else if(e.status===401||e.status===403){
-      try{localStorage.removeItem(K_TOK);}catch(_){}
+      clearToken();
       setStatus('OneDrive rechazó el acceso ('+e.message+'). Tocá «Conectar con Microsoft».',true);
     }
     else setStatus('Error al sincronizar: '+e.message,true);
@@ -7761,11 +7954,11 @@ function cardHTML(full){
       '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
       '<button class="secondary miniBtn od-btn-pick">Elegir archivos…</button><button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button></div>'+
       '<div class="hint od-status" style="margin-top:8px"></div>'+
-      '<div class="hint" style="margin-top:4px">La configuración está en Ajustes → OneDrive.</div>';
+      '<div class="hint" style="margin-top:4px">Elegí y sincronizá las fuentes desde acá. Los archivos locales se agregan en Centro de datos; quitar un vínculo no borra el original.</div>'+
+      '<div class="hint" style="margin-top:4px">La configuración avanzada está en Ajustes → OneDrive.</div>';
   }
   return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive · sincronización automática</h2>'+
-    '<div class="hint">Nora lee tus Excel directo desde OneDrive cada vez que la abrís, en la PC o en el celular. '+
-    'Es solo lectura: nunca modifica tus archivos. Editás en Excel como siempre.</div>'+
+    '<div class="hint">Administrá desde este panel la conexión, los archivos vinculados y la sincronización. Para incorporar archivos desde tu PC usá Centro de datos. Nora procesa las planillas Excel que elegís; Microsoft Files.Read permite leer archivos de tu cuenta, pero este código no incorpora operaciones para modificar ni eliminar originales.</div>'+
     '<div class="status-line od-status" style="margin:10px 0"></div>'+
     '<div class="row" style="gap:8px;flex-wrap:wrap">'+
     '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
@@ -7778,13 +7971,13 @@ function cardHTML(full){
     '<input type="text" class="od-in-folder" placeholder="Ej: Cobranza/2026  (vacío = raíz de OneDrive)" autocomplete="off"></div>'+
     '<div class="row" style="gap:16px;flex-wrap:wrap;margin-top:8px">'+
     '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label>'+
-    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label></div>'+
+    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label>'+    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>'+    '<div class="hint">Si lo dejás desmarcado, el token queda limitado a esta pestaña y quizá tengas que volver a conectar Microsoft al abrir Nora en otra sesión.</div>'+
     '<div class="field" style="margin-top:8px"><label>Dirección de redirección (copiala en Azure)</label>'+
     '<div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1">'+
     '<button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
     '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar</button></div>'+
     '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Historial de cambios</summary><div class="od-hist-list" style="margin-top:6px"></div></details>'+
-    '<div style="margin-top:12px"><b>Bloqueo con PIN</b><div class="hint">Pide un PIN al abrir Nora y tras 5 min sin uso.</div><div class="row" style="gap:8px;margin-top:6px"><button class="secondary miniBtn od-btn-pin">Configurar / cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
+    '<div class="od-security-note"><b>Seguridad y privacidad</b><br>El PIN bloquea la interfaz, pero no cifra la base local. El token de Microsoft se guarda en la sesión de esta pestaña por defecto; solo se guarda entre sesiones si activás «Recordar sesión». El permiso Files.Read puede leer archivos de la cuenta, aunque Nora solo procesa los Excel seleccionados. No compartas el perfil del navegador y mantené protegido el usuario de Windows.</div>'+    '<div style="margin-top:12px"><b>Bloqueo con PIN</b><div class="hint">Bloquea Nora al abrirla y tras 5 minutos sin actividad.</div><div class="row" style="gap:8px;margin-top:6px"><button class="secondary miniBtn od-btn-pin">Configurar / cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
     pasos;
 }
 
@@ -7793,6 +7986,7 @@ function fillInputs(){
   $$('.od-in-folder').forEach(e=>e.value=cfg.folder||'');
   $$('.od-in-rec').forEach(e=>e.checked=!!cfg.recursive);
   $$('.od-in-auto').forEach(e=>e.checked=!!cfg.auto);
+  $$('.od-in-remember').forEach(e=>e.checked=jget(K_REMEMBER,false)===true);
   $$('.od-in-redir').forEach(e=>e.value=REDIRECT);
 }
 
@@ -7802,13 +7996,17 @@ function saveCfg(){
     clientId:(g('.od-in-client')?.value||'').trim(),
     folder:(g('.od-in-folder')?.value||'').trim().replace(/^\/+|\/+$/g,''),
     recursive:!!g('.od-in-rec')?.checked,
-    auto:!!g('.od-in-auto')?.checked
+    auto:!!g('.od-in-auto')?.checked,
+    rememberSession:!!g('.od-in-remember')?.checked
   };
   if(next.clientId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(next.clientId)){
     setStatus('El ID de aplicación no tiene el formato esperado (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).',true);return false;
   }
-  if(next.clientId!==cfg.clientId){try{localStorage.removeItem(K_TOK);}catch(e){}}
+  if(next.clientId!==cfg.clientId)clearToken();
   if(next.folder!==cfg.folder||next.recursive!==cfg.recursive){jset(K_ST,{files:{}});}   // fuerza releer
+  const existingToken=readToken();
+  jset(K_REMEMBER,next.rememberSession===true);
+  if(existingToken)writeToken(existingToken);
   // se guarda siempre (incluso vacío) para poder pisar los valores por defecto del archivo
   jset(K_CFG,{clientId:next.clientId||'',folder:next.folder,recursive:next.recursive,auto:next.auto});
   cfg=Object.assign({},cfg,next);
@@ -7838,7 +8036,7 @@ function buildUI(){
     else if(t.classList.contains('od-btn-pin')){ev.preventDefault();window.NoraLock&&NoraLock.setup();}
     else if(t.classList.contains('od-btn-nopin')){ev.preventDefault();window.NoraLock&&NoraLock.remove();}
     else if(t.classList.contains('od-btn-sync')){ev.preventDefault();sync({manual:true});}
-    else if(t.classList.contains('od-btn-disc')){ev.preventDefault();try{localStorage.removeItem(K_TOK);}catch(e){}describeStatus();toast('OneDrive desconectado','ok');}
+    else if(t.classList.contains('od-btn-disc')){ev.preventDefault();clearToken();describeStatus();toast('OneDrive desconectado','ok');}
     else if(t.classList.contains('od-btn-save')){ev.preventDefault();if(saveCfg())toast('Configuración de OneDrive guardada','ok');}
     else if(t.classList.contains('od-btn-copy')){
       ev.preventDefault();
