@@ -2962,15 +2962,13 @@ function defaultDestinations(name,kind){
   if(isSorteoFileName(name))return ['sorteos','dashboard','explorador','listados'];
   return DATA_DESTINATIONS.filter(x=>x[0]!=='control'&&x[0]!=='sorteos').map(x=>x[0]);
 }
+/* Las sugerencias se aplican solo al crear una fuente. Una vez que el usuario
+   elige destinos, se respeta exactamente su selección, incluso si queda vacía. */
 function normalizeDestinationsForFile(f,destinations){
   const name=f?.name||'';
   const kind=f?.kind||f?.sourceType||'data';
-  if(kind==='control'||isControlFileName(name))return ['control'];
-  let d=[...new Set((Array.isArray(destinations)?destinations:defaultDestinations(name,kind)).filter(x=>DATA_DESTINATIONS.some(y=>y[0]===x)))];
-  if(isSorteoFileName(name)){if(!d.includes('sorteos'))d.push('sorteos');}
-  else d=d.filter(x=>x!=='sorteos');
-  if(!d.length)d=defaultDestinations(name,kind);
-  return d;
+  const source=Array.isArray(destinations)?destinations:defaultDestinations(name,kind);
+  return [...new Set(source.filter(x=>DATA_DESTINATIONS.some(y=>y[0]===x)))];
 }
 function getFileDestinations(f){return normalizeDestinationsForFile(f,f?.destinations);}
 function fileHasDestination(f,d){return getFileDestinations(f).includes(d);}
@@ -3074,8 +3072,10 @@ async function handleFiles(files,silent,opts){
   if(!files||!files.length)return;
   const statusEl=document.getElementById('status');
   if(statusEl){statusEl.className='status-line';statusEl.textContent='Analizando '+files.length+' archivo(s)…';}
-  let added=[],replaced=[],allErrors=[],controlFiles=[];
+  let added=[],replaced=[],allErrors=[],controlFiles=[],filePosition=0;
   for(const file of files){
+    filePosition++;
+    try{if(typeof opts?.onProgress==='function')opts.onProgress({current:filePosition,total:files.length,name:file.name});}catch(_){}
     try{
       const __source=opts?.source||'local';
       const __sourceMeta=__source==='onedrive'
@@ -3088,7 +3088,8 @@ async function handleFiles(files,silent,opts){
         const idx=FILES.findIndex(f=>f.name===file.name);
         const prevEntry=FILES.find(f=>f.name===file.name);
         const rawControl=await file.arrayBuffer();
-        const entry={...__sourceProps,name:file.name,records:[],sourceType:'control',kind:'control',destinations:['control'],raw:rawControl};
+        const preservedDests=prevEntry&&Array.isArray(prevEntry.destinations)?prevEntry.destinations:['control'];
+        const entry={...__sourceProps,name:file.name,records:[],sourceType:'control',kind:'control',destinations:normalizeDestinationsForFile({name:file.name,kind:'control'},preservedDests),raw:rawControl};
         if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
         continue;
       }
@@ -3108,6 +3109,8 @@ async function handleFiles(files,silent,opts){
   rebuildRecords();renderFilesList();updateStatusLine(added,replaced,allErrors);syncDataCenterUI();
   for(const file of controlFiles){
     try{
+      const controlEntry=FILES.find(f=>f.name===file.name);
+      if(!controlEntry||!fileHasDestination(controlEntry,'control'))continue;
       if(typeof window.noraControlLoadFile==='function'){
         await window.noraControlLoadFile(file);
       }else{
@@ -3118,7 +3121,7 @@ async function handleFiles(files,silent,opts){
   }
   if(!controlFiles.length&&typeof window.noraControlSync==='function'){const __cf=FILES.find(f=>f.raw&&fileHasDestination(f,'control')&&files.some(x=>x.name===f.name));if(__cf){try{await window.noraControlSync(true);}catch(e){}}}
   if(!opts?.fromSorteo && typeof window.__sorteoLoadFiles==='function'){
-    const lf=files.filter(f=>isSorteoFileName(f.name));
+    const lf=files.filter(f=>isSorteoFileName(f.name)&&fileHasDestination(FILES.find(x=>x.name===f.name)||{},'sorteos'));
     if(lf.length){
       try{await window.__sorteoLoadFiles(lf,true);}catch(e){if(window.AppLog?.error)AppLog.error('No se pudo sincronizar sorteo: '+(e.message||e));}
       // El lector específico de Sorteos puede ser el primero en crear los L -; conservar el ID de OneDrive.
@@ -3143,7 +3146,7 @@ async function handleFiles(files,silent,opts){
   if(!silent){
     if(added.length)notify(added.length+' archivo(s) agregado(s)','ok');if(replaced.length)notify(replaced.length+' archivo(s) actualizado(s)','ok');
     allErrors.forEach(e=>e.errors.slice(0,3).forEach(err=>notify(`${e.file}: ${err.col?'['+err.col+'] ':''}${err.msg}${err.row?' (fila '+err.row+')':''}`,'err',{duration:7000})));
-    if(controlFiles.length&&!allErrors.length)notify('Planilla Control detectada automáticamente y enviada a Control','ok');
+    if(controlFiles.some(file=>{const e=FILES.find(f=>f.name===file.name);return e&&fileHasDestination(e,'control');})&&!allErrors.length)notify('Planilla Control detectada y enviada a Control','ok');
   }
   renderHome();
   return {added:added.slice(),replaced:replaced.slice(),errors:allErrors.slice(),fileCount:files.length};
@@ -3162,7 +3165,8 @@ function renderDataManager(){
     const sourceLabel=f.source==='onedrive'?'OneDrive':f.source==='local'?'Este equipo':'Importado';
     const sourceClass=f.source==='onedrive'?'cloud':f.source==='local'?'local':'legacy';
     const pathInfo=f.source==='onedrive'&&f.sourcePath?' · '+esc(f.sourcePath):'';
-    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta"><span class="dm-source-pill ${sourceClass}">${sourceLabel}</span>${pathInfo} · ${isCtl?'Planilla de Control · solo Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}" title="Quita el archivo de Nora; no borra el Excel original"><span class="b-ic" data-icon="trash"></span>Quitar de Nora</button></div></div>`;
+    const typeLabel=isCtl?'Planilla identificada como Control':isSort?'Archivo L - · formato de Sorteos':'Excel de datos';
+    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta"><span class="dm-source-pill ${sourceClass}">${sourceLabel}</span>${pathInfo} · ${typeLabel} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''}>${label}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}">Todos los destinos</button><button class="ghost miniBtn" data-dm-clear="${i}">Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}" title="Quita el archivo de Nora; no borra el Excel original"><span class="b-ic" data-icon="trash"></span>Quitar de Nora</button></div></div>`;
   }).join('');
   list.querySelectorAll('[data-dm-dest]').forEach(ch=>ch.onchange=async()=>{
     const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f||ch.disabled)return;
@@ -3172,8 +3176,8 @@ function renderDataManager(){
     if(document.getElementById('view-datos')?.classList.contains('active'))renderDataViewer();
     if(document.getElementById('view-dash')?.classList.contains('active'))updateDashboard();
   });
-  list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
-  list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=isSorteoFileName(f.name)?['sorteos']:['dashboard'];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f)return;f.destinations=DATA_DESTINATIONS.map(x=>x[0]);await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f)return;f.destinations=[];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{
     const i=+b.dataset.dmRemove,f=FILES[i];if(!f)return;
     if(!confirm('¿Quitar '+f.name+' de Nora? El archivo original en su ubicación no se borra.'))return;
@@ -4016,7 +4020,7 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
       kind:f.kind||f.sourceType||'data',
       sourceType:f.sourceType||f.kind||'data',
       source:f.source||'',sourceId:f.sourceId||'',sourcePath:f.sourcePath||'',sourceSig:f.sourceSig||'',
-      destinations:normalizeDestinationsForFile(f,Array.isArray(f.destinations)&&f.destinations.length?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data')),
+      destinations:normalizeDestinationsForFile(f,Array.isArray(f.destinations)?f.destinations:defaultDestinations(f.name,f.kind||f.sourceType||'data')),
       raw:f.raw||null,
       records:(f.records||[]).map(r=>{
         let fc=r.fcarga;
@@ -7671,10 +7675,23 @@ function diffMsg(name,prev,f){
 }
 
 /* ---------------------------------------------------------- estado ---- */
-let statusMsg='', statusWarn=false, busy=false;
-function setStatus(msg,warn){
-  statusMsg=msg;statusWarn=!!warn;
-  $$('.od-status').forEach(e=>{e.textContent=msg;e.style.color=warn?'var(--warn)':'';});
+let statusMsg='', statusWarn=false, busy=false, statusProgress=null;
+function setStatus(msg,warn,progress){
+  statusMsg=msg;statusWarn=!!warn;statusProgress=progress||null;
+  $$('.od-status').forEach(e=>{
+    e.replaceChildren();e.style.color=warn?'var(--warn)':'';
+    const row=document.createElement('div');row.className='od-status-row';
+    const dot=document.createElement('span');dot.className='od-status-dot'+((busy||statusProgress?.active)?' is-active':'')+(warn?' is-warn':'');
+    const label=document.createElement('span');label.className='od-status-label';label.textContent=msg;
+    row.append(dot,label);e.appendChild(row);
+    const pr=statusProgress;
+    if(pr&&Number(pr.total)>0){
+      const total=Math.max(1,Number(pr.total)),current=Math.max(0,Math.min(total,Number(pr.current)||0)),pct=Math.round(current/total*100);
+      const wrap=document.createElement('div');wrap.className='od-operation-progress';wrap.setAttribute('role','progressbar');wrap.setAttribute('aria-valuemin','0');wrap.setAttribute('aria-valuemax',String(total));wrap.setAttribute('aria-valuenow',String(current));wrap.setAttribute('aria-label','Progreso de sincronización');
+      const bar=document.createElement('span');bar.className='od-operation-progress-bar';bar.style.width=pct+'%';wrap.appendChild(bar);e.appendChild(wrap);
+      const meta=document.createElement('div');meta.className='od-operation-meta';meta.textContent=current+' de '+total+' · '+pct+'%';e.appendChild(meta);
+    }
+  });
   refreshButtons();
 }
 function refreshButtons(){
@@ -7839,9 +7856,23 @@ async function download(it,token){
   return blob;
 }
 
+function pathFromGraphParent(parent){
+  const raw=String(parent||'');
+  const at=raw.indexOf('root:');
+  if(at>=0)return raw.slice(at+5).replace(/^\/+|\/+$/g,'');
+  return raw.replace(/^\/drive\/items\/[^:]+:/,'').replace(/^\/+|\/+$/g,'');
+}
+async function getItemMetadata(token,id){
+  const query=new URLSearchParams({$select:'id,name,size,eTag,lastModifiedDateTime,file,folder,parentReference'}).toString();
+  const item=await gfetch(GRAPH+'/me/drive/items/'+encodeURIComponent(id)+'?'+query,token);
+  if(!item.file||!EXCEL_RE.test(item.name||''))throw new Error('El elemento seleccionado ya no es un Excel compatible.');
+  const cached=(jget(K_LIST,[])||[]).find(x=>String(x.id)===String(item.id));
+  const linked=curFiles().find(x=>x.source==='onedrive'&&String(x.sourceId||'')===String(item.id));
+  return {id:String(item.id),name:item.name,size:item.size||0,etag:item.eTag||'',mtime:item.lastModifiedDateTime||'',url:'',path:pathFromGraphParent(item.parentReference?.path)||(cached?.path||linked?.sourcePath||'')};
+}
 async function refreshList(){
   const token=await getToken();if(!token){setStatus('Primero conectá con Microsoft.',true);return false;}
-  try{setStatus('Leyendo la carpeta…');const all=await listFolder(token);const m=new Map();
+  try{setStatus('Leyendo las carpetas de OneDrive para actualizar el explorador…',false,{active:true});const all=await listFolder(token);const m=new Map();
     all.forEach(it=>{const p=m.get(it.name);if(!p||it.mtime>p.mtime)m.set(it.name,it);});
     jset(K_LIST,[...m.values()].map(i=>({id:i.id,name:i.name,path:i.path,mtime:i.mtime,size:i.size,etag:i.etag||''})));describeStatus();return true;}
   catch(e){setStatus('No se pudo leer la carpeta: '+e.message,true);return false;}
@@ -7988,79 +8019,127 @@ async function sync(opts){
   if(busy||!ready())return;
   busy=true;refreshButtons();
   try{
-    setStatus('Buscando cambios en OneDrive…');
+    setStatus('Preparando la sesión de OneDrive…',false,{active:true});
     const token=await getToken();
     if(!token){
       if(opts.boot&&await trySilentRedirect())return;
-      setStatus('La sesión de OneDrive venció. Tocá «Reconectar» para renovarla. (Se siguen viendo los últimos datos guardados.)',true);
+      setStatus('La sesión de OneDrive venció. Tocá «Reconectar» para renovarla. Los últimos datos guardados siguen disponibles.',true);
       return;
     }
-    const all=await listFolder(token);
 
-    /* nombres repetidos en distintas subcarpetas: Nora identifica por nombre */
-    const byName=new Map();
-    all.forEach(it=>{
-      const p=byName.get(it.name);
-      if(!p||it.mtime>p.mtime){if(p)log('nombre repetido «'+it.name+'»: se usa el más reciente ('+it.path+')','warn');byName.set(it.name,it);}
-      else log('nombre repetido «'+it.name+'»: se ignora la copia de «'+it.path+'»','warn');
+    const storedSel=getSel()||{};
+    const persistedIds=new Set((storedSel.ids||[]).map(String).filter(Boolean));
+    const linkedCloud=curFiles().filter(f=>f.source==='onedrive'&&f.sourceId);
+    const selectedIds=new Set(persistedIds);
+    // Las planillas ya incorporadas y todavía visibles en Nora siguen siendo fuentes válidas,
+    // pero jamás se enumeran todas las carpetas para encontrarlas.
+    linkedCloud.forEach(f=>selectedIds.add(String(f.sourceId)));
+
+    // Compatibilidad con la selección antigua guardada solo por nombre. Solo se hace
+    // esta migración puntual cuando aún no existe ningún ID seleccionado/vinculado.
+    const legacyNames=new Set((storedSel.names||[]).map(String).filter(Boolean));
+    if(!persistedIds.size&&!linkedCloud.length&&legacyNames.size){
+      let cache=jget(K_LIST,[])||[];
+      let matches=cache.filter(i=>legacyNames.has(i.name)&&i.id);
+      const matchedNames=new Set(matches.map(i=>i.name));
+      if([...legacyNames].some(n=>!matchedNames.has(n))){
+        setStatus('Actualizando una vez los vínculos antiguos para obtener sus identificadores…',false,{active:true});
+        const scanned=await listFolder(token);
+        const byName=new Map();
+        scanned.forEach(it=>{if(!legacyNames.has(it.name))return;const prev=byName.get(it.name);if(!prev||it.mtime>prev.mtime)byName.set(it.name,it);});
+        matches=[...byName.values()];
+        const merged=new Map((cache||[]).map(i=>[String(i.id||''),i]));
+        matches.forEach(it=>merged.set(String(it.id),{...it}));
+        jset(K_LIST,[...merged.values()].filter(i=>i.id));
+      }
+      matches.forEach(i=>selectedIds.add(String(i.id)));
+      if(matches.length){
+        const namesById=new Map(matches.map(i=>[String(i.id),i.name]));
+        setSel({...storedSel,ids:[...selectedIds],names:[...new Set([...((storedSel.names)||[]),...matches.map(i=>i.name)])]});
+      }
+    }
+    if(!selectedIds.size){
+      setStatus('No hay archivos vinculados para revisar. Abrí «Explorar OneDrive…» y seleccioná las planillas que Nora debe sincronizar.',true);
+      return;
+    }
+
+    const known=new Map();
+    (jget(K_LIST,[])||[]).forEach(i=>{if(i.id)known.set(String(i.id),i);});
+    curFiles().filter(f=>f.source==='onedrive'&&f.sourceId).forEach(f=>{
+      const id=String(f.sourceId);if(!known.has(id))known.set(id,{id,name:f.name,path:f.sourcePath||''});
     });
-    const items=Array.from(byName.values());
-    jset(K_LIST,items.map(i=>({id:i.id,name:i.name,path:i.path,mtime:i.mtime,size:i.size,etag:i.etag||''})));
-    const selObj=getSel();
-    if(!selObj){setStatus('Encontré '+items.length+' Excel en OneDrive. Tocá «Elegir archivos» para indicar cuáles sincronizar.',true);return;}
-    const selSet=new Set((selObj.ids||[]).map(String));
-    const legacyNames=new Set(!selSet.size?(selObj.names||[]):[]);
-    const isChosen=i=>selSet.has(String(i.id))||legacyNames.has(i.name);
-    const chosen=items.filter(isChosen);
-    const seenIds=new Set((selObj.seenIds||[]).map(String));
-    const seenNames=new Set(selObj.seen||[]);
-    const fresh=items.filter(i=>!isChosen(i)&&!seenIds.has(String(i.id))&&!seenNames.has(i.name)).length;
-    const nota=fresh?' · '+fresh+' archivo(s) nuevo(s) sin elegir':'';
-    if(!chosen.length){setStatus('No hay archivos elegidos. Tocá «Elegir archivos».'+nota,true);return;}
+    const ids=[...selectedIds];
+    const items=[],missing=[],lookupErrors=[];
+    let readCount=0;
+    for(const id of ids){
+      readCount++;
+      const prior=known.get(id);const label=prior?.name||('archivo vinculado '+readCount);
+      setStatus('Leyendo metadatos de archivos vinculados · '+label,false,{active:true,current:readCount,total:ids.length});
+      try{
+        const fresh=await getItemMetadata(token,id);
+        items.push(fresh);known.set(id,fresh);
+      }catch(e){
+        if(e.status===404||e.status===410){missing.push(label);continue;}
+        if(e.status===401||e.status===403)throw e;
+        lookupErrors.push(label+': '+e.message);log('No se pudo leer metadatos de '+label+': '+e.message,'error');
+      }
+    }
+    if(!items.length){
+      const details=[...missing.map(n=>'ya no disponible: '+n),...lookupErrors].slice(0,3).join(' · ');
+      setStatus('No se pudo leer ningún archivo de la selección.'+(details?' '+details:' Revisá la conexión con OneDrive.'),true);
+      return;
+    }
 
-    const st=jget(K_ST,{files:{}});st.files=st.files||{};
-    const have=new Set((typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]).map(f=>f.name));
-    const sig=it=>it.etag+'|'+it.size;
+    // Actualiza los metadatos conocidos sin reemplazar la lista completa del explorador.
+    const cachedList=new Map((jget(K_LIST,[])||[]).filter(i=>i.id).map(i=>[String(i.id),i]));
+    items.forEach(i=>cachedList.set(String(i.id),{...(cachedList.get(String(i.id))||{}),...i}));
+    jset(K_LIST,[...cachedList.values()]);
+    const selNow=getSel()||{};
+    const selIds=[...new Set([...(selNow.ids||[]).map(String),...items.map(i=>String(i.id))])];
+    const selNames=[...new Set([...(selNow.names||[]),...items.map(i=>i.name)])];
+    setSel({...selNow,ids:selIds,names:selNames});
+
+    /* Si dos archivos seleccionados tienen el mismo nombre, el modelo de datos de Nora
+       (que indexa fuentes por nombre) solo puede incorporar una copia sin colisiones. */
+    const byName=new Map();
+    items.forEach(it=>{const prev=byName.get(it.name);if(!prev||it.mtime>prev.mtime){if(prev)log('Hay dos seleccionados llamados «'+it.name+'»; se procesa el más reciente para evitar mezclar registros.','warn');byName.set(it.name,it);}});
+    const chosen=[...byName.values()];
+    const st=jget(K_ST,{files:{}})||{};st.files=st.files||{};
+    const sig=it=>String(it.etag||'')+'|'+String(it.size||0)+'|'+String(it.mtime||'');
+    setStatus('Comparando versiones de las '+chosen.length+' planillas seleccionadas…',false,{active:true});
     const todo=chosen.filter(it=>{
-      const current=curFiles().find(f=>f.name===it.name);
-      const isSameCloudItem=current&&current.source==='onedrive'&&String(current.sourceId||'')===String(it.id);
+      const current=curFiles().find(f=>f.source==='onedrive'&&String(f.sourceId||'')===String(it.id));
       const remoteTag=String(it.etag||'');
       const entryTag=String(current?.sourceSig||'');
       const entryRevisionMismatch=!!remoteTag&&entryTag!==remoteTag;
-      return !have.has(it.name)||!isSameCloudItem||!st.files[it.id]||st.files[it.id].sig!==sig(it)||entryRevisionMismatch;
+      return !current||!st.files[it.id]||st.files[it.id].sig!==sig(it)||entryRevisionMismatch;
     });
 
-    const ids=new Set(items.map(i=>i.id));
-    const gone=Object.keys(st.files).filter(id=>!ids.has(id));
-    gone.forEach(id=>delete st.files[id]);
-
-    if(!items.length){
-      setStatus('No encontré archivos Excel en «'+(cfg.folder||'(raíz)')+'». Revisá el nombre de la carpeta.',true);
-      st.last=Date.now();jset(K_ST,st);return;
-    }
     if(!todo.length){
-      st.last=Date.now();jset(K_ST,st);
-      setStatus('✔ Todo al día · '+chosen.length+' elegido(s) · '+hora()+nota+(gone.length?' · '+gone.length+' ya no está(n) en OneDrive':''));
+      st.last=Date.now();jset(K_ST,st);renderSelectedFiles();
+      const suffix=missing.length?' · '+missing.length+' vínculo(s) ya no disponibles':'';
+      setStatus('Todo al día · '+chosen.length+' archivo(s) seleccionados revisados · '+hora()+suffix,missing.length>0||lookupErrors.length>0);
       return;
     }
 
     const files=[],okItems=[],fails=[],changes=[];
     let n=0;
     for(const it of todo){
-      n++;setStatus('Descargando '+n+'/'+todo.length+': '+it.name);
+      n++;setStatus('Descargando '+n+'/'+todo.length+' · '+it.name,false,{active:true,current:n-1,total:todo.length});
       try{
         const blob=await download(it,token);
         files.push(new File([blob],it.name,{
           type:blob.type||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           lastModified:Date.parse(it.mtime)||Date.now()}));
         okItems.push(it);
+        setStatus('Descargado '+n+'/'+todo.length+' · '+it.name,false,{active:true,current:n,total:todo.length});
       }catch(e){fails.push(e.message);log(e.message,'error');}
     }
     let imported=[];
     if(files.length){
-      setStatus('Procesando '+files.length+' archivo(s) en Nora…');
+      setStatus('Leyendo y procesando '+files.length+' planilla(s) en Nora…',false,{active:true,current:0,total:files.length});
       const before=snap(okItems.map(i=>i.name));
-      const importResult=await window.handleFiles(files,!opts.manual,{source:'onedrive',remoteItems:okItems});
+      const importResult=await window.handleFiles(files,!opts.manual,{source:'onedrive',remoteItems:okItems,onProgress:info=>setStatus('Leyendo Excel '+info.current+'/'+info.total+' · '+info.name,false,{active:true,current:info.current-1,total:info.total})});
       imported=okItems.filter(it=>curFiles().some(x=>x.name===it.name&&x.source==='onedrive'&&String(x.sourceId||'')===String(it.id)&&(!it.etag||String(x.sourceSig||'')===String(it.etag))));
       const failedItems=okItems.filter(it=>!imported.some(done=>String(done.id)===String(it.id)));
       failedItems.forEach(it=>{
@@ -8078,20 +8157,20 @@ async function sync(opts){
     else if(imported.length&&!opts.quiet)toast(imported.length+' archivo(s) incorporado(s) desde OneDrive','ok');
     if(fails.length)hist('Errores: '+fails.join(' | '));
     renderSelectedFiles();
-    setStatus((fails.length?'⚠ ':'✔ ')+imported.length+' incorporado(s) · '+chosen.length+' elegido(s) · '+hora()+nota+
-      (fails.length?' · '+fails.length+' con problema(s). '+fails.slice(0,2).join(' | '):''),fails.length>0);
-    log(imported.length+' archivo(s) incorporados'+(fails.length?', '+fails.length+' con error':''),fails.length?'error':'ok');
+    const diagnostics=[...fails,...lookupErrors,...missing.map(n=>'Ya no disponible: '+n)];
+    setStatus((diagnostics.length?'Atención · ':'Listo · ')+imported.length+' archivo(s) incorporado(s) · '+chosen.length+' seleccionado(s) revisados · '+hora()+(diagnostics.length?' · '+diagnostics.slice(0,2).join(' | '):''),diagnostics.length>0);
+    log(imported.length+' archivo(s) incorporados'+(diagnostics.length?', '+diagnostics.length+' problema(s)':''),diagnostics.length?'error':'ok');
   }catch(e){
-    if(e.offline){setStatus('Sin conexión · se muestran los últimos datos guardados.',true);}
-    else if(e.status===404){setStatus('No encontré la carpeta «'+(cfg.folder||'(raíz)')+'» en tu OneDrive. Revisá el nombre en Ajustes.',true);}
+    if(e.offline){setStatus('Sin conexión · se conservan los últimos datos guardados.',true);}
+    else if(e.status===404){setStatus('No se encontró uno de los archivos seleccionados. Abrí el explorador para revisar sus vínculos.',true);}
     else if(e.status===401||e.status===403){
       clearToken();
-      setStatus('OneDrive rechazó el acceso ('+e.message+'). Tocá «Conectar con Microsoft».',true);
+      setStatus('OneDrive rechazó el acceso ('+e.message+'). Tocá «Reconectar con Microsoft».',true);
     }
     else setStatus('Error al sincronizar: '+e.message,true);
     log('error: '+e.message+(e.stack?' · '+String(e.stack).split('\n')[1]:''),'error');
     try{console.error('[OneDrive]',e);}catch(_){}
-  }finally{busy=false;refreshButtons();}
+  }finally{busy=false;setStatus(statusMsg,statusWarn,statusProgress);refreshButtons();}
 }
 
 /* -------------------------------------------------------------- UI ----- */
@@ -8352,6 +8431,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .topbar-actions>*{scroll-margin-inline:4px}
 @media(max-width:720px){#view-carga .od-main-actions>button{flex:1 1 150px}#view-carga .od-settings-shortcut{flex-basis:100%}.nora-od-picker{width:min(100%,900px)!important}}
 @media(max-width:560px){#view-carga .od-local-source,#view-carga .od-local-list-section{padding:10px}.od-settings-section{padding:11px}.od-settings-actions button{flex:1 1 160px}.topbar:not(.tb-nolbl) .topbar-actions>.nr-w,.topbar:not(.tb-nolbl) .topbar-actions>.sc{max-width:200px!important}}
+</style>
+<style id="nora-sync-progress-v1">
+.od-status{display:block;min-width:0;line-height:1.45;overflow-wrap:anywhere;padding:6px 0}
+.od-status-row{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.od-status-dot{position:relative;top:5px;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent2) 12%,transparent)}
+.od-status-dot.is-warn{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 12%,transparent)}
+.od-status-dot.is-active{background:var(--accent);animation:noraOdPulse 1.1s ease-in-out infinite}
+.od-status-label{flex:1;min-width:0;font-size:11.5px}
+.od-operation-progress{height:5px;margin:8px 0 0 15px;border-radius:999px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)}
+.od-operation-progress-bar{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .18s ease}
+.od-operation-meta{margin:3px 0 0 15px;color:var(--sub);font-size:9.5px;text-align:right;font-variant-numeric:tabular-nums}
+@keyframes noraOdPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.od-status-dot.is-active{animation:none}.od-operation-progress-bar{transition:none}}
 </style>
 </body>
 </html>
