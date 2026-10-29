@@ -3938,6 +3938,7 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
   if(!st||!Array.isArray(st.files)||!st.files.length){
     try{await tryReconnectBackup();}catch(e){}
     syncDataCenterUI();renderDataManager();
+    window.__noraRestored=true;try{window.dispatchEvent(new Event('nora:restored'));}catch(e){}
     return;
   }
   try{
@@ -3971,6 +3972,7 @@ initSheet('toggleSheetPdf','controls');initSheet('toggleSheetDash','dashFiltersC
   }catch(e){console.warn('restoreState',e);}
   try{await tryReconnectBackup();}catch(e){}
   try{cobFileHandles=await getCobHandles();if(cobFileHandles.length)updateCobLinkStatus(cobFileHandles.length+' archivo(s) vinculados · datos guardados disponibles',false);}catch(e){}
+  window.__noraRestored=true;try{window.dispatchEvent(new Event('nora:restored'));}catch(e){}
 })();
 
 window.addEventListener('beforeunload',()=>{try{if(backupFileHandle)writeAutoBackup('cierre');}catch(e){}});
@@ -7364,5 +7366,427 @@ button:disabled{cursor:not-allowed;filter:saturate(.65)}
 }
 </style>
 
+<script id="nora-onedrive">
+/* ===================================================================
+   NORA · Sincronización automática con OneDrive (solo lectura)
+   - Inicio de sesión Microsoft (OAuth2 código + PKCE, sin librerías)
+   - Lee la carpeta indicada vía Microsoft Graph (permiso Files.Read)
+   - Baja solo los Excel que cambiaron y los procesa con handleFiles()
+   =================================================================== */
+(function(){
+'use strict';
+
+/* Valores por defecto: se pueden dejar acá para no cargarlos en cada dispositivo.
+   Lo que se guarde desde Ajustes en cada navegador tiene prioridad. */
+window.NORA_OD_DEFAULTS = window.NORA_OD_DEFAULTS || {
+  clientId: '',          // «ID de aplicación (cliente)» de Azure
+  folder: '',            // carpeta de OneDrive, ej: 'Cobranza/2026' (vacío = raíz)
+  recursive: true,       // incluir subcarpetas
+  auto: true             // sincronizar al abrir Nora
+};
+
+const K_CFG='nora_od_cfg_v1', K_TOK='nora_od_tok_v1', K_ST='nora_od_state_v1',
+      K_PKCE='nora_od_pkce_v1', K_SILENT='nora_od_lastsilent_v1';
+const SCOPE='Files.Read offline_access';
+const GRAPH='https://graph.microsoft.com/v1.0';
+const TENANT='consumers';                       // cuentas personales (hotmail/outlook/live)
+const REDIRECT=location.origin+location.pathname;
+const EXCEL_RE=/\.(xlsx|xls|xlsm)$/i;
+const MAX_DEPTH=3;
+
+const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const $$=sel=>Array.from(document.querySelectorAll(sel));
+const log=(m,t)=>{try{if(window.AppLog)AppLog.write('OneDrive: '+m,t||'info');}catch(e){}};
+const toast=(m,t)=>{try{if(window.notify)window.notify(m,t);}catch(e){}};
+const hora=()=>new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+
+function loadCfg(){
+  const saved=jget(K_CFG,{});
+  Object.keys(saved).forEach(k=>{if(saved[k]===''||saved[k]===null||saved[k]===undefined)delete saved[k];});
+  return Object.assign({clientId:'',folder:'',recursive:true,auto:true},window.NORA_OD_DEFAULTS||{},saved);
+}
+let cfg=loadCfg();
+const ready=()=>!!(cfg.clientId&&cfg.clientId.trim());
+const hasTok=()=>!!jget(K_TOK,null);
+
+/* ---------------------------------------------------------- estado ---- */
+let statusMsg='', statusWarn=false, busy=false;
+function setStatus(msg,warn){
+  statusMsg=msg;statusWarn=!!warn;
+  $$('.od-status').forEach(e=>{e.textContent=msg;e.style.color=warn?'var(--warn)':'';});
+  refreshButtons();
+}
+function refreshButtons(){
+  const conn=hasTok(),ok=ready();
+  $$('.od-btn-connect').forEach(b=>{b.style.display=ok?'':'none';b.textContent=conn?'Reconectar':'Conectar con Microsoft';});
+  $$('.od-btn-sync').forEach(b=>{b.disabled=!(ok&&conn)||busy;});
+  $$('.od-btn-disc').forEach(b=>{b.style.display=conn?'':'none';});
+}
+
+/* ----------------------------------------------------------- PKCE ------ */
+const b64url=buf=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const rnd=n=>b64url(crypto.getRandomValues(new Uint8Array(n)));
+
+async function startLogin(silent){
+  if(!ready()){setStatus('Falta el ID de aplicación. Completalo en Ajustes → OneDrive.',true);return;}
+  const verifier=rnd(48),state=rnd(12);
+  const challenge=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
+  jset(K_PKCE,{verifier,state,silent:!!silent,t:Date.now()});
+  const p=new URLSearchParams({
+    client_id:cfg.clientId.trim(),response_type:'code',redirect_uri:REDIRECT,
+    response_mode:'query',scope:SCOPE,state,code_challenge:challenge,code_challenge_method:'S256'
+  });
+  if(silent)p.set('prompt','none');
+  const dest='https://login.microsoftonline.com/'+TENANT+'/oauth2/v2.0/authorize?'+p.toString();
+  if(typeof window.__noraNav==='function')window.__noraNav(dest);else location.assign(dest);
+}
+
+async function tokenRequest(params){
+  const body=new URLSearchParams(Object.assign({client_id:cfg.clientId.trim(),scope:SCOPE},params));
+  let r;
+  try{
+    r=await fetch('https://login.microsoftonline.com/'+TENANT+'/oauth2/v2.0/token',
+      {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  }catch(e){const er=new Error('Sin conexión con Microsoft');er.offline=true;throw er;}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.access_token){const er=new Error(j.error_description||j.error||('HTTP '+r.status));er.code=j.error;throw er;}
+  const old=jget(K_TOK,{})||{};
+  const t={at:j.access_token,exp:Date.now()+(j.expires_in||3600)*1000-90000,rt:j.refresh_token||old.rt||''};
+  jset(K_TOK,t);
+  return t;
+}
+
+/* Vuelta del inicio de sesión (?code=...&state=...) */
+async function handleRedirect(){
+  const q=new URLSearchParams(location.search);
+  if(!q.has('state')||!(q.has('code')||q.has('error')))return false;
+  const pk=jget(K_PKCE,null);
+  try{history.replaceState(null,'',REDIRECT);}catch(e){}
+  if(!pk||pk.state!==q.get('state'))return false;          // no es una respuesta nuestra
+  try{localStorage.removeItem(K_PKCE);}catch(e){}
+  if(q.has('error')){
+    const err=q.get('error');
+    if(pk.silent&&/login_required|interaction_required|consent_required/.test(err)){
+      setStatus('La sesión de OneDrive venció. Tocá «Reconectar» para renovarla.',true);
+    }else{
+      setStatus('Microsoft respondió: '+(q.get('error_description')||err),true);
+    }
+    return true;
+  }
+  try{
+    await tokenRequest({grant_type:'authorization_code',code:q.get('code'),redirect_uri:REDIRECT,code_verifier:pk.verifier});
+    log('sesión iniciada','ok');
+  }catch(e){setStatus('No se pudo completar el inicio de sesión: '+e.message,true);}
+  return true;
+}
+
+/* Devuelve un access token válido, o null si hay que volver a iniciar sesión. */
+async function getToken(){
+  const t=jget(K_TOK,null);
+  if(!t)return null;
+  if(t.at&&Date.now()<t.exp)return t.at;
+  if(!t.rt)return null;
+  try{return (await tokenRequest({grant_type:'refresh_token',refresh_token:t.rt})).at;}
+  catch(e){
+    if(e.offline)throw e;
+    try{localStorage.removeItem(K_TOK);}catch(_){}
+    return null;
+  }
+}
+
+/* Renovación silenciosa por redirección (una vez cada 10 min como máximo). */
+async function trySilentRedirect(){
+  if(!ready()||!navigator.onLine)return false;
+  if(Date.now()-(jget(K_SILENT,0)||0)<10*60*1000)return false;
+  try{
+    const c=new AbortController(),to=setTimeout(()=>c.abort(),4000);
+    await fetch('https://login.microsoftonline.com/favicon.ico',{mode:'no-cors',cache:'no-store',signal:c.signal});
+    clearTimeout(to);
+  }catch(e){return false;}                                  // sin red real: no se redirige
+  jset(K_SILENT,Date.now());
+  setStatus('Renovando la sesión de OneDrive…');
+  await startLogin(true);
+  return true;
+}
+
+/* ----------------------------------------------------------- Graph ----- */
+async function gfetch(url,token,tries){
+  let r;
+  try{r=await fetch(url,{headers:{Authorization:'Bearer '+token}});}
+  catch(e){const er=new Error('Sin conexión con Microsoft Graph');er.offline=true;throw er;}
+  if((r.status===429||r.status===503)&&(tries||0)<3){
+    await sleep(((+r.headers.get('Retry-After'))||2)*1000);
+    return gfetch(url,token,(tries||0)+1);
+  }
+  if(!r.ok){
+    let m='';try{const j=await r.json();m=j.error&&j.error.message;}catch(e){}
+    const er=new Error(m||('HTTP '+r.status));er.status=r.status;throw er;
+  }
+  return r.json();
+}
+const encPath=p=>p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+const SELECT='$top=200&$select=id,name,size,eTag,lastModifiedDateTime,file,folder,@microsoft.graph.downloadUrl';
+
+async function listFolder(token){
+  const root=(cfg.folder||'').trim().replace(/^\/+|\/+$/g,'');
+  const first=root?GRAPH+'/me/drive/root:/'+encPath(root)+':/children?'+SELECT
+                  :GRAPH+'/me/drive/root/children?'+SELECT;
+  const out=[];
+  async function walk(url,depth,rel){
+    while(url){
+      const j=await gfetch(url,token);
+      const subs=[];
+      (j.value||[]).forEach(it=>{
+        if(it.folder){if(cfg.recursive&&depth<MAX_DEPTH)subs.push(it);return;}
+        if(it.file&&EXCEL_RE.test(it.name)&&!it.name.startsWith('~$')){
+          out.push({id:it.id,name:it.name,size:it.size||0,etag:it.eTag||'',mtime:it.lastModifiedDateTime||'',
+                    url:it['@microsoft.graph.downloadUrl']||'',path:rel});
+        }
+      });
+      for(const f of subs)await walk(GRAPH+'/me/drive/items/'+f.id+'/children?'+SELECT,depth+1,(rel?rel+'/':'')+f.name);
+      url=j['@odata.nextLink']||'';
+    }
+  }
+  await walk(first,0,'');
+  return out;
+}
+
+async function download(it,token){
+  const errs=[];
+  if(it.url){
+    try{const r=await fetch(it.url);if(r.ok)return await r.blob();errs.push('descarga directa HTTP '+r.status);}
+    catch(e){errs.push('descarga directa bloqueada');}
+  }
+  try{
+    const r=await fetch(GRAPH+'/me/drive/items/'+it.id+'/content',{headers:{Authorization:'Bearer '+token}});
+    if(r.ok)return await r.blob();
+    errs.push('/content HTTP '+r.status);
+  }catch(e){errs.push('/content: '+e.message);}
+  throw new Error('No se pudo descargar «'+it.name+'» ('+errs.join('; ')+')');
+}
+
+/* ------------------------------------------------------- sincronizar --- */
+async function sync(opts){
+  opts=opts||{};
+  if(busy||!ready())return;
+  busy=true;refreshButtons();
+  try{
+    setStatus('Buscando cambios en OneDrive…');
+    const token=await getToken();
+    if(!token){
+      if(opts.boot&&await trySilentRedirect())return;
+      setStatus('La sesión de OneDrive venció. Tocá «Reconectar» para renovarla. (Se siguen viendo los últimos datos guardados.)',true);
+      return;
+    }
+    const all=await listFolder(token);
+
+    /* nombres repetidos en distintas subcarpetas: Nora identifica por nombre */
+    const byName=new Map();
+    all.forEach(it=>{
+      const p=byName.get(it.name);
+      if(!p||it.mtime>p.mtime){if(p)log('nombre repetido «'+it.name+'»: se usa el más reciente ('+it.path+')','warn');byName.set(it.name,it);}
+      else log('nombre repetido «'+it.name+'»: se ignora la copia de «'+it.path+'»','warn');
+    });
+    const items=Array.from(byName.values());
+
+    const st=jget(K_ST,{files:{}});st.files=st.files||{};
+    const have=new Set((typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[]).map(f=>f.name));
+    const sig=it=>it.etag+'|'+it.size;
+    const todo=items.filter(it=>!have.has(it.name)||!st.files[it.id]||st.files[it.id].sig!==sig(it));
+
+    const ids=new Set(items.map(i=>i.id));
+    const gone=Object.keys(st.files).filter(id=>!ids.has(id));
+    gone.forEach(id=>delete st.files[id]);
+
+    if(!items.length){
+      setStatus('No encontré archivos Excel en «'+(cfg.folder||'(raíz)')+'». Revisá el nombre de la carpeta.',true);
+      st.last=Date.now();jset(K_ST,st);return;
+    }
+    if(!todo.length){
+      st.last=Date.now();jset(K_ST,st);
+      setStatus('✔ Todo al día · '+items.length+' archivo(s) · '+hora()+(gone.length?' · '+gone.length+' ya no está(n) en OneDrive':''));
+      return;
+    }
+
+    const files=[],okItems=[],fails=[];
+    let n=0;
+    for(const it of todo){
+      n++;setStatus('Descargando '+n+'/'+todo.length+': '+it.name);
+      try{
+        const blob=await download(it,token);
+        files.push(new File([blob],it.name,{
+          type:blob.type||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          lastModified:Date.parse(it.mtime)||Date.now()}));
+        okItems.push(it);
+      }catch(e){fails.push(e.message);log(e.message,'error');}
+    }
+    if(files.length){
+      setStatus('Procesando '+files.length+' archivo(s)…');
+      await window.handleFiles(files,!opts.manual);
+      okItems.forEach(it=>{st.files[it.id]={sig:sig(it),name:it.name,mtime:it.mtime};});
+    }
+    st.last=Date.now();jset(K_ST,st);
+    if(files.length&&!opts.quiet)toast(files.length+' archivo(s) actualizado(s) desde OneDrive','ok');
+    setStatus((fails.length?'⚠ ':'✔ ')+files.length+' actualizado(s) · '+items.length+' en total · '+hora()+
+      (fails.length?' · '+fails.length+' con error (ver consola)':''),fails.length>0);
+    log(files.length+' archivo(s) sincronizados'+(fails.length?', '+fails.length+' con error':''),fails.length?'error':'ok');
+  }catch(e){
+    if(e.offline){setStatus('Sin conexión · se muestran los últimos datos guardados.',true);}
+    else if(e.status===404){setStatus('No encontré la carpeta «'+(cfg.folder||'(raíz)')+'» en tu OneDrive. Revisá el nombre en Ajustes.',true);}
+    else if(e.status===401||e.status===403){
+      try{localStorage.removeItem(K_TOK);}catch(_){}
+      setStatus('OneDrive rechazó el acceso ('+e.message+'). Tocá «Conectar con Microsoft».',true);
+    }
+    else setStatus('Error al sincronizar: '+e.message,true);
+    log('error: '+e.message+(e.stack?' · '+String(e.stack).split('\n')[1]:''),'error');
+    try{console.error('[OneDrive]',e);}catch(_){}
+  }finally{busy=false;refreshButtons();}
+}
+
+/* -------------------------------------------------------------- UI ----- */
+function cardHTML(full){
+  const pasos=
+    '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">¿Cómo obtengo el ID de aplicación? (una sola vez)</summary>'+
+    '<ol class="hint" style="margin:8px 0 0 18px;line-height:1.6">'+
+    '<li>Entrá a <b>entra.microsoft.com</b> con tu cuenta Microsoft → <b>Identidad › Aplicaciones › Registros de aplicaciones › Nuevo registro</b>.</li>'+
+    '<li>Nombre: <b>Nora</b>. Tipos de cuenta: <b>Solo cuentas personales de Microsoft</b>.</li>'+
+    '<li>URI de redirección: plataforma <b>Aplicación de página única (SPA)</b> y pegá la dirección de redirección de acá abajo, tal cual.</li>'+
+    '<li>Registrar. En «Información general» copiá el <b>Id. de aplicación (cliente)</b> y pegalo acá.</li>'+
+    '<li>Guardá y tocá <b>Conectar con Microsoft</b>. La primera vez te pide permiso de lectura de tus archivos.</li>'+
+    '</ol></details>';
+  if(!full){
+    return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive</h2>'+
+      '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+      '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
+      '<button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button></div>'+
+      '<div class="hint od-status" style="margin-top:8px"></div>'+
+      '<div class="hint" style="margin-top:4px">La configuración está en Ajustes → OneDrive.</div>';
+  }
+  return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive · sincronización automática</h2>'+
+    '<div class="hint">Nora lee tus Excel directo desde OneDrive cada vez que la abrís, en la PC o en el celular. '+
+    'Es solo lectura: nunca modifica tus archivos. Editás en Excel como siempre.</div>'+
+    '<div class="status-line od-status" style="margin:10px 0"></div>'+
+    '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+    '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
+    '<button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button>'+
+    '<button class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
+    '<div class="field" style="margin-top:12px"><label>ID de aplicación (cliente) de Azure</label>'+
+    '<input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>'+
+    '<div class="field" style="margin-top:8px"><label>Carpeta en OneDrive</label>'+
+    '<input type="text" class="od-in-folder" placeholder="Ej: Cobranza/2026  (vacío = raíz de OneDrive)" autocomplete="off"></div>'+
+    '<div class="row" style="gap:16px;flex-wrap:wrap;margin-top:8px">'+
+    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label>'+
+    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label></div>'+
+    '<div class="field" style="margin-top:8px"><label>Dirección de redirección (copiala en Azure)</label>'+
+    '<div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1">'+
+    '<button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
+    '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar</button></div>'+
+    pasos;
+}
+
+function fillInputs(){
+  $$('.od-in-client').forEach(e=>e.value=cfg.clientId||'');
+  $$('.od-in-folder').forEach(e=>e.value=cfg.folder||'');
+  $$('.od-in-rec').forEach(e=>e.checked=!!cfg.recursive);
+  $$('.od-in-auto').forEach(e=>e.checked=!!cfg.auto);
+  $$('.od-in-redir').forEach(e=>e.value=REDIRECT);
+}
+
+function saveCfg(){
+  const g=sel=>{const e=document.querySelector(sel);return e;};
+  const next={
+    clientId:(g('.od-in-client')?.value||'').trim(),
+    folder:(g('.od-in-folder')?.value||'').trim().replace(/^\/+|\/+$/g,''),
+    recursive:!!g('.od-in-rec')?.checked,
+    auto:!!g('.od-in-auto')?.checked
+  };
+  if(next.clientId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(next.clientId)){
+    setStatus('El ID de aplicación no tiene el formato esperado (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).',true);return false;
+  }
+  if(next.clientId!==cfg.clientId){try{localStorage.removeItem(K_TOK);}catch(e){}}
+  if(next.folder!==cfg.folder||next.recursive!==cfg.recursive){jset(K_ST,{files:{}});}   // fuerza releer
+  // se guarda siempre (incluso vacío) para poder pisar los valores por defecto del archivo
+  jset(K_CFG,{clientId:next.clientId||'',folder:next.folder,recursive:next.recursive,auto:next.auto});
+  cfg=Object.assign({},cfg,next);
+  setStatus(ready()?(hasTok()?'Configuración guardada.':'Configuración guardada. Tocá «Conectar con Microsoft».'):'Falta el ID de aplicación.',!ready());
+  return true;
+}
+
+function describeStatus(){
+  if(!ready())return setStatus('Sin configurar: completá el ID de aplicación en Ajustes → OneDrive.');
+  if(!hasTok())return setStatus('Falta iniciar sesión. Tocá «Conectar con Microsoft».');
+  const last=(jget(K_ST,{})||{}).last;
+  setStatus(last?'Última sincronización: '+new Date(last).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'}):'Conectado. Todavía no se sincronizó.');
+}
+
+function buildUI(){
+  const mk=full=>{const d=document.createElement('div');d.className='card od-card';d.innerHTML=cardHTML(full);return d;};
+  const a=document.getElementById('btnLinkCobFiles2'),b=document.getElementById('btnLinkCobFiles');
+  const ca=a&&a.closest('.card'),cb=b&&b.closest('.card');
+  if(ca)ca.after(mk(true));
+  if(cb)cb.after(mk(!ca));                 // si no existe Ajustes, la tarjeta completa va en Inicio
+  if(!ca&&!cb){const dc=document.getElementById('dataCenterCard');if(dc)dc.after(mk(true));}
+  fillInputs();
+  document.addEventListener('click',ev=>{
+    const t=ev.target.closest&&ev.target.closest('button');if(!t)return;
+    if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);}
+    else if(t.classList.contains('od-btn-sync')){ev.preventDefault();sync({manual:true});}
+    else if(t.classList.contains('od-btn-disc')){ev.preventDefault();try{localStorage.removeItem(K_TOK);}catch(e){}describeStatus();toast('OneDrive desconectado','ok');}
+    else if(t.classList.contains('od-btn-save')){ev.preventDefault();if(saveCfg())toast('Configuración de OneDrive guardada','ok');}
+    else if(t.classList.contains('od-btn-copy')){
+      ev.preventDefault();
+      const done=()=>toast('Dirección copiada','ok');
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(REDIRECT).then(done,()=>prompt('Copiá esta dirección:',REDIRECT));
+      else prompt('Copiá esta dirección:',REDIRECT);
+    }
+  });
+  try{if(typeof paintIcons==='function')$$('.od-card').forEach(c=>paintIcons(c));}catch(e){}
+}
+
+/* ------------------------------------------------------------ inicio --- */
+async function autoStart(){
+  if(!cfg.auto||!ready()||!hasTok())return;
+  await sync({boot:true,quiet:false});
+}
+
+async function init(){
+  buildUI();
+  const handled=await handleRedirect();
+  if(!handled||!statusMsg)describeStatus();
+  refreshButtons();
+
+  let started=false;
+  const go=()=>{if(started)return;started=true;autoStart();};
+  if(window.__noraRestored)go();
+  else{
+    window.addEventListener('nora:restored',go,{once:true});
+    setTimeout(go,20000);                       // por si la señal de restauración no llegara
+  }
+
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState!=='visible'||!cfg.auto||!ready()||!hasTok())return;
+    if(Date.now()-((jget(K_ST,{})||{}).last||0)>5*60*1000)sync({quiet:true});
+  });
+  setInterval(()=>{
+    if(document.visibilityState==='visible'&&cfg.auto&&ready()&&hasTok())sync({quiet:true});
+  },10*60*1000);
+
+  /* El botón «Actualizar» existente también sincroniza OneDrive */
+  const orig=window.forzarActualizacionInfalible;
+  if(typeof orig==='function'){
+    window.forzarActualizacionInfalible=async function(){
+      if(ready()&&hasTok())await sync({manual:true});
+      return orig.apply(this,arguments);
+    };
+  }
+}
+
+window.NoraOD={sync,startLogin,config:()=>Object.assign({},cfg)};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+</script>
 </body>
 </html>
