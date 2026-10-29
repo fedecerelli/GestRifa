@@ -1361,8 +1361,8 @@ body.nx-hide-floats .nx-float{display:none}
   <div class="card data-manager-hero">
     <div style="display:flex;align-items:flex-start;gap:12px;justify-content:space-between;flex-wrap:wrap">
       <div>
-        <h2><span class="h-ic" data-icon="upload"></span>Carga de Datos</h2>
-        <p class="hint">Un único lugar para cargar todos los Excel y decidir exactamente qué secciones pueden utilizarlos.</p>
+        <h2><span class="h-ic" data-icon="upload"></span>Archivos locales</h2>
+        <p class="hint">Importá los Excel que tenés en tu equipo. Las planillas de OneDrive se administran justo arriba, en este mismo centro de archivos.</p>
       </div>
       <span class="tag" id="dmCount">0 archivos</span>
     </div>
@@ -3017,8 +3017,9 @@ function syncDataCenterUI(){
   const controlCount=FILES.filter(f=>f.kind==='control'||f.sourceType==='control').length;
   if(count)count.textContent=`${FILES.length} archivo(s) · ${RECORDS.length} registro(s) · ${controlCount} Control`;
   if(st)st.textContent=FILES.length?`${RECORDS.length} registros disponibles para todo el sistema${controlCount?' · '+controlCount+' planilla(s) Control detectada(s)':''}.`:'Sin datos cargados.';
-  if(list){list.innerHTML=FILES.map((f,i)=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <button data-dc-remove="${i}" title="Quitar de Nora; no borra el Excel original" aria-label="Quitar ${esc(f.name)} de Nora">✕</button></span>`;}).join('');list.querySelectorAll('[data-dc-remove]').forEach(b=>b.onclick=async()=>{const __removed=FILES[+b.dataset.dcRemove];const __rm=__removed?.name;if(__rm)window.NoraSourceExclusions?.exclude(__rm);FILES.splice(+b.dataset.dcRemove,1);if(__rm&&window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();refreshSelects();renderFilesList();syncDataCenterUI();updateStatusLine([],[],[]);if(!FILES.length){await clearState();['controls','previewCard','genCard','dashFiltersCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('filesActions')?.classList.add('hidden');document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}else{refreshPreview();updateDashboard();await saveState();}renderHome();});}
+  if(list){list.innerHTML=FILES.map(f=>{const isCtl=f.kind==='control'||f.sourceType==='control';const n=(f.records||[]).filter(r=>!r._excluded).length;const src=f.source==='onedrive'?'OneDrive':f.source==='local'?'Local':'Importado';return `<span class="file-pill"><b title="${esc(f.name)}">${esc(f.name)}</b> · ${isCtl?'Control detectado':n+' reg.'} <small>${src}</small></span>`;}).join('');}
   if(actions)actions.classList.toggle('hidden',!FILES.length);
+  const centralClear=document.querySelector('#view-carga .od-clear-all');if(centralClear)centralClear.classList.toggle('hidden',!FILES.length);
 }
 function initDataCenterCommunication(){const input=document.getElementById('dcCommTemplate');if(!input)return;const key='nora_comm_template_v1';const def='{localidad} · {institucion} · {fecha} · N° {numero} · {apellido}, {nombre}';try{input.value=localStorage.getItem(key)||def;}catch(e){input.value=def;}const getText=()=>{const r=DV.allSorted&&DV.allSorted.length?DV.allSorted[0]:RECORDS[0];const vals={localidad:r?.localidad||window.S?.files?.[0]?.loc||'',institucion:r?.source||window.S?.files?.[0]?.title||'',fecha:new Date().toLocaleDateString('es-AR'),numero:r?.num||'',apellido:r?.apellido||'',nombre:r?.nombre||''};return input.value.replace(/\{(localidad|institucion|fecha|numero|apellido|nombre)\}/g,(_,k)=>vals[k]||'');};document.getElementById('dcCommSave')?.addEventListener('click',()=>{try{localStorage.setItem(key,input.value);}catch(e){}notify('Plantilla guardada','ok');});document.getElementById('dcCommWhatsApp')?.addEventListener('click',()=>{const text=getText();window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');});document.getElementById('dcCommEmail')?.addEventListener('click',()=>{const subject='Nora Suite';window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(getText());});}
 function initDataCenter(){initDataManager();syncDataCenterUI();}
@@ -3087,7 +3088,15 @@ async function handleFiles(files,silent,opts){
   if(!controlFiles.length&&typeof window.noraControlSync==='function'){const __cf=FILES.find(f=>f.raw&&fileHasDestination(f,'control')&&files.some(x=>x.name===f.name));if(__cf){try{await window.noraControlSync(true);}catch(e){}}}
   if(!opts?.fromSorteo && typeof window.__sorteoLoadFiles==='function'){
     const lf=files.filter(f=>isSorteoFileName(f.name));
-    if(lf.length){try{await window.__sorteoLoadFiles(lf,true);}catch(e){if(window.AppLog?.error)AppLog.error('No se pudo sincronizar sorteo: '+(e.message||e));}}
+    if(lf.length){
+      try{await window.__sorteoLoadFiles(lf,true);}catch(e){if(window.AppLog?.error)AppLog.error('No se pudo sincronizar sorteo: '+(e.message||e));}
+      // El lector específico de Sorteos puede ser el primero en crear los L -; conservar el ID de OneDrive.
+      if(opts?.source==='onedrive'&&Array.isArray(opts.remoteItems)){
+        lf.forEach(file=>{const meta=opts.remoteItems.find(x=>x.name===file.name);const entry=FILES.find(x=>x.name===file.name);
+          if(meta&&entry){entry.source='onedrive';entry.sourceId=String(meta.id||'');entry.sourcePath=meta.path||'';entry.sourceSig=meta.sig||meta.etag||'';}
+        });
+      }
+    }
   }
   rebuildRecords();renderFilesList();syncDataCenterUI();updateStatusLine(added,replaced,allErrors);
   if(controlFiles.length){try{await saveState();}catch(e){}}
@@ -3106,6 +3115,7 @@ async function handleFiles(files,silent,opts){
     if(controlFiles.length&&!allErrors.length)notify('Planilla Control detectada automáticamente y enviada a Control','ok');
   }
   renderHome();
+  return {added:added.slice(),replaced:replaced.slice(),errors:allErrors.slice(),fileCount:files.length};
 }
 window.handleFiles = handleFiles;
 function renderDataManager(){
@@ -3118,7 +3128,10 @@ function renderDataManager(){
     const isSort=isSorteoFileName(f.name);
     const isU=/^U\s*-/.test(normalizeFileNameForRole(f.name));
     const n=(f.records||[]).filter(r=>!r._excluded).length,dest=getFileDestinations(f);
-    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta">${isCtl?'Planilla de Control · SOLO Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}" title="Quita el archivo de Nora; no borra el Excel original"><span class="b-ic" data-icon="trash"></span>Quitar de Nora</button></div></div>`;
+    const sourceLabel=f.source==='onedrive'?'OneDrive':f.source==='local'?'Este equipo':'Importado';
+    const sourceClass=f.source==='onedrive'?'cloud':f.source==='local'?'local':'legacy';
+    const pathInfo=f.source==='onedrive'&&f.sourcePath?' · '+esc(f.sourcePath):'';
+    return `<div class="data-manager-card ${isCtl?'is-control':''}" data-dm-file="${i}"><div class="dm-file-head"><div><div class="dm-file-name">${esc(f.name)}</div><div class="dm-file-meta"><span class="dm-source-pill ${sourceClass}">${sourceLabel}</span>${pathInfo} · ${isCtl?'Planilla de Control · solo Control':isSort?'Archivo L - · Sorteos obligatorio':'Excel de datos'} · ${n?esc(n)+' registros':'sin registros generales'}</div></div><span class="tag">${dest.length} destino(s)</span></div><div class="dm-destinations">${DATA_DESTINATIONS.map(([id,label])=>{const forced=isCtl?id!=='control':id==='sorteos'&&(isSort||isU);const checked=dest.includes(id);return `<label class="dm-dest ${checked?'on':''} ${forced?'forced':''}"><input type="checkbox" data-dm-dest="${id}" data-dm-index="${i}" ${checked?'checked':''} ${forced?'disabled':''}>${label}${forced?'<small class="dm-force">'+(isCtl?'obligatorio':'obligatorio')+'</small>':''}</label>`;}).join('')}</div><div class="dm-actions"><button class="ghost miniBtn" data-dm-all="${i}" ${isCtl?'disabled':''}>Todas permitidas</button><button class="ghost miniBtn" data-dm-clear="${i}" ${isCtl?'disabled':''}>Quitar destinos</button><button class="ghost miniBtn" data-dm-remove="${i}" title="Quita el archivo de Nora; no borra el Excel original"><span class="b-ic" data-icon="trash"></span>Quitar de Nora</button></div></div>`;
   }).join('');
   list.querySelectorAll('[data-dm-dest]').forEach(ch=>ch.onchange=async()=>{
     const i=+ch.dataset.dmIndex,id=ch.dataset.dmDest,f=FILES[i];if(!f||ch.disabled)return;
@@ -3130,7 +3143,19 @@ function renderDataManager(){
   });
   list.querySelectorAll('[data-dm-all]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmAll];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=defaultDestinations(f.name,f.kind||f.sourceType||'data');await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
   list.querySelectorAll('[data-dm-clear]').forEach(b=>b.onclick=async()=>{const f=FILES[+b.dataset.dmClear];if(!f||f.kind==='control'||isControlFileName(f.name))return;f.destinations=isSorteoFileName(f.name)?['sorteos']:['dashboard'];await saveState();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
-  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.dmRemove;if(!FILES[i])return;if(!confirm('¿Quitar '+FILES[i].name+' de Nora? El archivo original en su ubicación no se borra.'))return;const __rm=FILES[i].name;window.NoraSourceExclusions?.exclude(__rm);FILES.splice(i,1);if(window.noraControlCurrentName&&window.noraControlCurrentName()===__rm&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();rebuildRecords();if(!FILES.length)await clearState();else await saveState();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();});
+  list.querySelectorAll('[data-dm-remove]').forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.dmRemove,f=FILES[i];if(!f)return;
+    if(!confirm('¿Quitar '+f.name+' de Nora? El archivo original en su ubicación no se borra.'))return;
+    const name=f.name,wasCloud=f.source==='onedrive',cloudId=String(f.sourceId||'');
+    window.NoraSourceExclusions?.exclude(name);
+    if(wasCloud){
+      window.NoraOD?.unlinkSource?.(name,cloudId);
+    }
+    FILES.splice(i,1);
+    if(window.noraControlCurrentName&&window.noraControlCurrentName()===name&&!FILES.some(x=>x.raw&&fileHasDestination(x,'control')))window.noraControlClear&&window.noraControlClear();
+    rebuildRecords();if(!FILES.length)await clearState();else await saveState();
+    renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
+  });
   paintIcons();
 }
 function initDataManager(){
@@ -4045,9 +4070,33 @@ const uid=()=>'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function tab(t){if(!['month','files','hist','tools'].includes(t))t='month';S.cfg.tab=t;document.querySelectorAll('#sTabs .chip').forEach(c=>c.classList.toggle('active',c.dataset.sp===t));document.querySelectorAll('.sp').forEach(p=>p.classList.toggle('active',p.id==='sp-'+t));if(t==='month')renderMonth();if(t==='hist')renderHist();}
 window.tab=tab;
 $('sTabs').onclick=e=>{const c=e.target.closest('.chip');if(c)tab(c.dataset.sp);};
-const dz=$('sDz'),fi=$('sFile');dz.onclick=()=>fi.click();dz.ondragover=e=>{e.preventDefault();dz.classList.add('ready')};dz.ondragleave=()=>dz.classList.remove('ready');dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ready');loadFiles([...e.dataTransfer.files]);};fi.onchange=()=>{loadFiles([...fi.files]);fi.value='';};
+const dz=$('sDz'),fi=$('sFile');
+if(dz){dz.innerHTML='<span class="b-ic" data-icon="folder"></span><b>Archivos centralizados</b><div class="hint">Los Excel se incorporan desde Carga de Datos. Los archivos que empiezan con “L -” también se integran automáticamente en Sorteos.</div><button type="button" class="secondary miniBtn" id="sOpenDataManager">Abrir Carga de Datos</button>';dz.onclick=e=>{if(e.target.closest('button')||!e.target.closest('input'))setView('carga');};dz.ondragover=e=>{e.preventDefault();dz.classList.add('ready')};dz.ondragleave=()=>dz.classList.remove('ready');dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ready');setView('carga');notify('Para incorporar estos archivos, soltálos en el área de Carga de Datos.','info');};}
+if(fi){fi.onchange=()=>{fi.value='';};fi.style.display='none';}
+document.getElementById('sOpenDataManager')?.addEventListener('click',()=>setView('carga'));
 window.__sorteoLoadFiles=async(files,silent)=>{await loadFiles(files,silent);};
-async function syncSorteoIntoDataCenter(files){if(!files||!files.length)return;for(const file of files){const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn)continue;const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0)continue;const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const out=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!nums.length)continue;nums.forEach(n=>maxLen=Math.max(maxLen,n.length));for(const num of nums){const rec={num,apellido:cap(r[1]+''),nombre:cap(r[2]+''),calle:cap(r[3]+''),calleKey:claveCalle(r[3]+''),nroCalle:cap(r[4]+''),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim(),pago:Math.max(0,Math.min(CFG.cuotas,toNum(r[7]))),debe:Math.max(0,CFG.cuotas-toNum(r[7])),mes:cap(r[8]+''),situacion:cap(r[10]+''),localidad:cap(r[11]+''),fcarga:parseDate(r[12]),source:file.name,sourceType:'sorteo',_excluded:false,_raw:{}};out.push(rec);}}if(!out.length)continue;const idx=FILES.findIndex(f=>f.name===file.name);const entry={name:file.name,records:out,sourceType:'sorteo'};if(idx>=0)FILES[idx]=entry;else FILES.push(entry);}rebuildRecords();renderFilesList();refreshSelects();populateBulkPdfSelectors();updateDashboard();syncDataCenterUI();await saveState();renderHome();}
+async function syncSorteoIntoDataCenter(files){
+  if(!files||!files.length)return;
+  for(const file of files){
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+    const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn)continue;
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
+    const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0)continue;
+    const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°')),nCols=[];
+    hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});
+    const out=[];
+    for(let i=h+1;i<rows.length;i++){
+      const r=rows[i],nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});
+      if(!nums.length)continue;
+      for(const num of nums)out.push({num,apellido:cap(r[1]+''),nombre:cap(r[2]+''),calle:cap(r[3]+''),calleKey:claveCalle(r[3]+''),nroCalle:cap(r[4]+''),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim(),pago:Math.max(0,Math.min(CFG.cuotas,toNum(r[7]))),debe:Math.max(0,CFG.cuotas-toNum(r[7])),mes:cap(r[8]+''),situacion:cap(r[10]+''),localidad:cap(r[11]+''),fcarga:parseDate(r[12]),source:file.name,sourceType:'sorteo',_excluded:false,_raw:{}});
+    }
+    if(!out.length)continue;
+    const idx=FILES.findIndex(f=>f.name===file.name),prev=idx>=0?FILES[idx]:null;
+    const entry={...(prev||{}),name:file.name,records:out,sourceType:prev?.sourceType||'sorteo',kind:prev?.kind||'data',source:prev?.source||'local',sourceId:prev?.sourceId||'',sourcePath:prev?.sourcePath||'',sourceSig:prev?.sourceSig||'',destinations:prev?.destinations||defaultDestinations(file.name,'sorteo'),raw:prev?.raw||null};
+    if(idx>=0)FILES[idx]=entry;else FILES.push(entry);
+  }
+  rebuildRecords();renderFilesList();refreshSelects();populateBulkPdfSelectors();updateDashboard();syncDataCenterUI();renderDataManager();await saveState();renderHome();
+}
 async function loadFiles(files,silent){const ok=[],err=[];const validFiles=files.filter(f=>isSorteoFileName(f.name));files.filter(f=>!isSorteoFileName(f.name)).forEach(f=>err.push(f.name+': no participa del sorteo porque no comienza con L -'));files=validFiles;if(!files.length){$('sFilesMsg').className='status-line warn';$('sFilesMsg').textContent=err.join(' | ')||'No hay archivos L - para sorteo.';if(!silent&&err.length)notify(err.join(' · '),'warn');return;}$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}if(ok.length){try{await syncSorteoIntoDataCenter(files);}catch(e){AppLog.error('Integración sorteo → Centro de datos: '+(e.message||e));}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
@@ -4122,7 +4171,19 @@ $('tReporte').onclick=async()=>{const m=month()||new Date().toISOString().slice(
 $('tXlsx').onclick=async()=>{const m=month(),data=[];S.files.forEach(f=>{const d=drawOf(f);if(!d)return;rowsOf(f,d).forEach(r=>data.push({Sorteo:f.title,Quiniela:d.name,Fecha:d.date,'#':r.pos,'N°':r.num,Apellido:r.p?r.p.ape:'Sin Vender',Nombre:r.p?r.p.nom:''}));});if(!data.length)return notify('No hay ganadores','err');const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Ganadores');const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveXlsxBlob(new Blob([out],{type:'application/octet-stream'}),`Ganadores ${m||''}.xlsx`);};
 $('tRestore').onclick=()=>$('tRestoreF').click();
 $('tRestoreF').onchange=async e=>{try{const v=JSON.parse(await e.target.files[0].text());let merged=null;if(v.files||v.draws)merged=v;else if(v.state&&v.state.sorteos)merged=v.state.sorteos;if(!merged)throw 0;if(!confirm('Esto reemplaza los datos actuales. ¿Continuar?'))return;merge(merged);await save();syncCards();render();notify('Respaldo restaurado','ok');}catch(x){notify('Archivo inválido','err');}e.target.value='';};
-function syncPersistedSorteoToDataCenter(){if(!S.files||!S.files.length)return;S.files.forEach(f=>{const out=[];f.people.forEach(p=>p.nums.forEach(num=>out.push({num:keyOf(num,f.cifras),apellido:p.ape||'',nombre:p.nom||'',calle:'',calleKey:'',nroCalle:'',piso:'',dpto:'',dom:p.dom||'',pago:0,debe:CFG.cuotas,mes:'',situacion:p.sit||'',localidad:p.loc||f.loc||'',fcarga:null,source:f.name,sourceType:'sorteo',_excluded:false,_raw:{}})));if(out.length){const idx=FILES.findIndex(x=>x.name===f.name);const entry={name:f.name,records:out,sourceType:'sorteo'};if(idx>=0){if(!(FILES[idx].records&&FILES[idx].records.length))FILES[idx]=entry;}else FILES.push(entry);}});rebuildRecords();refreshSelects();populateBulkPdfSelectors();syncDataCenterUI();}
+function syncPersistedSorteoToDataCenter(){
+  if(!S.files||!S.files.length)return;
+  S.files.forEach(f=>{
+    const out=[];
+    f.people.forEach(p=>p.nums.forEach(num=>out.push({num:keyOf(num,f.cifras),apellido:p.ape||'',nombre:p.nom||'',calle:'',calleKey:'',nroCalle:'',piso:'',dpto:'',dom:p.dom||'',pago:0,debe:CFG.cuotas,mes:'',situacion:p.sit||'',localidad:p.loc||f.loc||'',fcarga:null,source:f.name,sourceType:'sorteo',_excluded:false,_raw:{}})));
+    if(out.length){
+      const idx=FILES.findIndex(x=>x.name===f.name),prev=idx>=0?FILES[idx]:null;
+      const entry={...(prev||{}),name:f.name,records:prev?.records?.length?prev.records:out,sourceType:prev?.sourceType||'sorteo',kind:prev?.kind||'data',source:prev?.source||'local',sourceId:prev?.sourceId||'',sourcePath:prev?.sourcePath||'',sourceSig:prev?.sourceSig||'',destinations:prev?.destinations||defaultDestinations(f.name,'sorteo')};
+      if(idx>=0)FILES[idx]=entry;else FILES.push(entry);
+    }
+  });
+  rebuildRecords();refreshSelects();populateBulkPdfSelectors();syncDataCenterUI();
+}
 function render(){renderFiles();renderCards();renderMonth();renderHome();}
 (async()=>{await window._boot;const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');await load();syncPersistedSorteoToDataCenter();await loadLogo();applyBrand();applyLayout();syncCards();render();tab(S.cfg.tab||(S.files.length?'month':'files'));try{sorteoFileHandles=await getSorteoHandles();if(sorteoFileHandles.length)updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);}catch(e){}const _sv=setView;window.setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>{b.onclick=()=>window.setView(b.dataset.view);});setTimeout(renderHome,300);})();
 })();
@@ -5234,7 +5295,7 @@ const $=s=>document.getElementById(s),safe=(n,f)=>{try{return f()}catch(e){conso
 /* ---------- 1) Un solo lugar para cargar y vincular Excel ---------- */
 const XL={description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}};
 const isL=n=>typeof isSorteoFileName==='function'&&isSorteoFileName(n);
-function pickPlain(){const i=$('dataCenterFile');if(i)i.click();}
+function pickPlain(){const i=$('dataManagerFile')||$('file');if(typeof setView==='function')setView('carga');if(i)i.click();else notify('Abrí Carga de Datos para seleccionar tus Excel.','info');}
 async function linkAll(){
  if(!window.showOpenFilePicker){notify('Este navegador no permite vincular. Cargá los Excel (todos juntos) y se reparten solos.','warn');pickPlain();return;}
  let hs;try{hs=await showOpenFilePicker({multiple:true,types:[XL]});}catch(e){if(e.name!=='AbortError')console.warn(e);return;}
@@ -5322,7 +5383,74 @@ function mobilePrint(blob,name){
   if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
   const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
   w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}</body></html>`);
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff}img{width:${W};height:${Hh};object-fit:contain;margin:0;break-after:page;page-break-after:always}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}
+<style id="nora-od-explorer-ui">
+/* Nora · Centro de archivos: explorador sobrio inspirado en gestores Linux */
+#view-carga .od-card{padding:20px;overflow:hidden}
+.od-manager-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.od-manager-kicker{font-size:10px;letter-spacing:.13em;font-weight:800;color:var(--accent);margin-bottom:5px}
+.od-manager-head h2{font-size:16px;margin:0 0 5px;display:flex;gap:8px;align-items:center}
+.od-manager-head p{max-width:760px;margin:0;line-height:1.5}
+.od-cloud-badge{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);background:var(--panel2);border-radius:12px}
+.od-cloud-glyph{width:35px;height:35px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:9px;background:color-mix(in srgb,var(--accent) 9%,var(--panel));font-size:10px;font-weight:850;color:var(--accent);letter-spacing:.04em}
+.od-cloud-badge b,.od-cloud-badge small{display:block}.od-cloud-badge b{font-size:12px}.od-cloud-badge small{font-size:10px;color:var(--sub);margin-top:2px}
+.od-main-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.od-linked-block{padding-top:14px}.od-linked-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.od-linked-head b{font-size:12px}.od-linked-head .hint{margin-top:3px}.od-selected-count{font-size:11px;white-space:nowrap;color:var(--sub);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-variant-numeric:tabular-nums}
+.od-selected-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px}.od-picked-item{min-width:0;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);background:var(--panel2);border-radius:10px}.od-picked-xls{flex:0 0 auto;width:30px;height:32px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:6px;color:var(--accent2);background:color-mix(in srgb,var(--accent2) 8%,var(--panel));font-size:8px;font-weight:900}.od-picked-text{min-width:0;flex:1}.od-picked-text b,.od-picked-text small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.od-picked-text b{font-size:11px}.od-picked-text small{font-size:9.5px;color:var(--sub);margin-top:3px}.od-picked-status{flex:0 0 auto;color:var(--accent2);font-size:9px}.od-picked-empty{padding:13px;border:1px dashed var(--line);border-radius:10px;color:var(--sub);font-size:11px;background:var(--panel2)}
+.od-config{margin-top:15px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel2) 48%,transparent)}.od-config>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px 14px;font-size:12px;font-weight:700}.od-config>summary::-webkit-details-marker{display:none}.od-config>summary:after{content:'⌄';margin-left:auto;color:var(--sub);font-size:17px}.od-config[open]>summary:after{content:'⌃'}.od-config-body{padding:0 14px 14px}.od-config-body .field label{font-size:10.5px}.od-check-options{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:11px}.od-check-options label{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:500;color:var(--ink)}.od-check-options input{accent-color:var(--accent)}.od-help{margin-top:10px}.od-help>summary{cursor:pointer;color:var(--sub);font-size:11px}.od-security-note{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:10.5px;line-height:1.55;color:var(--sub)}.od-security-note b{color:var(--ink)}.od-pin-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0;margin-top:12px;border-top:1px solid var(--line)}.od-setup-steps{line-height:1.7}
+.nora-od-picker-overlay{padding:12px;background:rgba(8,12,19,.56);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.nora-od-picker{width:min(1120px,100%);height:min(820px,94vh);max-height:94vh;padding:0!important;gap:0!important;border-radius:16px!important;overflow:hidden;box-shadow:0 28px 90px #0004;display:flex;flex-direction:column}
+.pk-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid var(--line);background:var(--panel)}.pk-title-group{min-width:0}.pk-title-group h2{font-size:17px;margin:0 0 4px}.pk-title-group p{font-size:11px;color:var(--sub);margin:0;line-height:1.45}.pk-eyebrow{font-size:9px;letter-spacing:.14em;font-weight:850;color:var(--accent);margin-bottom:5px}.pk-head-actions{display:flex;align-items:center;gap:10px}.pk-cloud-mark{height:33px;min-width:38px;padding:0 7px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;color:var(--accent);font-size:10px;font-weight:900;background:var(--panel2)}
+.pk-explorer{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;flex:1;background:var(--panel)}.pk-sidebar{min-height:0;overflow-y:auto;padding:13px 10px;background:var(--panel2);border-right:1px solid var(--line)}.pk-side-label{font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--sub);padding:6px 9px 8px}.pk-folders-label{margin-top:15px}.pk-place{display:flex;width:100%;align-items:center;gap:8px;min-width:0;padding:8px 9px;margin:2px 0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font-size:11px;font-weight:500}.pk-place:hover{background:var(--panel);border-color:var(--line)}.pk-place.active{background:color-mix(in srgb,var(--accent) 11%,var(--panel));border-color:color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--accent);font-weight:700}.pk-nav-glyph{width:17px;flex:0 0 17px;text-align:center;color:var(--sub);font-size:13px}.pk-place.active .pk-nav-glyph{color:var(--accent)}.pk-place>span:nth-child(2){min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-place small{font-size:9px;color:var(--sub);font-variant-numeric:tabular-nums}.pk-folder-place{padding-left:calc(9px + var(--pk-depth,0)*10px)}.pk-side-note{margin:20px 7px 4px;padding-top:12px;border-top:1px solid var(--line);color:var(--sub);font-size:9.5px;line-height:1.5}.pk-no-folders{padding:8px 9px;color:var(--sub);font-size:10px}
+.pk-main{display:flex;flex-direction:column;min-height:0;min-width:0;padding:14px 16px 10px;gap:9px}.pk-toolbar{display:flex;align-items:center;gap:8px}.pk-search{display:flex;align-items:center;gap:8px;min-width:0;flex:1;padding-left:11px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--sub)}.pk-search>span{font-size:22px;line-height:1}.pk-q{width:100%;height:37px!important;border:0!important;background:transparent!important;outline:none!important;box-shadow:none!important;padding:8px 10px 8px 0!important;font-size:12px!important}.pk-ref{height:37px}.pk-crumbs{display:flex;align-items:center;gap:6px;min-height:24px;flex-wrap:wrap;color:var(--sub);font-size:10px}.pk-crumbs button{padding:3px 5px;border:0;background:transparent;color:var(--sub);font-size:10px}.pk-crumbs button:last-child{color:var(--ink);font-weight:700}.pk-crumbs button:hover{color:var(--accent)}.pk-crumb-sep{opacity:.6}.pk-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.pk-bulk,.pk-actions-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-bulk button,.pk-ref{font-size:10px!important}.pk-only-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--sub);padding:4px 5px}.pk-only-label input{accent-color:var(--accent)}.pk-view-toggle{display:inline-flex;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}.pk-view-toggle button{padding:5px 8px;border:0;background:transparent;color:var(--sub);font-size:9px;border-radius:6px}.pk-view-toggle button.active{background:var(--panel);box-shadow:0 1px 3px #0001;color:var(--ink)}.pk-cnt{font-size:10px;font-weight:750;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pk-list-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.pk-list[data-mode=list]{display:flex;flex-direction:column}.pk-list[data-mode=list]:before{content:'ARCHIVO                                      CARPETA                                MODIFICADO            TAMAÑO';position:sticky;top:0;z-index:1;display:block;padding:9px 43px 9px 43px;background:var(--panel2);border-bottom:1px solid var(--line);color:var(--sub);font-size:8px;font-weight:850;letter-spacing:.04em;white-space:pre;overflow:hidden}.pk-file-row{position:relative;display:flex;align-items:center;gap:10px;min-width:0;padding:8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer;transition:background .12s}.pk-file-row:last-child{border-bottom:0}.pk-file-row:hover{background:color-mix(in srgb,var(--accent) 5%,var(--panel))}.pk-file-row.is-selected{background:color-mix(in srgb,var(--accent) 7%,var(--panel))}.pk-file-row>input{width:14px;height:14px;flex:0 0 auto;accent-color:var(--accent)}.pk-file-icon{position:relative;width:29px;height:32px;display:grid;place-items:end center;padding-bottom:4px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--accent2) 40%,var(--line));border-radius:5px;background:color-mix(in srgb,var(--accent2) 8%,var(--panel));color:var(--accent2);font-size:7px;font-weight:900}.pk-file-fold{position:absolute;right:0;top:0;width:8px;height:8px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 3px 0 3px}.pk-file-main{min-width:100px;flex:1;display:flex;flex-direction:column;gap:3px}.pk-file-title{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}.pk-file-path{font-size:9.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pk-file-date,.pk-file-size{flex:0 0 auto;color:var(--sub);font-size:9.5px;white-space:nowrap;font-variant-numeric:tabular-nums}.pk-file-date{width:86px}.pk-file-size{width:60px;text-align:right}.pk-new{padding:3px 5px;border-radius:5px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));color:var(--accent);font-size:8px;letter-spacing:.05em}.pk-row-check{width:16px;height:16px;flex:0 0 auto;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;color:transparent}.pk-file-row:has(input:checked) .pk-row-check{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}.pk-file-row:has(input:checked) .pk-row-check:after{content:'✓';font-size:10px;font-weight:900}
+.pk-list[data-mode=grid]{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;align-content:start;padding:10px}.pk-list[data-mode=grid]:before{display:none}.pk-list[data-mode=grid] .pk-file-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto auto;align-content:start;gap:7px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}.pk-list[data-mode=grid] .pk-file-row>input{grid-column:1;grid-row:1}.pk-list[data-mode=grid] .pk-file-icon{grid-column:1;grid-row:2;width:34px;height:39px}.pk-list[data-mode=grid] .pk-file-main{grid-column:1/-1;grid-row:3;min-width:0}.pk-list[data-mode=grid] .pk-file-date{grid-column:2;grid-row:1;width:auto;justify-self:end}.pk-list[data-mode=grid] .pk-file-size{grid-column:2;grid-row:2;width:auto;text-align:right;align-self:center}.pk-list[data-mode=grid] .pk-new{grid-column:3;grid-row:1}.pk-list[data-mode=grid] .pk-row-check{grid-column:3;grid-row:2;justify-self:end}.pk-empty{grid-column:1/-1;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;text-align:center;padding:22px;color:var(--sub);font-size:11px}.pk-empty b{color:var(--ink);font-size:12px}.pk-empty-mark{display:grid;place-items:center;width:45px;height:50px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-weight:900;font-size:10px;color:var(--accent2)}.pk-status{min-height:13px;color:var(--sub);font-size:9.5px}.pk-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 17px;background:var(--panel2);border-top:1px solid var(--line)}.pk-safe-note{display:inline-flex;align-items:center;gap:7px;color:var(--sub);font-size:9.5px}.pk-safe-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block}.pk-foot>div{display:flex;gap:7px}.pk-foot button{min-height:34px;font-size:10.5px}.pk-foot .pk-ok{min-width:210px}
+#dataCenterFiles .file-pill button{display:none!important}#dataCenterLink,#dataCenterLinkSorteo,#dataCenterReload,#dataCenterForceUpdate{display:none!important}
+@media(max-width:760px){#view-carga .od-card{padding:14px}.pk-explorer{grid-template-columns:145px minmax(0,1fr)}.pk-sidebar{padding:10px 6px}.pk-main{padding:10px 8px}.pk-file-date{display:none}.pk-list[data-mode=list]:before{content:'ARCHIVO / CARPETA';padding-left:40px}.pk-foot{padding:10px}.pk-safe-note{max-width:150px}.pk-foot .pk-ok{min-width:0}}
+@media(max-width:560px){.pk-explorer{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.pk-sidebar{display:flex;align-items:center;gap:5px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:7px}.pk-side-label,.pk-folders-label,.pk-side-note{display:none}.pk-place{width:auto;flex:0 0 auto;max-width:160px;padding:7px 9px}.pk-folder-nav{display:flex;gap:5px}.pk-main{min-height:0}.pk-actions{align-items:flex-start}.pk-bulk{max-width:100%}.pk-cnt{font-size:9px}.pk-foot>div{margin-left:auto}.pk-foot .pk-ok{font-size:9px}}
+</style>
+
+
+<style id="nora-unified-file-center-v3">
+#view-carga .od-card{display:flex;flex-direction:column;gap:18px;padding:20px;overflow:visible}
+#view-carga .od-local-source,#view-carga .od-local-list-section{border:1px solid var(--line);border-radius:13px;padding:15px;background:color-mix(in srgb,var(--panel2) 54%,var(--panel));min-width:0}
+#view-carga .od-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+#view-carga .od-section-head>b,#view-carga .od-section-head>div>b{font-size:13px;color:var(--ink)}
+#view-carga .od-local-count-slot{display:flex;align-items:center;gap:8px}
+#view-carga #dmCount{font-size:10px;white-space:nowrap}
+#view-carga #dataManagerDrop{margin-top:0!important;padding:21px 14px;border:1px dashed color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--panel) 70%,transparent);border-radius:10px;min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink)}
+#view-carga #dataManagerDrop:hover,#view-carga #dataManagerDrop.ready{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+#view-carga #dataManagerDrop>b{font-size:12px}
+#view-carga #dataManagerDrop .hint{text-align:center;font-size:10px}
+#view-carga #dmStatus{margin:8px 0 0!important;font-size:10px}
+#view-carga .od-local-list-toolbar{margin-bottom:12px}
+#view-carga .od-local-list-toolbar>div{flex:1;min-width:180px}
+#view-carga #dmRefresh,#view-carga #dataCenterClear{min-height:32px;white-space:nowrap}
+#view-carga #dataCenterClear{border:1px solid var(--line);border-style:solid;color:var(--sub);font-size:10px}
+#view-carga #dataManagerList{margin-top:0!important;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,370px),1fr));gap:9px}
+#view-carga .data-manager-card{padding:12px;border-radius:10px;background:var(--panel);box-shadow:none}
+#view-carga .dm-file-name{font-size:12px;overflow-wrap:anywhere}
+#view-carga .dm-file-meta{font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+#view-carga .dm-source-pill{display:inline-flex;align-items:center;vertical-align:baseline;padding:1px 6px;border-radius:5px;border:1px solid var(--line);font-size:9px;font-weight:750;letter-spacing:.015em;white-space:nowrap}
+#view-carga .dm-source-pill.cloud{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border-color:color-mix(in srgb,var(--accent) 28%,var(--line));color:var(--accent)}
+#view-carga .dm-source-pill.local{background:color-mix(in srgb,var(--accent2) 9%,var(--panel));border-color:color-mix(in srgb,var(--accent2) 25%,var(--line));color:var(--accent2)}
+#view-carga .dm-source-pill.legacy{color:var(--sub)}
+#view-carga .dm-dest{font-size:10px}
+#view-carga .od-main-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+#view-carga .od-main-actions button{min-height:35px}
+#view-carga .od-linked-block{margin-top:0}
+#view-carga .od-config{margin-top:0}
+#view-carga .od-manager-head{margin-bottom:0}
+#view-carga .od-card> .status-line{margin:0!important}
+#view-carga .od-refresh-list{order:3}
+#dataCenterActions>div:first-child{display:none!important}
+#dataCenterClear.hidden{display:none!important}
+.nora-od-picker .pk-folder-place{gap:7px}
+.nora-od-picker .pk-file-row{min-height:52px}
+@media(max-width:720px){#view-carga .od-card{padding:12px;gap:12px}#view-carga .od-local-source,#view-carga .od-local-list-section{padding:11px}#view-carga #dataManagerList{grid-template-columns:1fr}#view-carga .od-section-head{align-items:flex-start}#view-carga .od-local-list-toolbar>div{min-width:100%}}
+</style>
+
+</body></html>`);
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
@@ -6333,7 +6461,7 @@ safe('texts',()=>{TITLES.home=['Inicio','Centro de datos y resumen general.'];TI
  const dc=$('dataCenterCard');if(dc){dc.classList.remove('hidden');dc.removeAttribute('aria-hidden');dc.style.display='';}
  document.querySelectorAll('[data-go=pdf]').forEach(b=>{if(/Informe PDF/.test(b.textContent)&&b.lastChild)b.lastChild.nodeValue='Cobranzas';});
  const sub=$('pageSub');if(sub&&/Centro de datos/.test(sub.textContent))sub.textContent=TITLES.home[1];});
-const pickFiles=()=>{const i=$('dataCenterFile');if(i)i.click();};
+const pickFiles=()=>{const i=$('dataManagerFile')||$('file');if(typeof setView==='function')setView('carga');if(i)i.click();};
 
 /* ---------- 11) Cobranzas: generar → imprimir en una sola sección ---------- */
 const _sv=window.setView;
@@ -6449,10 +6577,12 @@ function calcPop(btn){const n=mk('div','nr-calc',`<h4>${ico('calc')}Calculadora<
  n.onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;if(k==='C')ex='';else if(k==='⌫')ex=ex.slice(0,-1);else if(k==='='){try{if(/^[0-9+\-*/().\s]+$/.test(ex)&&ex){const v=Function('"use strict";return ('+ex+')')();ex=String(Math.round(v*1e10)/1e10);}}catch(er){ex='Error';}}else{if(ex==='Error')ex='';ex+=k;}show();};
  openPop(btn,n,'Calculadora');}
 /* --- Archivos cargados (reemplaza al viejo Centro de datos) --- */
-function dataPop(btn){const n=mk('div','',`<h4>${ico('database')}Archivos cargados</h4><div class="hint" id="nrDpS"></div><ul id="nrDpL"></ul><div class="r" style="flex-wrap:wrap"><button type="button" class="primary" data-a="load">${ico('upload')}Cargar Excel</button><button type="button" data-a="link">${ico('link')}Vincular</button><button type="button" data-a="re">${ico('refresh')}Releer</button><button type="button" class="ghost" data-a="clr">${ico('trash')}Vaciar</button></div>`);
- const draw=()=>{const f=typeof FILES!=='undefined'?FILES:[];n.querySelector('#nrDpS').textContent=f.length?`${f.length} archivo(s) · ${(typeof RECORDS!=='undefined'?RECORDS.length:0).toLocaleString('es-AR')} registros`:'Todavía no cargaste ningún Excel.';n.querySelector('#nrDpL').innerHTML=f.map(x=>`<li>${ico('filetext')}<span>${esc(x.name)}</span><small class="hint">${(x.records||[]).length.toLocaleString('es-AR')}</small></li>`).join('');};
- n.onclick=e=>{const b=e.target.closest('button[data-a]');if(!b)return;const a=b.dataset.a;if(a==='load')pickFiles();else if(a==='link')$('btnLinkCobFiles')&&$('btnLinkCobFiles').click();else if(a==='re')$('btnReloadCobFiles')&&$('btnReloadCobFiles').click();else if(a==='clr'){const c=$('dataCenterClear');if(c&&confirm('¿Vaciar todos los datos cargados?'))c.click();setTimeout(draw,300);}};
- draw();openPop(btn,n,'Archivos');}
+function dataPop(btn){
+ const n=mk('div','',`<h4>${ico('database')}Centro de archivos</h4><div class="hint" id="nrDpS"></div><ul id="nrDpL"></ul><div class="r" style="flex-wrap:wrap"><button type="button" class="primary" data-a="manage">Abrir Carga de Datos</button></div>`);
+ const draw=()=>{const f=typeof FILES!=='undefined'?FILES:[];n.querySelector('#nrDpS').textContent=f.length?`${f.length} archivo(s) · ${(typeof RECORDS!=='undefined'?RECORDS.length:0).toLocaleString('es-AR')} registros`:'Todavía no cargaste ningún Excel.';n.querySelector('#nrDpL').innerHTML=f.slice(0,6).map(x=>`<li>${ico('filetext')}<span>${esc(x.name)}</span><small class="hint">${(x.records||[]).length.toLocaleString('es-AR')}</small></li>`).join('')+(f.length>6?`<li class="hint">Y ${f.length-6} archivo(s) más.</li>`:'');};
+ n.onclick=e=>{const b=e.target.closest('button[data-a]');if(!b)return;if(typeof closePop==='function')closePop();setView('carga');};
+ draw();openPop(btn,n,'Archivos');
+}
 /* --- Clima (Open-Meteo, sin clave) --- */
 const WXK='nora_wx_v1';let WX=Object.assign({lat:-34.8953,lon:-60.0169,name:'Chivilcoy, Buenos Aires, Argentina',data:null,ts:0},LS.get(WXK,{}));
 const wxSave=()=>LS.set(WXK,WX);
@@ -7582,9 +7712,11 @@ function setStatus(msg,warn){
 }
 function refreshButtons(){
   const conn=hasTok(),ok=ready();
-  $$('.od-btn-connect').forEach(b=>{b.style.display=ok?'':'none';b.textContent=conn?'Reconectar':'Conectar con Microsoft';});
+  $$('.od-btn-connect').forEach(b=>{b.style.display='';b.textContent=conn?'Reconectar con Microsoft':'Conectar con Microsoft';});
+  $$('.od-btn-pick').forEach(b=>{b.disabled=!(ok&&conn)||busy;});
   $$('.od-btn-sync').forEach(b=>{b.disabled=!(ok&&conn)||busy;});
   $$('.od-btn-disc').forEach(b=>{b.style.display=conn?'':'none';});
+  renderSelectedFiles();
 }
 
 /* ----------------------------------------------------------- PKCE ------ */
@@ -7689,7 +7821,7 @@ async function gfetch(url,token,tries){
   return r.json();
 }
 const encPath=p=>p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-const SELECT='$top=200&$select=id,name,size,eTag,lastModifiedDateTime,file,folder,@microsoft.graph.downloadUrl';
+const SELECT='$top=200&$select=id,name,size,eTag,lastModifiedDateTime,file,folder';
 
 async function listFolder(token){
   const root=(cfg.folder||'').trim().replace(/^\/+|\/+$/g,'');
@@ -7716,17 +7848,27 @@ async function listFolder(token){
 }
 
 async function download(it,token){
-  const errs=[];
-  if(it.url){
-    try{const r=await fetch(it.url);if(r.ok)return await r.blob();errs.push('descarga directa HTTP '+r.status);}
-    catch(e){errs.push('descarga directa bloqueada');}
+  // Microsoft recomienda usar la URL preautenticada; /content redirige con 302
+  // y puede fallar por CORS en aplicaciones JavaScript.
+  async function resolveUrl(){
+    if(it.url)return it.url;
+    const query=new URLSearchParams({'$select':'id,@microsoft.graph.downloadUrl'}).toString();
+    const detail=await gfetch(GRAPH+'/me/drive/items/'+encodeURIComponent(it.id)+'?'+query,token);
+    return detail['@microsoft.graph.downloadUrl']||'';
   }
-  try{
-    const r=await fetch(GRAPH+'/me/drive/items/'+it.id+'/content',{headers:{Authorization:'Bearer '+token}});
-    if(r.ok)return await r.blob();
-    errs.push('/content HTTP '+r.status);
-  }catch(e){errs.push('/content: '+e.message);}
-  throw new Error('No se pudo descargar «'+it.name+'» ('+errs.join('; ')+')');
+  let url=await resolveUrl();
+  if(!url)throw new Error('Microsoft no entregó una URL de descarga para «'+it.name+'». Volvé a actualizar la lista.');
+  let r;
+  try{r=await fetch(url,{cache:'no-store'});}catch(e){throw new Error('No se pudo descargar «'+it.name+'» desde OneDrive: '+(e.message||'error de red'));}
+  // Las URL preautenticadas vencen. Renovar una sola vez si el servidor la rechazó.
+  if(!r.ok&&[401,403,404,410].includes(r.status)){
+    it.url='';url=await resolveUrl();
+    if(url){try{r=await fetch(url,{cache:'no-store'});}catch(e){throw new Error('Falló la descarga renovada de «'+it.name+'».');}}
+  }
+  if(!r||!r.ok)throw new Error('Descarga de «'+it.name+'» rechazada por OneDrive (HTTP '+(r?r.status:'sin respuesta')+').');
+  const blob=await r.blob();
+  if(!blob.size)throw new Error('OneDrive devolvió un archivo vacío: «'+it.name+'».');
+  return blob;
 }
 
 async function refreshList(){
@@ -7738,8 +7880,10 @@ async function refreshList(){
 }
 async function openPicker(){
   const cachedList=jget(K_LIST,null);
-  if((!Array.isArray(cachedList)||cachedList.some(i=>!i.id))&&!(await refreshList()))return;
-  let list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));
+  const refreshed=await refreshList();
+  if(!refreshed&&(!Array.isArray(cachedList)||!cachedList.some(i=>i&&i.id)))return;
+  let list=(refreshed?(jget(K_LIST,[])||[]):cachedList||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));
+  if(!list.length){setStatus('No encontré archivos Excel en la ubicación configurada de OneDrive.',true);return;}
   const sel=getSel()||{ids:[],names:[],seen:[]};
   const chosen=new Set((sel.ids||[]).map(String));
   const legacyNames=new Set((!chosen.size?(sel.names||[]):[]).map(String));
@@ -7748,40 +7892,64 @@ async function openPicker(){
   const first=!getSel();
   const ov=document.createElement('div');ov.className='nora-od-picker-overlay';
   ov.innerHTML='<section class="nora-od-picker card" role="dialog" aria-modal="true" aria-labelledby="pk-title">'+
-    '<header class="pk-head"><div><div class="pk-eyebrow">FUENTES DE DATOS</div><h2 id="pk-title">Elegir archivos</h2><p>Marcá las planillas que Nora debe leer. Los originales de OneDrive no se modifican ni se eliminan.</p></div><button type="button" class="iconbtn pk-x" aria-label="Cerrar">×</button></header>'+
-    '<div class="pk-tools"><input type="search" class="pk-q" placeholder="Buscar por nombre o carpeta…" aria-label="Buscar archivos" autocomplete="off">'+
-    '<select class="pk-folder" aria-label="Filtrar por carpeta"><option value="">Todas las carpetas</option></select></div>'+
-    '<div class="pk-actions"><div class="pk-bulk"><button type="button" class="secondary miniBtn pk-all">Marcar visibles</button><button type="button" class="ghost miniBtn pk-none">Desmarcar visibles</button><button type="button" class="ghost miniBtn pk-ref">Actualizar lista</button><label class="pk-only-label"><input type="checkbox" class="pk-only"> Solo seleccionados</label></div><div class="pk-cnt" aria-live="polite"></div></div>'+
-    '<div class="pk-list-wrap"><div class="pk-list"></div></div>'+
-    '<footer class="pk-foot"><span class="pk-safe-note"><span class="pk-safe-dot"></span>Solo lectura · sin borrar archivos originales</span><div><button type="button" class="secondary miniBtn pk-cancel">Cancelar</button> <button type="button" class="primary miniBtn pk-ok">Guardar selección</button></div></footer>'+
-    '<div class="pk-status" aria-live="polite"></div></section>';
+    '<header class="pk-head"><div class="pk-title-group"><div class="pk-eyebrow">NORA · CENTRO DE ARCHIVOS</div><h2 id="pk-title">OneDrive</h2><p>Elegí las planillas que Nora puede leer. Tus originales permanecen en OneDrive.</p></div><div class="pk-head-actions"><span class="pk-cloud-mark" aria-hidden="true">OD</span><button type="button" class="iconbtn pk-x" aria-label="Cerrar">×</button></div></header>'+
+    '<div class="pk-explorer"><aside class="pk-sidebar" aria-label="Carpetas de OneDrive"><div class="pk-side-label">UBICACIONES</div><button type="button" class="pk-place active" data-place=""><span class="pk-nav-glyph">⌂</span><span>Todos los Excel</span><small class="pk-all-count"></small></button><div class="pk-side-label pk-folders-label">CARPETAS</div><nav class="pk-folder-nav"></nav><div class="pk-side-note">Solo se muestran archivos Excel admitidos por Nora.</div></aside>'+
+    '<main class="pk-main"><div class="pk-toolbar"><label class="pk-search"><span aria-hidden="true">⌕</span><input type="search" class="pk-q" placeholder="Buscar archivo o carpeta…" aria-label="Buscar archivos" autocomplete="off"></label><button type="button" class="secondary miniBtn pk-ref" title="Actualizar la lista de OneDrive">Actualizar</button></div>'+
+    '<div class="pk-crumbs" aria-label="Ubicación actual"></div><div class="pk-actions"><div class="pk-bulk"><button type="button" class="secondary miniBtn pk-all">Marcar visibles</button><button type="button" class="ghost miniBtn pk-none">Desmarcar visibles</button><label class="pk-only-label"><input type="checkbox" class="pk-only"> Solo seleccionados</label></div><div class="pk-actions-right"><div class="pk-view-toggle" role="group" aria-label="Vista de archivos"><button type="button" class="active" data-viewmode="list" title="Vista de lista">Lista</button><button type="button" data-viewmode="grid" title="Vista de cuadrícula">Cuadrícula</button></div><div class="pk-cnt" aria-live="polite"></div></div></div>'+
+    '<div class="pk-list-wrap"><div class="pk-list" data-mode="list"></div></div><div class="pk-status" aria-live="polite"></div></main></div>'+
+    '<footer class="pk-foot"><span class="pk-safe-note"><span class="pk-safe-dot"></span>Lectura de archivos · sin modificar ni borrar originales</span><div><button type="button" class="secondary miniBtn pk-cancel">Cancelar</button><button type="button" class="primary miniBtn pk-ok">Guardar selección y sincronizar</button></div></footer></section>';
   document.body.appendChild(ov);
-  const q=c=>ov.querySelector(c);let vis=[];
+  const q=c=>ov.querySelector(c);let vis=[],currentFolder='',viewMode='list';
   const folderOf=i=>i.path||'';
-  function fillFolders(){
-    const f=q('.pk-folder'),prev=f.value;
-    const folders=[...new Set(list.map(folderOf).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-    f.innerHTML='<option value="">Todas las carpetas</option>'+folders.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
-    if(folders.includes(prev))f.value=prev;
+  const isChecked=i=>chosen.has(String(i.id))||legacyNames.has(i.name);
+  let folderNames=[];
+  function buildFolderTree(){
+    const fs=new Set();
+    list.forEach(i=>{const parts=folderOf(i).split('/').filter(Boolean);for(let n=1;n<=parts.length;n++)fs.add(parts.slice(0,n).join('/'));});
+    folderNames=[...fs].sort((a,b)=>a.split('/').length-b.split('/').length||a.localeCompare(b,'es'));
+    const nav=q('.pk-folder-nav');
+    nav.innerHTML=folderNames.map(f=>{
+      const depth=f.split('/').length,count=list.filter(i=>folderOf(i)===f||folderOf(i).startsWith(f+'/')).length;
+      return '<button type="button" class="pk-place pk-folder-place" data-place="'+esc(f)+'" style="--pk-depth:'+Math.min(depth-1,4)+'" title="'+esc(f)+'"><span class="pk-nav-glyph">'+(depth>1?'↳':'▰')+'</span><span>'+esc(f.split('/').pop())+'</span><small>'+count+'</small></button>';
+    }).join('')||'<div class="pk-no-folders">No hay subcarpetas</div>';
+    q('.pk-all-count').textContent=String(list.length);
+    selectPlace(currentFolder);
+  }
+  function selectPlace(path){
+    currentFolder=path||'';
+    q('.pk-sidebar').querySelectorAll('[data-place]').forEach(b=>b.classList.toggle('active',String(b.dataset.place||'')===currentFolder));
+    const parts=currentFolder?currentFolder.split('/'):[];
+    q('.pk-crumbs').innerHTML='<button type="button" data-crumb="">Todos los Excel</button>'+parts.map((part,i)=>'<span class="pk-crumb-sep">/</span><button type="button" data-crumb="'+esc(parts.slice(0,i+1).join('/'))+'">'+esc(part)+'</button>').join('');
+    draw();
+  }
+  function fmtSize(n){if(n>=1073741824)return (n/1073741824).toLocaleString('es-AR',{maximumFractionDigits:1})+' GB';if(n>=1048576)return (n/1048576).toLocaleString('es-AR',{maximumFractionDigits:1})+' MB';if(n>=1024)return Math.round(n/1024)+' KB';return (n||0)+' B';}
+  function itemMarkup(i,k){
+    const id=String(i.id||''),checked=isChecked(i),fresh=!(seenIds.has(id)||seenNames.has(i.name)||first);
+    const date=i.mtime?new Date(i.mtime).toLocaleDateString('es-AR'):'—';
+    const path=i.path||'Carpeta principal';
+    return '<label class="pk-file-row '+(checked?'is-selected':'')+'" data-row-id="'+esc(id)+'">'+
+      '<input type="checkbox" data-k="'+k+'" '+(checked?'checked':'')+' aria-label="Seleccionar '+esc(i.name)+'">'+
+      '<span class="pk-file-icon" aria-hidden="true"><span class="pk-file-fold"></span><b>XLS</b></span>'+
+      '<span class="pk-file-main"><span class="pk-file-title">'+esc(i.name)+'</span><span class="pk-file-path">'+esc(path)+'</span></span>'+
+      '<span class="pk-file-date">'+esc(date)+'</span><span class="pk-file-size">'+esc(fmtSize(i.size||0))+'</span>'+
+      (fresh?'<span class="pk-new">NUEVO</span>':'')+'<span class="pk-row-check" aria-hidden="true"></span></label>';
   }
   function draw(){
-    const t=q('.pk-q').value.trim().toLocaleLowerCase('es-AR'),folder=q('.pk-folder').value,only=q('.pk-only').checked;
+    const t=q('.pk-q').value.trim().toLocaleLowerCase('es-AR'),only=q('.pk-only').checked;
     vis=list.filter(i=>{
-      const matchText=!t||(i.name+' '+i.path).toLocaleLowerCase('es-AR').includes(t);
-      const matchFolder=!folder||folderOf(i)===folder;
-      const checked=chosen.has(String(i.id))||legacyNames.has(i.name);
-      return matchText&&matchFolder&&(!only||checked);
+      const path=folderOf(i),inFolder=!currentFolder||path===currentFolder||path.startsWith(currentFolder+'/');
+      const matchText=!t||(i.name+' '+path).toLocaleLowerCase('es-AR').includes(t);
+      return inFolder&&matchText&&(!only||isChecked(i));
     });
-    q('.pk-list').innerHTML=vis.map((i,k)=>{
-      const id=String(i.id||'');const checked=chosen.has(id)||legacyNames.has(i.name);
-      const fresh=!(seenIds.has(id)||seenNames.has(i.name)||first);
-      const date=i.mtime?new Date(i.mtime).toLocaleDateString('es-AR'):'Sin fecha';
-      const size=(i.size||0)>=1048576?((i.size||0)/1048576).toLocaleString('es-AR',{maximumFractionDigits:1})+' MB':Math.max(1,Math.round((i.size||0)/1024))+' KB';
-      return '<label class="pk-file-row"><input type="checkbox" data-k="'+k+'" '+(checked?'checked':'')+'><span class="pk-file-icon" aria-hidden="true">XLS</span><span class="pk-file-main"><span class="pk-file-title">'+esc(i.name)+'</span><span class="pk-file-path">'+esc(i.path||'Carpeta principal')+'</span><span class="pk-file-meta">'+esc(date)+' · '+esc(size)+(fresh?' · <b class="pk-new">NUEVO</b>':'')+'</span></span><span class="pk-row-check" aria-hidden="true"></span></label>';
-    }).join('')||'<div class="pk-empty"><b>No encontramos coincidencias</b><span>Probá con otro nombre o cambiá el filtro de carpeta.</span></div>';
-    const selectedNow=list.filter(i=>chosen.has(String(i.id))||legacyNames.has(i.name)).length;
-    q('.pk-cnt').textContent=selectedNow+' seleccionados · '+vis.length+' visibles de '+list.length;
+    const box=q('.pk-list');box.dataset.mode=viewMode;
+    box.innerHTML=vis.map((i,k)=>itemMarkup(i,k)).join('')||'<div class="pk-empty"><span class="pk-empty-mark">XLS</span><b>No hay archivos para mostrar</b><span>Probá con otra carpeta o cambiá la búsqueda.</span></div>';
+    const selectedNow=list.filter(isChecked).length;
+    q('.pk-cnt').textContent=selectedNow+' seleccionados';
     q('.pk-all').disabled=!vis.length;q('.pk-none').disabled=!vis.length;
+    q('.pk-status').textContent=vis.length+' archivo(s) en esta vista · '+list.length+' disponibles en OneDrive';
+    q('.pk-all-count').textContent=String(list.length);
+    q('.pk-sidebar').querySelectorAll('[data-place]').forEach(b=>{if(b.dataset.place==='')return;const f=b.dataset.place;b.querySelector('small').textContent=list.filter(i=>folderOf(i)===f||folderOf(i).startsWith(f+'/')).length;});
+    renderSelectedFiles();
   }
   ov.addEventListener('change',e=>{
     const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;
@@ -7789,35 +7957,31 @@ async function openPicker(){
     if(e.target.checked){chosen.add(id);legacyNames.delete(it.name);}else{chosen.delete(id);legacyNames.delete(it.name);}
     draw();
   });
-  q('.pk-q').oninput=draw;q('.pk-folder').onchange=draw;q('.pk-only').onchange=draw;
+  q('.pk-q').oninput=draw;q('.pk-only').onchange=draw;
   q('.pk-all').onclick=()=>{vis.forEach(i=>{chosen.add(String(i.id||''));legacyNames.delete(i.name);});draw();};
   q('.pk-none').onclick=()=>{vis.forEach(i=>{chosen.delete(String(i.id||''));legacyNames.delete(i.name);});draw();};
+  q('.pk-sidebar').addEventListener('click',e=>{const b=e.target.closest('[data-place]');if(b)selectPlace(b.dataset.place||'');});
+  q('.pk-crumbs').addEventListener('click',e=>{const b=e.target.closest('[data-crumb]');if(b)selectPlace(b.dataset.crumb||'');});
+  q('.pk-view-toggle').onclick=e=>{const b=e.target.closest('[data-viewmode]');if(!b)return;viewMode=b.dataset.viewmode;q('.pk-view-toggle').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));draw();};
   q('.pk-ref').onclick=async()=>{
-    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando la lista de OneDrive…';
+    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando OneDrive…';
     const ok=await refreshList();
-    if(ok){list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||''));fillFolders();draw();q('.pk-status').textContent='Lista actualizada.';}
-    else q('.pk-status').textContent='No se pudo actualizar. Revisá la conexión y volvé a intentar.';
+    if(ok){list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));buildFolderTree();q('.pk-status').textContent='Lista actualizada.';}
+    else q('.pk-status').textContent='No se pudo actualizar. Se conserva la última lista disponible.';
     q('.pk-ref').disabled=false;
   };
   const close=()=>ov.remove();q('.pk-x').onclick=close;q('.pk-cancel').onclick=close;
   ov.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
   q('.pk-ok').onclick=async()=>{
-    const validIds=list.filter(i=>chosen.has(String(i.id||''))||legacyNames.has(i.name)).map(i=>String(i.id||''));
-    const validItems=list.filter(i=>validIds.includes(String(i.id||'')));
+    const validItems=list.filter(i=>chosen.has(String(i.id||''))||legacyNames.has(i.name));
+    const validIds=[...new Set(validItems.map(i=>String(i.id||'')).filter(Boolean))];
     const previous=getSel()||{ids:[],names:[]};
     const previousIds=new Set((previous.ids||[]).map(String));
     const previousNames=new Set(previous.names||[]);
     const nextIds=new Set(validIds);
-    const removedIds=new Set([...previousIds].filter(id=>!nextIds.has(id)));
-    // Migración segura: si la versión anterior guardaba solo nombres, desvinculamos por nombre.
     const removedNames=new Set([...previousNames].filter(name=>!validItems.some(i=>i.name===name)));
     const st=jget(K_ST,{files:{}})||{};st.files=st.files||{};
-    Object.keys(st.files).forEach(id=>{
-      if(!nextIds.has(String(id))){
-        if(st.files[id]?.name)removedNames.add(st.files[id].name);
-        delete st.files[id];
-      }
-    });
+    Object.keys(st.files).forEach(id=>{if(!nextIds.has(String(id))){const nm=st.files[id]?.name;if(nm&&!validItems.some(i=>i.name===nm))removedNames.add(nm);delete st.files[id];}});
     if(typeof FILES!=='undefined'&&Array.isArray(FILES)){
       const before=FILES.length;
       FILES=FILES.filter(f=>{
@@ -7825,17 +7989,28 @@ async function openPicker(){
         if(!f.source&&removedNames.has(f.name))return false;
         return true;
       });
-      if(FILES.length!==before){
-        rebuildRecords();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();
-        if(FILES.length)await saveState();else await clearState();
-      }
+      if(FILES.length!==before){rebuildRecords();renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();if(FILES.length)await saveState();else await clearState();}
     }
     setSel({ids:validIds,names:validItems.map(i=>i.name),seenIds:list.map(i=>String(i.id||'')),seen:list.map(i=>i.name)});
     jset(K_ST,st);
     removedNames.forEach(name=>window.NoraSourceExclusions?.exclude(name));
-    close();await sync({manual:true});
+    close();await sync({manual:true});renderSelectedFiles();
   };
-  fillFolders();draw();q('.pk-q').focus();
+  buildFolderTree();draw();q('.pk-q').focus();
+  if(!refreshed)q('.pk-status').textContent='Sin conexión con Microsoft: se muestra la última lista guardada.';
+}
+
+function renderSelectedFiles(){
+  const els=$$('.od-selected-files');
+  if(!els.length)return;
+  const sel=getSel()||{ids:[],names:[]},list=jget(K_LIST,[])||[];
+  const ids=new Set((sel.ids||[]).map(String));
+  const names=(sel.names||[]).map(String);
+  let chosen=list.filter(i=>ids.has(String(i.id))||(!ids.size&&names.includes(i.name)));
+  els.forEach(el=>{
+    el.innerHTML=chosen.length?chosen.slice(0,8).map(i=>'<span class="od-picked-item"><span class="od-picked-xls">XLS</span><span class="od-picked-text"><b>'+esc(i.name)+'</b><small>'+esc(i.path||'Carpeta principal')+'</small></span><span class="od-picked-status">Vinculado</span></span>').join('')+(chosen.length>8?'<div class="hint">Y '+(chosen.length-8)+' archivo(s) más.</div>':''):'<div class="od-picked-empty">Todavía no seleccionaste archivos de OneDrive.</div>';
+  });
+  $$('.od-selected-count').forEach(el=>el.textContent=chosen.length+' seleccionado(s)');
 }
 
 /* ------------------------------------------------------- sincronizar --- */
@@ -7880,7 +8055,10 @@ async function sync(opts){
     const todo=chosen.filter(it=>{
       const current=curFiles().find(f=>f.name===it.name);
       const isSameCloudItem=current&&current.source==='onedrive'&&String(current.sourceId||'')===String(it.id);
-      return !have.has(it.name)||!isSameCloudItem||!st.files[it.id]||st.files[it.id].sig!==sig(it);
+      const remoteTag=String(it.etag||'');
+      const entryTag=String(current?.sourceSig||'');
+      const entryRevisionMismatch=!!remoteTag&&entryTag!==remoteTag;
+      return !have.has(it.name)||!isSameCloudItem||!st.files[it.id]||st.files[it.id].sig!==sig(it)||entryRevisionMismatch;
     });
 
     const ids=new Set(items.map(i=>i.id));
@@ -7909,21 +8087,31 @@ async function sync(opts){
         okItems.push(it);
       }catch(e){fails.push(e.message);log(e.message,'error');}
     }
+    let imported=[];
     if(files.length){
-      setStatus('Procesando '+files.length+' archivo(s)…');
+      setStatus('Procesando '+files.length+' archivo(s) en Nora…');
       const before=snap(okItems.map(i=>i.name));
-      await window.handleFiles(files,!opts.manual,{source:'onedrive',remoteItems:okItems});
-      const imported=okItems.filter(it=>curFiles().some(x=>x.name===it.name&&x.source==='onedrive'&&String(x.sourceId||'')===String(it.id)));
-      imported.forEach(it=>{const m=diffMsg(it.name,before[it.name],curFiles().find(x=>x.name===it.name));if(m)changes.push(m);});
+      const importResult=await window.handleFiles(files,!opts.manual,{source:'onedrive',remoteItems:okItems});
+      imported=okItems.filter(it=>curFiles().some(x=>x.name===it.name&&x.source==='onedrive'&&String(x.sourceId||'')===String(it.id)&&(!it.etag||String(x.sourceSig||'')===String(it.etag))));
+      const failedItems=okItems.filter(it=>!imported.some(done=>String(done.id)===String(it.id)));
+      failedItems.forEach(it=>{
+        const issue=(importResult?.errors||[]).find(e=>e.file===it.name);
+        const detail=issue?.errors?.map(x=>x.msg).filter(Boolean).join('; ');
+        fails.push('«'+it.name+'» descargado pero no incorporado'+(detail?': '+detail+'.':'. Revisá la estructura de la hoja y las columnas Apellido/Nombre.'));
+      });
+      imported.forEach(it=>{const m=diffMsg(it.name,before[it.name],curFiles().find(x=>x.name===it.name&&String(x.sourceId||'')===String(it.id)));if(m)changes.push(m);});
       imported.forEach(it=>{st.files[it.id]={sig:sig(it),name:it.name,mtime:it.mtime,path:it.path};});
+      if(imported.length)try{await saveState();}catch(e){log('No se pudo guardar la referencia de los archivos sincronizados: '+e.message,'error');}
+      if(imported.length!==okItems.length)log('Algunos Excel se descargaron pero no se importaron. Revisá el estado de carga y el formato de la hoja.','error');
     }
     st.last=Date.now();jset(K_ST,st);
     if(changes.length){hist(changes.join(' | '));toast(esc(changes.slice(0,2).join(' · '))+(changes.length>2?' …':''),'ok');}
-    else if(files.length&&!opts.quiet)toast(files.length+' archivo(s) actualizado(s) desde OneDrive','ok');
+    else if(imported.length&&!opts.quiet)toast(imported.length+' archivo(s) incorporado(s) desde OneDrive','ok');
     if(fails.length)hist('Errores: '+fails.join(' | '));
-    setStatus((fails.length?'⚠ ':'✔ ')+files.length+' actualizado(s) · '+chosen.length+' elegido(s) · '+hora()+nota+
-      (fails.length?' · '+fails.length+' con error (ver consola)':''),fails.length>0);
-    log(files.length+' archivo(s) sincronizados'+(fails.length?', '+fails.length+' con error':''),fails.length?'error':'ok');
+    renderSelectedFiles();
+    setStatus((fails.length?'⚠ ':'✔ ')+imported.length+' incorporado(s) · '+chosen.length+' elegido(s) · '+hora()+nota+
+      (fails.length?' · '+fails.length+' con problema(s). '+fails.slice(0,2).join(' | '):''),fails.length>0);
+    log(imported.length+' archivo(s) incorporados'+(fails.length?', '+fails.length+' con error':''),fails.length?'error':'ok');
   }catch(e){
     if(e.offline){setStatus('Sin conexión · se muestran los últimos datos guardados.',true);}
     else if(e.status===404){setStatus('No encontré la carpeta «'+(cfg.folder||'(raíz)')+'» en tu OneDrive. Revisá el nombre en Ajustes.',true);}
@@ -7939,46 +8127,22 @@ async function sync(opts){
 
 /* -------------------------------------------------------------- UI ----- */
 function cardHTML(full){
-  const pasos=
-    '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">¿Cómo obtengo el ID de aplicación? (una sola vez)</summary>'+
-    '<ol class="hint" style="margin:8px 0 0 18px;line-height:1.6">'+
-    '<li>Entrá a <b>entra.microsoft.com</b> con tu cuenta Microsoft → <b>Identidad › Aplicaciones › Registros de aplicaciones › Nuevo registro</b>.</li>'+
-    '<li>Nombre: <b>Nora</b>. Tipos de cuenta: <b>Solo cuentas personales de Microsoft</b>.</li>'+
-    '<li>URI de redirección: plataforma <b>Aplicación de página única (SPA)</b> y pegá la dirección de redirección de acá abajo, tal cual.</li>'+
-    '<li>Registrar. En «Información general» copiá el <b>Id. de aplicación (cliente)</b> y pegalo acá.</li>'+
-    '<li>Guardá y tocá <b>Conectar con Microsoft</b>. La primera vez te pide permiso de lectura de tus archivos.</li>'+
-    '</ol></details>';
-  if(!full){
-    return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive</h2>'+
-      '<div class="row" style="gap:8px;flex-wrap:wrap">'+
-      '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
-      '<button class="secondary miniBtn od-btn-pick">Elegir archivos…</button><button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button></div>'+
-      '<div class="hint od-status" style="margin-top:8px"></div>'+
-      '<div class="hint" style="margin-top:4px">Elegí y sincronizá las fuentes desde acá. Los archivos locales se agregan en Centro de datos; quitar un vínculo no borra el original.</div>'+
-      '<div class="hint" style="margin-top:4px">La configuración avanzada está en Ajustes → OneDrive.</div>';
-  }
-  return '<h2><span class="h-ic" data-icon="refresh"></span>OneDrive · sincronización automática</h2>'+
-    '<div class="hint">Administrá desde este panel la conexión, los archivos vinculados y la sincronización. Para incorporar archivos desde tu PC usá Centro de datos. Nora procesa las planillas Excel que elegís; Microsoft Files.Read permite leer archivos de tu cuenta, pero este código no incorpora operaciones para modificar ni eliminar originales.</div>'+
-    '<div class="status-line od-status" style="margin:10px 0"></div>'+
-    '<div class="row" style="gap:8px;flex-wrap:wrap">'+
-    '<button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>'+
-    '<button class="secondary miniBtn od-btn-pick">Elegir archivos…</button>'+
-    '<button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button>'+
-    '<button class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
-    '<div class="field" style="margin-top:12px"><label>ID de aplicación (cliente) de Azure</label>'+
-    '<input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>'+
-    '<div class="field" style="margin-top:8px"><label>Carpeta en OneDrive</label>'+
-    '<input type="text" class="od-in-folder" placeholder="Ej: Cobranza/2026  (vacío = raíz de OneDrive)" autocomplete="off"></div>'+
-    '<div class="row" style="gap:16px;flex-wrap:wrap;margin-top:8px">'+
-    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label>'+
-    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label>'+    '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>'+    '<div class="hint">Si lo dejás desmarcado, el token queda limitado a esta pestaña y quizá tengas que volver a conectar Microsoft al abrir Nora en otra sesión.</div>'+
-    '<div class="field" style="margin-top:8px"><label>Dirección de redirección (copiala en Azure)</label>'+
-    '<div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1">'+
-    '<button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
-    '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar</button></div>'+
-    '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Historial de cambios</summary><div class="od-hist-list" style="margin-top:6px"></div></details>'+
-    '<div class="od-security-note"><b>Seguridad y privacidad</b><br>El PIN bloquea la interfaz, pero no cifra la base local. El token de Microsoft se guarda en la sesión de esta pestaña por defecto; solo se guarda entre sesiones si activás «Recordar sesión». El permiso Files.Read puede leer archivos de la cuenta, aunque Nora solo procesa los Excel seleccionados. No compartas el perfil del navegador y mantené protegido el usuario de Windows.</div>'+    '<div style="margin-top:12px"><b>Bloqueo con PIN</b><div class="hint">Bloquea Nora al abrirla y tras 5 minutos sin actividad.</div><div class="row" style="gap:8px;margin-top:6px"><button class="secondary miniBtn od-btn-pin">Configurar / cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
-    pasos;
+  const pasos='<ol class="hint od-setup-steps"><li>Entrá a <b>entra.microsoft.com</b> → Registros de aplicaciones → Nuevo registro.</li><li>Nombre: <b>Nora</b>. Elegí cuentas personales de Microsoft.</li><li>Agregá la URL que aparece abajo en la plataforma <b>Aplicación de página única (SPA)</b>.</li><li>Copiá el Id. de aplicación (cliente), pegalo acá y guardá.</li><li>Conectá Microsoft y aceptá el permiso de lectura solicitado.</li></ol>';
+  return '<div class="od-manager-head"><div><div class="od-manager-kicker">FUENTE EN LA NUBE</div><h2><span class="h-ic" data-icon="refresh"></span>Archivos y sincronización</h2><p class="hint">Administrá desde acá las planillas locales y las de OneDrive. Elegí una vez los Excel que Nora puede leer; los originales no se modifican ni se eliminan.</p></div><div class="od-cloud-badge"><span class="od-cloud-glyph">OD</span><span><b>Microsoft OneDrive</b><small>Solo lectura</small></span></div></div>'+
+  '<div class="status-line od-status" style="margin:12px 0"></div><div class="od-main-actions"><button class="primary miniBtn od-btn-connect">Conectar con Microsoft</button><button class="secondary miniBtn od-btn-pick">Explorar OneDrive…</button><button class="secondary miniBtn od-btn-sync">Sincronizar ahora</button><button class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
+  '<div class="od-linked-block"><div class="od-linked-head"><div><b>Planillas vinculadas</b><div class="hint">Estas son las fuentes en la nube que Nora mantiene actualizadas.</div></div><span class="od-selected-count">0 seleccionado(s)</span></div><div class="od-selected-files"><div class="od-picked-empty">Todavía no seleccionaste archivos de OneDrive.</div></div></div>'+
+  '<section class="od-local-source"><div class="od-section-head"><div><b>Archivos del equipo</b><div class="hint">Agregá Excel desde tu computadora. Se administran junto con OneDrive.</div></div><span class="od-local-count-slot"></span></div><div class="od-local-drop-mount"></div></section>'+
+  '<section class="od-local-list-section"><div class="od-section-head od-local-list-toolbar"><div><b>Archivos disponibles en Nora</b><div class="hint">Asigná destinos o quitá el vínculo desde esta única lista.</div></div></div><div class="od-local-list-mount"></div></section>'+
+  '<details class="od-config" '+(!ready()?'open':'')+'><summary><span class="b-ic" data-icon="settings"></span>Configuración, acceso y seguridad</summary><div class="od-config-body">'+
+  '<div class="field"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>'+
+  '<div class="field" style="margin-top:9px"><label>Carpeta base de OneDrive (opcional)</label><input type="text" class="od-in-folder" placeholder="Vacío = raíz de OneDrive" autocomplete="off"><div class="hint">Podés dejarla vacía y explorar las carpetas disponibles desde el explorador.</div></div>'+
+  '<div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo</label></div>'+
+  '<div class="field" style="margin-top:10px"><label>Dirección de redirección (registrala en Azure)</label><div class="row" style="gap:8px"><input type="text" class="od-in-redir" readonly style="flex:1"><button class="ghost miniBtn od-btn-copy">Copiar</button></div></div>'+
+  '<div class="row" style="gap:8px;margin-top:10px"><button class="secondary miniBtn od-btn-save">Guardar configuración</button></div>'+
+  '<details class="od-help"><summary>Cómo configurar la aplicación de Microsoft</summary>'+pasos+'</details>'+
+  '<div class="od-security-note"><b>Privacidad</b><br>El permiso Files.Read permite leer los archivos de la cuenta conectada. El PIN de Nora bloquea la interfaz, pero no cifra por sí solo la base local del navegador. Protegé tu sesión de Windows y no compartas el perfil del navegador.</div>'+
+  '<div class="od-pin-setting"><div><b>Bloqueo con PIN</b><div class="hint">Bloquea Nora al abrirla y tras cinco minutos sin actividad.</div></div><div class="row" style="gap:7px"><button class="secondary miniBtn od-btn-pin">Configurar o cambiar PIN</button><button class="ghost miniBtn od-btn-nopin">Quitar PIN</button></div></div>'+
+  '<details class="od-help"><summary>Historial de sincronización</summary><div class="od-hist-list" style="margin-top:8px"></div></details></div></details>';
 }
 
 function fillInputs(){
@@ -8015,34 +8179,62 @@ function saveCfg(){
 }
 
 function describeStatus(){
-  if(!ready())return setStatus('Sin configurar: completá el ID de aplicación en Ajustes → OneDrive.');
+  if(!ready())return setStatus('Falta configurar Microsoft. Abrí «Configuración, acceso y seguridad» y completá el ID de aplicación.');
   if(!hasTok())return setStatus('Falta iniciar sesión. Tocá «Conectar con Microsoft».');
   const last=(jget(K_ST,{})||{}).last;
   setStatus(last?'Última sincronización: '+new Date(last).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'}):'Conectado. Todavía no se sincronizó.');
 }
 
 function buildUI(){
-  const mk=full=>{const d=document.createElement('div');d.className='card od-card';d.innerHTML=cardHTML(full);return d;};
-  const a=document.getElementById('btnLinkCobFiles2'),b=document.getElementById('btnLinkCobFiles');
-  const ca=a&&a.closest('.card'),cb=b&&b.closest('.card');
-  if(ca)ca.after(mk(true));
-  if(cb)cb.after(mk(!ca));                 // si no existe Ajustes, la tarjeta completa va en Inicio
-  if(!ca&&!cb){const dc=document.getElementById('dataCenterCard');if(dc)dc.after(mk(true));}
-  fillInputs();renderHist();
+  const mount=document.getElementById('view-carga');
+  if(mount&&!mount.querySelector('.od-card')){
+    const d=document.createElement('div');d.className='card od-card';d.innerHTML=cardHTML(true);
+    const hero=mount.querySelector('.data-manager-hero');mount.insertBefore(d,hero||mount.firstChild);
+  }
+  // Un único Centro de archivos: OneDrive, carga local, destinos y archivos ya incorporados.
+  const center=mount&&mount.querySelector('.od-card');
+  if(center){
+    const dropMount=center.querySelector('.od-local-drop-mount'),countSlot=center.querySelector('.od-local-count-slot');
+    const drop=mount.querySelector('#dataManagerDrop'),dmStatus=mount.querySelector('#dmStatus'),dmCount=mount.querySelector('#dmCount');
+    if(countSlot&&dmCount)countSlot.appendChild(dmCount);
+    if(dropMount&&drop)dropMount.appendChild(drop);
+    if(dropMount&&dmStatus)dropMount.appendChild(dmStatus);
+    const listMount=center.querySelector('.od-local-list-mount'),list=mount.querySelector('#dataManagerList'),refresh=mount.querySelector('#dmRefresh');
+    const listToolbar=center.querySelector('.od-local-list-toolbar');
+    if(listToolbar&&refresh){refresh.classList.add('od-refresh-list');listToolbar.appendChild(refresh);}
+    if(listMount&&list)listMount.appendChild(list);
+    const clear=document.getElementById('dataCenterClear');
+    if(clear&&listToolbar){clear.textContent='Vaciar datos de Nora';clear.title='Quita los datos de Nora; no elimina los archivos originales';clear.classList.add('od-clear-all');listToolbar.appendChild(clear);}
+    mount.querySelector('.data-manager-hero')?.remove();
+    mount.querySelectorAll(':scope > .card:not(.od-card)').forEach(card=>card.remove());
+    if(clear&&!clear.dataset.noraBound){clear.dataset.noraBound='1';clear.onclick=async()=>{
+      if(!Array.isArray(FILES)||!FILES.length)return;
+      if(!confirm('¿Quitar todos los datos cargados de Nora? Se borran solo los datos internos de Nora. Los Excel originales del equipo y de OneDrive no se eliminan ni se modifican.'))return;
+      FILES.map(f=>f.name).forEach(name=>window.NoraSourceExclusions?.exclude(name));
+      const oldSel=getSel()||{};setSel({ids:[],names:[],seenIds:oldSel.seenIds||[],seen:oldSel.seen||[]});jset(K_ST,{files:{},last:Date.now()});
+      FILES=[];RECORDS=[];try{window.noraControlClear?.();}catch(e){}
+      await clearState({allowEmpty:true});renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();renderSelectedFiles();renderHome();
+      clear.classList.add('hidden');notify('Datos quitados de Nora. Los archivos originales siguen en su ubicación.','ok');
+    };}
+  }
+  // Ocultar accesos heredados a OneDrive: la gestión unificada vive en Carga de Datos.
+  const oldSettings=document.getElementById('btnLinkCobFiles2')?.closest('.card');
+  if(oldSettings&&!oldSettings.closest('#view-carga'))oldSettings.style.display='none';
+  const legacy=document.getElementById('legacyDataControls');if(legacy)legacy.style.display='none';
+  ['dataCenterLink','dataCenterLinkSorteo','dataCenterReload','dataCenterForceUpdate','btnLinkCobFiles','btnLinkCobFiles2','btnReloadCobFiles','btnReconnectCobFiles','btnReconnectCobFiles2','btnLinkSorteoFiles','btnLinkSorteoFiles2','btnReconnectSorteoFiles','btnReconnectSorteoFiles2'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.setAttribute('aria-hidden','true');}});
+  fillInputs();renderHist();syncDataCenterUI();renderDataManager();renderSelectedFiles();
   document.addEventListener('click',ev=>{
     const t=ev.target.closest&&ev.target.closest('button');if(!t)return;
-    if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);}
-    else if(t.classList.contains('od-btn-pick')){ev.preventDefault();if(ready()&&hasTok())openPicker();else setStatus('Primero conectá con Microsoft.',true);}
+    if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);else setStatus('Abrí Configuración, ingresá el ID de aplicación y guardá antes de conectar.',true);}
+    else if(t.classList.contains('od-btn-pick')){ev.preventDefault();if(ready()&&hasTok())openPicker();else setStatus('Primero configurá el ID y conectá con Microsoft.',true);}
     else if(t.classList.contains('od-btn-pin')){ev.preventDefault();window.NoraLock&&NoraLock.setup();}
     else if(t.classList.contains('od-btn-nopin')){ev.preventDefault();window.NoraLock&&NoraLock.remove();}
     else if(t.classList.contains('od-btn-sync')){ev.preventDefault();sync({manual:true});}
     else if(t.classList.contains('od-btn-disc')){ev.preventDefault();clearToken();describeStatus();toast('OneDrive desconectado','ok');}
-    else if(t.classList.contains('od-btn-save')){ev.preventDefault();if(saveCfg())toast('Configuración de OneDrive guardada','ok');}
+    else if(t.classList.contains('od-btn-save')){ev.preventDefault();if(saveCfg()){fillInputs();toast('Configuración de OneDrive guardada','ok');}}
     else if(t.classList.contains('od-btn-copy')){
-      ev.preventDefault();
-      const done=()=>toast('Dirección copiada','ok');
-      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(REDIRECT).then(done,()=>prompt('Copiá esta dirección:',REDIRECT));
-      else prompt('Copiá esta dirección:',REDIRECT);
+      ev.preventDefault();const done=()=>toast('Dirección copiada','ok');
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(REDIRECT).then(done,()=>prompt('Copiá esta dirección:',REDIRECT));else prompt('Copiá esta dirección:',REDIRECT);
     }
   });
   try{if(typeof paintIcons==='function')$$('.od-card').forEach(c=>paintIcons(c));}catch(e){}
@@ -8087,7 +8279,14 @@ async function init(){
   }
 }
 
-window.NoraOD={sync,startLogin,config:()=>Object.assign({},cfg)};
+function unlinkSource(name,id){
+  const sel=getSel()||{ids:[],names:[],seen:[],seenIds:[]};
+  const sourceId=String(id||'');
+  setSel({ids:(sel.ids||[]).map(String).filter(x=>x!==sourceId),names:(sel.names||[]).filter(x=>x!==name),seen:sel.seen||[],seenIds:sel.seenIds||[]});
+  const st=jget(K_ST,{files:{}})||{};st.files=st.files||{};delete st.files[sourceId];jset(K_ST,st);
+  renderSelectedFiles();refreshButtons();
+}
+window.NoraOD={sync,startLogin,config:()=>Object.assign({},cfg),unlinkSource};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 
