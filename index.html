@@ -4115,16 +4115,41 @@ window.__sorteoLoadFiles=async(files,silent)=>{await loadFiles(files,silent);};
 // Nora: la exclusión/desvinculación se aplica también al inventario propio de Sorteos
 // y a los permisos de lectura locales persistidos. Nunca borra el Excel original.
 function sorteoSourceKey(name){return String(name||'').trim().toLocaleLowerCase('es-AR').replace(/\s+/g,' ');}
-function readNoraSourceExclusions(){try{const v=JSON.parse(localStorage.getItem('nora_source_exclusions_v1')||'[]');return Array.isArray(v)?v.map(sorteoSourceKey).filter(Boolean):[];}catch(e){return[];}}
+/* Una exclusión antigua nunca debe ocultar una planilla que sigue activa en el Centro de datos
+   y tiene Sorteos marcado. Al re-vincularla, esa selección activa prevalece sobre el bloqueo viejo. */
+function activeCentralSorteoNames(){
+  const active=new Set();
+  try{
+    if(typeof FILES!=='undefined'&&Array.isArray(FILES))FILES.forEach(f=>{
+      if(f&&f.name&&typeof isSorteoFileName==='function'&&isSorteoFileName(f.name)&&
+         typeof fileHasDestination==='function'&&fileHasDestination(f,'sorteos'))active.add(sorteoSourceKey(f.name));
+    });
+  }catch(e){}
+  return active;
+}
+function readNoraSourceExclusions(){
+  try{
+    const v=JSON.parse(localStorage.getItem('nora_source_exclusions_v1')||'[]');
+    if(!Array.isArray(v))return[];
+    const active=activeCentralSorteoNames();
+    const all=[...new Set(v.map(sorteoSourceKey).filter(Boolean))];
+    const kept=all.filter(n=>!active.has(n));
+    if(kept.length!==all.length){
+      try{localStorage.setItem('nora_source_exclusions_v1',JSON.stringify(kept));}catch(e){}
+    }
+    return kept;
+  }catch(e){return[];}
+}
 async function purgeExcludedSorteoSources(renderUI=false){
   const excluded=new Set(readNoraSourceExclusions());
+  const active=activeCentralSorteoNames();
   let changed=false;
   const beforeFiles=S.files.length;
-  if(excluded.size)S.files=S.files.filter(f=>!excluded.has(sorteoSourceKey(f&&f.name)));
+  if(excluded.size)S.files=S.files.filter(f=>!excluded.has(sorteoSourceKey(f&&f.name))||active.has(sorteoSourceKey(f&&f.name)));
   changed=changed||S.files.length!==beforeFiles;
   let handles=[];
   try{handles=await getSorteoHandles();}catch(e){}
-  const kept=(handles||[]).filter(h=>!excluded.has(sorteoSourceKey(h&&h.name)));
+  const kept=(handles||[]).filter(h=>!excluded.has(sorteoSourceKey(h&&h.name))||active.has(sorteoSourceKey(h&&h.name)));
   if(kept.length!==(handles||[]).length){await storeSorteoHandles(kept);changed=true;}
   try{sorteoFileHandles=kept;}catch(e){}
   if(changed){await save();if(renderUI){try{renderFiles();render();renderHome();}catch(e){}}}
@@ -4147,6 +4172,7 @@ window.__noraUnlinkSorteoSource=unlinkSorteoSource;
 async function syncSorteoIntoDataCenter(files){
   if(!files||!files.length)return;
   for(const file of files){
+    try{window.NoraSourceExclusions?.allow(file.name);}catch(e){}
     const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
     const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn)continue;
     const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
@@ -4254,7 +4280,30 @@ function syncPersistedSorteoToDataCenter(){
   rebuildRecords();refreshSelects();populateBulkPdfSelectors();syncDataCenterUI();
 }
 function render(){renderFiles();renderCards();renderMonth();renderHome();}
-(async()=>{await window._boot;const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');await load();await purgeExcludedSorteoSources(false);syncPersistedSorteoToDataCenter();await loadLogo();applyBrand();applyLayout();syncCards();render();tab(S.cfg.tab||(S.files.length?'month':'files'));try{sorteoFileHandles=await getSorteoHandles();if(sorteoFileHandles.length)updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);}catch(e){}const _sv=setView;window.setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>{b.onclick=()=>window.setView(b.dataset.view);});setTimeout(renderHome,300);})();
+/* Recupera las planillas activas marcadas para Sorteos desde el estado central si una versión
+   anterior las quitó de S.files por una exclusión obsoleta. Usa la copia de trabajo local; no borra
+   ni modifica el Excel original y solo restaura archivos con el destino Sorteos seleccionado. */
+async function restoreActiveSorteoFilesFromDataCenter(){
+  try{
+    if(typeof FILES==='undefined'||!Array.isArray(FILES))return;
+    const existing=new Set((S.files||[]).map(f=>sorteoSourceKey(f&&f.name)));
+    const wanted=FILES.filter(f=>f&&f.name&&isSorteoFileName(f.name)&&fileHasDestination(f,'sorteos')&&!existing.has(sorteoSourceKey(f.name))&&f.raw);
+    if(!wanted.length)return;
+    const files=[];
+    for(const f of wanted){
+      try{
+        const raw=f.raw;
+        if(raw instanceof Blob){files.push(new File([raw],f.name,{type:raw.type||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',lastModified:Date.now()}));}
+        else if(raw instanceof ArrayBuffer||ArrayBuffer.isView(raw)){files.push(new File([raw],f.name,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',lastModified:Date.now()}));}
+      }catch(e){console.warn('No se pudo recuperar la copia de trabajo para Sorteos:',f.name,e);}
+    }
+    if(files.length){
+      files.forEach(f=>{try{window.NoraSourceExclusions?.allow(f.name);}catch(e){}});
+      await loadFiles(files,true);
+    }
+  }catch(e){console.warn('restoreActiveSorteoFilesFromDataCenter',e);}
+}
+(async()=>{await window._boot;const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');await load();await purgeExcludedSorteoSources(false);await restoreActiveSorteoFilesFromDataCenter();syncPersistedSorteoToDataCenter();await loadLogo();applyBrand();applyLayout();syncCards();render();tab(S.cfg.tab||(S.files.length?'month':'files'));try{sorteoFileHandles=await getSorteoHandles();if(sorteoFileHandles.length)updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);}catch(e){}const _sv=setView;window.setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>{b.onclick=()=>window.setView(b.dataset.view);});setTimeout(renderHome,300);})();
 })();
 
 document.querySelectorAll('.topbar-actions .iconbtn').forEach(b=>{if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.title||'Acción');});
