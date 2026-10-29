@@ -2278,6 +2278,7 @@ function updateSorteoLinkStatus(msg,showBtn){const el=document.getElementById('s
 async function linkSorteoFiles(){
   if(!window.showOpenFilePicker){
     await noraPickFilesFallback('.xlsx,.xlsm,.xls',true,async files=>{
+      (files||[]).forEach(f=>window.NoraSourceExclusions?.allow(f.name));
       if(typeof window.__sorteoLoadFiles!=='function')throw new Error('El módulo de Sorteos todavía no está listo.');
       updateSorteoLinkStatus('Importando archivos de sorteo…',false);
       await window.__sorteoLoadFiles(files,true);
@@ -2286,7 +2287,7 @@ async function linkSorteoFiles(){
     });
     return;
   }
-  try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]});sorteoFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeSorteoHandles(sorteoFileHandles);updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);notify('Vinculados','ok');await reloadSorteoFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}
+  try{const handles=await window.showOpenFilePicker({multiple:true,types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm','.xls']}}]});handles.forEach(h=>window.NoraSourceExclusions?.allow(h.name));sorteoFileHandles=handles.map(h=>({name:h.name,handle:h}));await storeSorteoHandles(sorteoFileHandles);updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);notify('Vinculados','ok');await reloadSorteoFiles();}catch(e){if(e.name!=='AbortError')console.warn(e);}
 }
 async function reconnectSorteoFiles(){
   if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
@@ -2308,6 +2309,7 @@ async function reconnectSorteoFiles(){
 }
 async function reloadSorteoFiles(silentIfNone){
   if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
+  await purgeExcludedSorteoSources(false);
   if(!sorteoFileHandles.length){
     if(!silentIfNone){updateSorteoLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una sola vez.','warn');}
     return {updated:0,failed:0};
@@ -4110,6 +4112,38 @@ if(dz){dz.innerHTML='<span class="b-ic" data-icon="folder"></span><b>Archivos ce
 if(fi){fi.onchange=()=>{fi.value='';};fi.style.display='none';}
 document.getElementById('sOpenDataManager')?.addEventListener('click',()=>setView('carga'));
 window.__sorteoLoadFiles=async(files,silent)=>{await loadFiles(files,silent);};
+// Nora: la exclusión/desvinculación se aplica también al inventario propio de Sorteos
+// y a los permisos de lectura locales persistidos. Nunca borra el Excel original.
+function sorteoSourceKey(name){return String(name||'').trim().toLocaleLowerCase('es-AR').replace(/\s+/g,' ');}
+function readNoraSourceExclusions(){try{const v=JSON.parse(localStorage.getItem('nora_source_exclusions_v1')||'[]');return Array.isArray(v)?v.map(sorteoSourceKey).filter(Boolean):[];}catch(e){return[];}}
+async function purgeExcludedSorteoSources(renderUI=false){
+  const excluded=new Set(readNoraSourceExclusions());
+  let changed=false;
+  const beforeFiles=S.files.length;
+  if(excluded.size)S.files=S.files.filter(f=>!excluded.has(sorteoSourceKey(f&&f.name)));
+  changed=changed||S.files.length!==beforeFiles;
+  let handles=[];
+  try{handles=await getSorteoHandles();}catch(e){}
+  const kept=(handles||[]).filter(h=>!excluded.has(sorteoSourceKey(h&&h.name)));
+  if(kept.length!==(handles||[]).length){await storeSorteoHandles(kept);changed=true;}
+  try{sorteoFileHandles=kept;}catch(e){}
+  if(changed){await save();if(renderUI){try{renderFiles();render();renderHome();}catch(e){}}}
+  return changed;
+}
+async function unlinkSorteoSource(name,renderUI=true){
+  const key=sorteoSourceKey(name);if(!key)return false;
+  const beforeFiles=S.files.length;
+  S.files=S.files.filter(f=>sorteoSourceKey(f&&f.name)!==key);
+  let handles=[];try{handles=await getSorteoHandles();}catch(e){}
+  const kept=(handles||[]).filter(h=>sorteoSourceKey(h&&h.name)!==key);
+  const handlesChanged=kept.length!==(handles||[]).length;
+  if(handlesChanged)await storeSorteoHandles(kept);
+  try{sorteoFileHandles=kept;}catch(e){}
+  const changed=S.files.length!==beforeFiles||handlesChanged;
+  if(changed){await save();if(renderUI){try{renderFiles();render();renderHome();}catch(e){}}}
+  return changed;
+}
+window.__noraUnlinkSorteoSource=unlinkSorteoSource;
 async function syncSorteoIntoDataCenter(files){
   if(!files||!files.length)return;
   for(const file of files){
@@ -4135,7 +4169,7 @@ async function syncSorteoIntoDataCenter(files){
 async function loadFiles(files,silent){const ok=[],err=[];const validFiles=files.filter(f=>isSorteoFileName(f.name));files.filter(f=>!isSorteoFileName(f.name)).forEach(f=>err.push(f.name+': no participa del sorteo porque no comienza con L -'));files=validFiles;if(!files.length){$('sFilesMsg').className='status-line warn';$('sFilesMsg').textContent=err.join(' | ')||'No hay archivos L - para sorteo.';if(!silent&&err.length)notify(err.join(' · '),'warn');return;}$('sFilesMsg').className='status-line';$('sFilesMsg').textContent='Leyendo '+files.length+' archivo(s)…';for(const file of files){try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos');if(!sn){err.push(file.name+': sin solapa "Datos"');continue;}const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});const h=rows.findIndex(r=>(r[1]+'').trim().toLowerCase()==='apellido');if(h<0){err.push(file.name+': no encuentro la cabecera');continue;}const hd=rows[h].map(x=>(x+'').trim().toUpperCase().replace('º','°'));const nCols=[];hd.forEach((x,i)=>{if(x==='N°'||/^N°\s?\d+$/.test(x))nCols.push(i);});const people=[];let maxLen=0;for(let i=h+1;i<rows.length;i++){const r=rows[i];const ape=(r[1]+'').trim();const nom=(r[2]+'').trim();const nums=[];nCols.forEach(c=>{const d=(r[c]+'').replace(/\D/g,'');if(d&&!nums.includes(d))nums.push(d);});if(!ape&&!nom&&!nums.length)continue;if(!nums.length)continue;nums.forEach(x=>{maxLen=Math.max(maxLen,x.length);});const rec={calle:cap(r[3]+''),nroCalle:cap((r[4]+'').trim()),piso:(r[5]+'').trim(),dpto:(r[6]+'').trim()};people.push({nums,ape:cap(ape),nom:cap(nom),dom:domicilio(rec),sit:cap(r[10]+''),loc:cap(r[11]+'')});}let loc='',ins='';const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));if(cs)for(const r of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(r[0]+'').toLowerCase();if(a.startsWith('localidad'))loc=(r[1]+'').trim();else if(a.startsWith('instituci'))ins=(r[1]+'').trim();}if(!loc&&people[0])loc=people[0].loc;const yr=(file.name.match(/20\d\d/)||[new Date().getFullYear()])[0];const cif=maxLen>=4?4:3;const entry={name:file.name,title:[loc,ins,yr].filter(Boolean).join(' - ').toUpperCase(),loc,ins,cifras:cif,people,loaded:Date.now(),inicioSorteo:'',finSorteo:''};const i=S.files.findIndex(f=>f.name===file.name);if(i>=0){entry.title=S.files[i].title;entry.inicioSorteo=S.files[i].inicioSorteo||'';entry.finSorteo=S.files[i].finSorteo||'';S.files[i]=entry;}else S.files.push(entry);ok.push(file.name+' ('+cif+' cifras)');}catch(ex){err.push(file.name+': '+ex.message);}}if(ok.length){try{await syncSorteoIntoDataCenter(files);}catch(e){AppLog.error('Integración sorteo → Centro de datos: '+(e.message||e));}}const m=$('sFilesMsg');m.className='status-line '+(err.length?'err':'ok');m.textContent=(ok.length?'Cargado: '+ok.join(', ')+'. ':'')+err.join(' | ');if(ok.length&&!silent)notify(ok.length+' archivo(s) guardados','ok');if(err.length)notify('Errores: '+err.join(' · '),'err');await save();render();renderHome();}
 const keyOf=(n,c)=>String(n).padStart(c,'0').slice(-c);
 function holders(f){const m={};f.people.forEach(p=>p.nums.forEach(n=>{const k=keyOf(n,f.cifras);(m[k]=m[k]||[]).push(p);}));return m;}
-function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} números duplicados dentro del archivo</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="date" data-start="${i}" value="${esc(f.inicioSorteo||'')}"></div><div class="field"><label>Finaliza sorteo</label><input type="date" data-end="${i}" value="${esc(f.finSorteo||'')}"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{if(confirm('¿Quitar?')){S.files.splice(x.dataset.del,1);save();render();}});}
+function renderFiles(){const box=$('sFilesList');if(!S.files.length){box.innerHTML='';$('sFilesMsg').textContent='Sin archivos cargados.';return;}box.innerHTML=S.files.map((f,i)=>{const h=holders(f),dups=Object.entries(h).filter(([k,v])=>new Set(v.map(p=>p.ape+p.nom)).size>1||v.length>1).map(e=>e[0]);const nn=f.people.reduce((a,p)=>a+p.nums.length,0);return `<div class="sfile"><div class="top"><input type="text" data-t="${i}" value="${esc(f.title)}"><button class="secondary" data-del="${i}">✕</button></div><div class="meta"><span class="pill">${esc(f.name)}</span><span class="pill">${f.loaded?new Date(f.loaded).toLocaleDateString('es-AR'):'—'}</span></div><div class="meta"><span class="pill">${f.people.length} participantes</span><span class="pill">${nn} números</span>${dups.length?`<span class="pill warn">${dups.length} números duplicados dentro del archivo</span>`:'<span class="pill ok">sin repetidos</span>'}<select data-c="${i}" style="width:auto;padding:2px 8px;font-size:12px"><option value="4"${f.cifras==4?' selected':''}>4 cifras</option><option value="3"${f.cifras==3?' selected':''}>3 cifras</option></select></div><div class="row" style="margin-top:8px"><div class="field"><label>Comienza a sortear</label><input type="date" data-start="${i}" value="${esc(f.inicioSorteo||'')}"></div><div class="field"><label>Finaliza sorteo</label><input type="date" data-end="${i}" value="${esc(f.finSorteo||'')}"></div></div><div class="hint">Estas fechas quedan guardadas con el archivo y se conservan al actualizar/releer.</div></div>`;}).join('');box.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>{S.files[x.dataset.t].title=x.value.trim();save();renderMonth();});box.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.files[x.dataset.c].cifras=+x.value;save();renderFiles();renderMonth();});box.querySelectorAll('[data-start]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.start].inicioSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-end]').forEach(x=>x.onchange=()=>{S.files[+x.dataset.end].finSorteo=x.value||'';save();renderFiles();renderMonth();});box.querySelectorAll('[data-del]').forEach(x=>x.onclick=async()=>{const f=S.files[+x.dataset.del];if(!f)return;if(!confirm('¿Desvincular '+f.name+' de Nora? Se quitará de Sorteos y de la lista activa, pero el Excel original permanecerá en su ubicación.'))return;const name=f.name;const key=sorteoSourceKey(name);if(typeof FILES!=='undefined'&&Array.isArray(FILES)){const before=FILES.length;FILES=FILES.filter(v=>sorteoSourceKey(v&&v.name)!==key);if(FILES.length!==before){rebuildRecords();if(FILES.length)await saveState();else await clearState();try{renderFilesList();syncDataCenterUI();refreshSelects();populateBulkPdfSelectors();renderDataManager();if(FILES.length){refreshPreview();updateDashboard();}else{['controls','previewCard','genCard','dashFiltersCard','filesActions'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('dashEmpty')?.classList.remove('hidden');document.getElementById('dashBody')?.classList.add('hidden');}}catch(e){}}}if(window.NoraSourceExclusions?.exclude)window.NoraSourceExclusions.exclude(name);else await unlinkSorteoSource(name,true);});}
 let cards=[];
 const defDate=()=>{const t=new Date().toISOString().slice(0,10),m=month();return !m||t.slice(0,7)===m?t:m+'-01';};
 const blank=()=>({lot:'',turno:'',id:uid(),saved:false,dirty:true,name:'',date:defDate(),nums:Array(20).fill('')});
@@ -4220,7 +4254,7 @@ function syncPersistedSorteoToDataCenter(){
   rebuildRecords();refreshSelects();populateBulkPdfSelectors();syncDataCenterUI();
 }
 function render(){renderFiles();renderCards();renderMonth();renderHome();}
-(async()=>{await window._boot;const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');await load();syncPersistedSorteoToDataCenter();await loadLogo();applyBrand();applyLayout();syncCards();render();tab(S.cfg.tab||(S.files.length?'month':'files'));try{sorteoFileHandles=await getSorteoHandles();if(sorteoFileHandles.length)updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);}catch(e){}const _sv=setView;window.setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>{b.onclick=()=>window.setView(b.dataset.view);});setTimeout(renderHome,300);})();
+(async()=>{await window._boot;const n=new Date();$('cMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');await load();await purgeExcludedSorteoSources(false);syncPersistedSorteoToDataCenter();await loadLogo();applyBrand();applyLayout();syncCards();render();tab(S.cfg.tab||(S.files.length?'month':'files'));try{sorteoFileHandles=await getSorteoHandles();if(sorteoFileHandles.length)updateSorteoLinkStatus(sorteoFileHandles.length+' vinculados',false);}catch(e){}const _sv=setView;window.setView=function(v){_sv(v);if(v==='home')renderHome();if(v==='settings'){setTimeout(()=>{try{renderStyle();}catch(e){}},10);}};document.querySelectorAll('.nav button, .bottom-nav button').forEach(b=>{b.onclick=()=>window.setView(b.dataset.view);});setTimeout(renderHome,300);})();
 })();
 
 document.querySelectorAll('.topbar-actions .iconbtn').forEach(b=>{if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.title||'Acción');});
@@ -4905,7 +4939,7 @@ applyP();try{renderSkinGrid()}catch(e){}
   }
   window.NoraSourceExclusions={
     isExcluded(name){return read().includes(norm(name));},
-    exclude(name){const n=norm(name);if(n){write(read().concat(n));unlinkCloudByName(name);}},
+    exclude(name){const n=norm(name);if(n){write(read().concat(n));unlinkCloudByName(name);try{const job=window.__noraUnlinkSorteoSource?.(name,true);if(job&&typeof job.catch==='function')job.catch(e=>console.warn('No se pudo desvincular de Sorteos',e));}catch(e){console.warn('No se pudo desvincular de Sorteos',e);}}},
     allow(name){const n=norm(name);write(read().filter(x=>x!==n));},
     clearAll(){write([]);},
     list(){return read().slice();}
@@ -8011,6 +8045,8 @@ async function openPicker(){
   ov.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
   q('.pk-ok').onclick=async()=>{
     const validItems=list.filter(i=>chosen.has(String(i.id||''))||legacyNames.has(i.name));
+    // Elegir de nuevo un archivo es una acción explícita: permite volver a vincularlo.
+    validItems.forEach(i=>window.NoraSourceExclusions?.allow(i.name));
     const validIds=[...new Set(validItems.map(i=>String(i.id||'')).filter(Boolean))];
     const previous=getSel()||{ids:[],names:[]};
     const previousIds=new Set((previous.ids||[]).map(String));
