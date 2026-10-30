@@ -8,11 +8,46 @@
 <title>Nora - Suite de Gestión</title>
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="icon-512.png">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+  const names={xlsx:'xlsx.full.min.js',jspdf:'jspdf.umd.min.js',autotable:'jspdf.plugin.autotable.min.js',pdflib:'pdf-lib.min.js',chart:'chart.umd.min.js'};
+  const state={};
+  function panel(){
+    let el=document.getElementById('noraDependencyNotice');
+    if(!el && document.body){
+      el=document.createElement('div');el.id='noraDependencyNotice';el.setAttribute('role','status');
+      el.style.cssText='display:none;margin:8px 14px;padding:10px 12px;border:1px solid #c58a35;border-radius:10px;background:rgba(197,138,53,.10);color:var(--ink,#333);font-size:13px;line-height:1.45';
+      (document.querySelector('main')||document.getElementById('mainContent')||document.body).prepend(el);
+    }
+    return el;
+  }
+  function refresh(){
+    const missing=Object.keys(names).filter(k=>state[k]==='missing');
+    const el=panel();if(!el)return;
+    if(!missing.length){el.style.display='none';return;}
+    const labels={xlsx:'lectura de Excel',jspdf:'exportación PDF',autotable:'tablas PDF',pdflib:'edición de PDF',chart:'gráficos'};
+    el.style.display='block';
+    el.textContent='Algunas funciones no están disponibles porque faltan librerías ('+missing.map(k=>labels[k]).join(', ')+'). Revisá la conexión o recargá Nora. Los datos guardados no se eliminan.';
+  }
+  window.noraDependencyLoaded=function(key){state[key]='ok';refresh();};
+  window.noraDependencyError=function(key){
+    if(state[key]==='fallback-loading'||state[key]==='ok')return;
+    state[key]='fallback-loading';
+    const fallback=document.createElement('script');
+    fallback.src='./vendor/'+(names[key]||'');
+    fallback.onload=function(){state[key]='ok';refresh();};
+    fallback.onerror=function(){state[key]='missing';refresh();};
+    document.head.appendChild(fallback);
+  };
+  window.noraDependencyState=state;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});else refresh();
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onload="window.noraDependencyLoaded('xlsx')" onerror="window.noraDependencyError('xlsx',this)"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onload="window.noraDependencyLoaded('jspdf')" onerror="window.noraDependencyError('jspdf',this)"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" onload="window.noraDependencyLoaded('autotable')" onerror="window.noraDependencyError('autotable',this)"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" onload="window.noraDependencyLoaded('pdflib')" onerror="window.noraDependencyError('pdflib',this)"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onload="window.noraDependencyLoaded('chart')" onerror="window.noraDependencyError('chart',this)"></script>
 <style>
 :root{
   --bg:#eef1f5;--panel:#fff;--panel2:#f7f8fa;--ink:#171b22;--sub:#5b6572;--line:#e0e3e9;
@@ -2245,46 +2280,25 @@ async function linkCobFiles(){
 }
 async function reconnectCobFiles(){
   if(!cobFileHandles.length)cobFileHandles=await getCobHandles();
-  if(!cobFileHandles.length){notify('No hay archivos vinculados','warn');return;}
-  let granted=0,failed=0;
-  try{
-    for(const it of cobFileHandles){
-      try{
-        if(!it||!it.handle)throw new Error('Handle inválido');
-        let perm=it.handle.queryPermission?await it.handle.queryPermission({mode:'read'}):'granted';
-        if(perm!=='granted'&&it.handle.requestPermission)perm=await it.handle.requestPermission({mode:'read'});
-        if(perm==='granted'){granted++;}else failed++;
-      }catch(e){failed++;}
-    }
-    await reloadCobFiles();
-    if(granted)notify(granted+' archivo(s) reconectado(s)'+(failed?' · '+failed+' pendiente(s)':''),'ok');
-  }catch(e){console.warn(e);updateCobLinkStatus('No se pudo reconectar. Volvé a vincular el Excel.',true);notify('No se pudo reconectar','err');}
+  if(!cobFileHandles.length){notify('No hay archivos vinculados. Volvé a elegirlos desde “Vincular Excel”.','warn');return {updated:0,failed:0,needsReselect:true};}
+  /* Los permisos solo se solicitan desde reconnectAll(), enlazada directamente al clic. */
+  return reloadCobFiles(true);
 }
 async function reloadCobFiles(silentIfNone){
   if(!cobFileHandles.length)cobFileHandles=await getCobHandles();
-  if(!cobFileHandles.length){if(!silentIfNone){updateCobLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una sola vez.','warn');}return;}
+  if(!cobFileHandles.length){if(!silentIfNone){updateCobLinkStatus('No hay archivos vinculados.',false);notify('No hay archivos vinculados. Vinculalos una sola vez.','warn');}return {updated:0,failed:0};}
   const files=[];let failed=0;let permissionAsked=0;
   for(const it of cobFileHandles){
     try{
       if(!it||!it.handle||typeof it.handle.getFile!=='function'){failed++;continue;}
-      let f;
-      try{
-        f=await it.handle.getFile();
-      }catch(firstErr){
-        if(it.handle.requestPermission && /SecurityError|NotAllowedError|permission/i.test(String(firstErr.name)+' '+String(firstErr.message))){
-          const perm=await it.handle.requestPermission({mode:'read'});
-          permissionAsked++;
-          if(perm!=='granted')throw firstErr;
-          f=await it.handle.getFile();
-        }else throw firstErr;
-      }
+      const f=await it.handle.getFile();
       files.push(f);
-    }catch(e){failed++;}
+    }catch(e){failed++;AppLog.warn('Permiso de archivo local: '+((it&&it.name)||'archivo')+' · '+(e.name||'Error')+' · '+(e.message||e));}
   }
   if(!files.length){
-    updateCobLinkStatus('No se pudo actualizar el archivo. Los últimos datos siguen disponibles.',true);
+    updateCobLinkStatus('El navegador bloqueó el acceso al archivo local. En Firefox/Linux volvé a seleccionar el Excel desde “Vincular archivos”; los últimos datos siguen disponibles.',true);
     notify('No se pudo actualizar. Los datos actuales se conservaron.','warn');
-    return;
+    return {updated:0,failed};
   }
   updateCobLinkStatus('Actualizando archivos…',failed>0);
   try{
@@ -2294,7 +2308,8 @@ async function reloadCobFiles(silentIfNone){
     updateCobLinkStatus(msg,pendientes>0);
     notify(pendientes?'Datos actualizados · algunos archivos no pudieron leerse':'Datos actualizados','ok');
     await storeCobHandles(cobFileHandles);
-  }catch(e){updateCobLinkStatus('No se pudo procesar: '+e.message,true);notify('Error al actualizar','err');}
+    return {updated:files.length,failed:pendientes};
+  }catch(e){updateCobLinkStatus('No se pudo procesar: '+e.message,true);notify('Error al actualizar','err');return {updated:0,failed:failed+1,error:e};}
 }
 window.linkCobFiles=linkCobFiles;window.reconnectCobFiles=reconnectCobFiles;window.reloadCobFiles=reloadCobFiles;
 let sorteoFileHandles=[];
@@ -2317,21 +2332,9 @@ async function linkSorteoFiles(){
 }
 async function reconnectSorteoFiles(){
   if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
-  if(!sorteoFileHandles.length){notify('No hay archivos de sorteo vinculados','warn');return {updated:0,failed:0};}
-  try{
-    let granted=0,failed=0;
-    for(const it of sorteoFileHandles){
-      try{
-        if(!it||!it.handle)throw new Error('Handle inválido');
-        let perm=it.handle.queryPermission?await it.handle.queryPermission({mode:'read'}):'granted';
-        if(perm!=='granted'&&it.handle.requestPermission)perm=await it.handle.requestPermission({mode:'read'});
-        if(perm==='granted')granted++;else failed++;
-      }catch(e){failed++;}
-    }
-    const r=await reloadSorteoFiles(true);
-    if(granted)notify(granted+' archivo(s) de sorteo reconectado(s)'+(failed?' · '+failed+' pendiente(s)':''),'ok');
-    return r;
-  }catch(e){AppLog.error('Reconexión de sorteos: '+(e.message||e));updateSorteoLinkStatus('No se pudo reconectar. Volvé a vincular el Excel.',true);notify('No se pudo reconectar','err');return {updated:0,failed:1,error:e};}
+  if(!sorteoFileHandles.length){notify('No hay archivos de sorteo vinculados. Volvé a elegirlos desde “Vincular Excel”.','warn');return {updated:0,failed:0,needsReselect:true};}
+  /* Los permisos solo se solicitan desde reconnectAll(), enlazada directamente al clic. */
+  return reloadSorteoFiles(true);
 }
 async function reloadSorteoFiles(silentIfNone){
   if(!sorteoFileHandles.length)sorteoFileHandles=await getSorteoHandles();
@@ -2344,26 +2347,19 @@ async function reloadSorteoFiles(silentIfNone){
   for(const it of sorteoFileHandles){
     try{
       if(!it||!it.handle||typeof it.handle.getFile!=='function')throw new Error('Handle inválido');
-      let f;
-      try{f=await it.handle.getFile();}
-      catch(firstErr){
-        if(it.handle.requestPermission && /SecurityError|NotAllowedError|permission/i.test(String(firstErr.name)+' '+String(firstErr.message))){
-          const perm=await it.handle.requestPermission({mode:'read'});
-          if(perm!=='granted')throw firstErr;
-          f=await it.handle.getFile();
-        }else throw firstErr;
-      }
+      const f=await it.handle.getFile();
       files.push(f);
-    }catch(e){failed++;AppLog.error('No se pudo leer sorteo: '+((it&&it.name)||'archivo')+' · '+(e.message||e));}
+    }catch(e){failed++;AppLog.error('No se pudo leer sorteo: '+((it&&it.name)||'archivo')+' · '+(e.name||'Error')+' · '+(e.message||e));}
   }
   if(!files.length){
-    updateSorteoLinkStatus('No se pudo actualizar. Los últimos datos siguen disponibles.',true);
+    updateSorteoLinkStatus('El navegador bloqueó el acceso al Excel local. En Firefox/Linux volvé a seleccionar el archivo desde “Vincular archivos”; los últimos datos siguen disponibles.',true);
     if(!silentIfNone)notify('No se pudo actualizar. Los datos actuales se conservaron.','warn');
     return {updated:0,failed};
   }
   updateSorteoLinkStatus('Actualizando archivos de sorteo…',failed>0);
   try{
     await window.__sorteoLoadFiles(files,true);
+    try{window.noraEmitDataUpdated&&window.noraEmitDataUpdated('sorteo-reloaded');}catch(_){}
     const msg=files.length+' archivo(s) de sorteo actualizado(s)'+(failed?' · '+failed+' sin acceso':'');
     updateSorteoLinkStatus(msg,failed>0);
     if(!silentIfNone)notify(failed?'Sorteos actualizados · algunos archivos no pudieron leerse':'Sorteos actualizados','ok');
@@ -2511,9 +2507,25 @@ window.CFG = CFG;
 
 const CALLE_ABREV = {S:'SAN',SN:'SAN',STA:'SANTA',STO:'SANTO',STOS:'SANTOS',STAS:'SANTAS',GRAL:'GENERAL',GRL:'GENERAL',AV:'AVENIDA',AVDA:'AVENIDA',AVD:'AVENIDA',DR:'DOCTOR',DRA:'DOCTORA',ING:'INGENIERO',ARQ:'ARQUITECTO',CNEL:'CORONEL',TTE:'TENIENTE',CAP:'CAPITAN',SGTO:'SARGENTO',CBO:'CABO',PDTE:'PRESIDENTE',PTE:'PRESIDENTE',BRIG:'BRIGADIER',MY:'MAYOR',PROF:'PROFESOR',LIC:'LICENCIADO',MTRO:'MAESTRO',MTRA:'MAESTRA',FCO:'FRANCISCO',FCA:'FRANCISCA'};
 const CALLE_ALIAS_KEY = 'nora_calle_alias_v1';
+function normalizarClaveAliasCalle(value){
+  let key=normCalleRaw(value);
+  key=limpiarAlturaCalle(key);
+  key=expandirAbrevCalle(key).replace(/\s+/g,' ').trim();
+  return key;
+}
+function normalizarDiccionarioAliasCalle(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('El diccionario debe ser un objeto JSON de alias.');
+  const out={};
+  Object.entries(raw).forEach(([from,to])=>{
+    const key=normalizarClaveAliasCalle(from);
+    const value=normalizarClaveAliasCalle(to);
+    if(key&&value)out[key]=value;
+  });
+  return out;
+}
 let CALLE_ALIAS = {};
-try{ CALLE_ALIAS = JSON.parse(localStorage.getItem(CALLE_ALIAS_KEY)||'{}'); }catch(e){ CALLE_ALIAS = {}; }
-function saveCalleAlias(){ try{ localStorage.setItem(CALLE_ALIAS_KEY, JSON.stringify(CALLE_ALIAS)); }catch(e){} }
+try{ CALLE_ALIAS = normalizarDiccionarioAliasCalle(JSON.parse(localStorage.getItem(CALLE_ALIAS_KEY)||'{}')); }catch(e){ CALLE_ALIAS = {}; }
+function saveCalleAlias(){ try{ CALLE_ALIAS=normalizarDiccionarioAliasCalle(CALLE_ALIAS);localStorage.setItem(CALLE_ALIAS_KEY, JSON.stringify(CALLE_ALIAS)); }catch(e){} }
 
 function normCalleRaw(s){
   return String(s ?? '').replace(/\u00A0/g,' ')
@@ -2737,13 +2749,25 @@ function renderFooterEditor(){
   const box=document.getElementById('footerEditor');if(!box)return;box.innerHTML='';
   CFG.footerItems.forEach((it,i)=>{const div=document.createElement('div');div.className='editor-row';div.innerHTML=`<input type="text" data-f="text" value="${(it.text||'').replace(/"/g,'&quot;')}"><select data-f="align"><option value="left">Izq</option><option value="center">Centro</option><option value="right">Der</option></select><button class="ghost miniBtn" data-a="del">✕</button>`;div.querySelector('[data-f=text]').oninput=e=>{it.text=e.target.value;previewPdfStyle();};const sel=div.querySelector('[data-f=align]');sel.value=it.align;sel.onchange=e=>{it.align=e.target.value;previewPdfStyle();};div.querySelector('[data-a=del]').onclick=()=>{CFG.footerItems.splice(i,1);renderFooterEditor();previewPdfStyle();};box.appendChild(div);});
 }
+function setupHiDpiPreviewCanvas(cv,W,H,K=1.1){
+  const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1));
+  const scale=K*dpr;
+  cv.width=Math.round(W*scale);
+  cv.height=Math.round(H*scale);
+  cv.style.width=(W*K)+'px';
+  cv.style.height='auto';
+  cv.style.maxWidth='100%';
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(scale,0,0,scale,0,0);
+  return ctx;
+}
 function pdfMarginPt(){return CFG.pdfMargin==='small'?20:CFG.pdfMargin==='large'?60:40;}
 function pdfRowH(){return CFG.pdfRowH==='small'?2.5:CFG.pdfRowH==='large'?6:4;}
 function previewPdfStyle(){
   const cv=document.getElementById('pdfPrev');if(!cv)return;
   const isLand=CFG.pdfOrient!=='portrait';
-  const W=isLand?842:595,H=isLand?595:842,K=1.1;cv.width=W*K;cv.height=H*K;
-  const c=cv.getContext('2d');c.setTransform(K,0,0,K,0,0);c.fillStyle='#fff';c.fillRect(0,0,W,H);
+  const W=isLand?842:595,H=isLand?595:842,K=1.1;
+  const c=setupHiDpiPreviewCanvas(cv,W,H,K);c.fillStyle='#fff';c.fillRect(0,0,W,H);
   const title=(CFG.title||'Informe de Cobranza'),accent=CFG.accent||'#1f4e8c',M=pdfMarginPt();
   const fam=CFG.pdfFont==='times'?'Georgia,serif':CFG.pdfFont==='courier'?'Courier New,monospace':'Helvetica,Arial,sans-serif';
   const titleSize=CFG.pdfSize==='small'?16:CFG.pdfSize==='large'?22:18;
@@ -2767,7 +2791,7 @@ function previewPdfStyle(){
 function previewLstStyle(){
   const cv=document.getElementById('lstPrev');if(!cv)return;
   const isLand=CFG.lstOrient!=='portrait';const W=isLand?842:595,H=isLand?595:842,K=1.1;
-  cv.width=W*K;cv.height=H*K;const c=cv.getContext('2d');c.setTransform(K,0,0,K,0,0);c.fillStyle='#fff';c.fillRect(0,0,W,H);
+  const c=setupHiDpiPreviewCanvas(cv,W,H,K);c.fillStyle='#fff';c.fillRect(0,0,W,H);
   const fam=CFG.lstFont==='times'?'Georgia,serif':CFG.lstFont==='courier'?'Courier New,monospace':'Helvetica,Arial,sans-serif';
   const base=CFG.lstSize==='small'?8:CFG.lstSize==='large'?10:9;const accent=CFG.accent||'#1f4e8c',M=30;
   c.fillStyle='#14181e';c.font='bold 15px '+fam;c.fillText((CFG.lstTitle||'Listado')+' · Perfil',M,34);
@@ -2783,7 +2807,7 @@ function previewLstStyle(){
 }
 function previewGapsStyle(){
   const cv=document.getElementById('gapsPrev');if(!cv)return;const W=595,H=842,K=1.1;
-  cv.width=W*K;cv.height=H*K;const c=cv.getContext('2d');c.setTransform(K,0,0,K,0,0);c.fillStyle='#fff';c.fillRect(0,0,W,H);
+  const c=setupHiDpiPreviewCanvas(cv,W,H,K);c.fillStyle='#fff';c.fillRect(0,0,W,H);
   const fam=CFG.gapsFont==='times'?'Georgia,serif':CFG.gapsFont==='courier'?'Courier New,monospace':'Helvetica,Arial,sans-serif';
   const base=CFG.gapsSize==='small'?9:CFG.gapsSize==='large'?11:10;const accent=CFG.accent||'#1f4e8c',M=36;
   c.fillStyle='#14181e';c.font='bold 18px '+fam;c.fillText(CFG.gapsTitle||'Informe de Legajos Faltantes',M,44);
@@ -2921,8 +2945,10 @@ document.getElementById('calleImportAlias').onclick = ()=>{
   const inp = document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange = async ()=>{ try{
     const v = JSON.parse(await inp.files[0].text());
-    if(typeof v!=='object') throw 0;
-    CALLE_ALIAS = Object.assign({}, CALLE_ALIAS, v);
+    if(!v||typeof v!=='object'||Array.isArray(v)) throw new Error('El JSON debe contener un objeto de alias.');
+    const imported=normalizarDiccionarioAliasCalle(v);
+    if(!Object.keys(imported).length&&Object.keys(v).length)throw new Error('No hay pares de alias válidos en el diccionario.');
+    CALLE_ALIAS = Object.assign({}, normalizarDiccionarioAliasCalle(CALLE_ALIAS), imported);
     saveCalleAlias();
     FILES.forEach(f=>f.records.forEach(r=>{ r.calleKey = claveCalle(r.calle); }));
     rebuildRecords();
@@ -2978,7 +3004,12 @@ if(!document.getElementById('cMonth').value)document.getElementById('cMonth').va
 (function swipe(){let ts=null;const content=document.getElementById('mainContent');content.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(t.target.closest('input,select,textarea,button,canvas,.scrollx,.omni-overlay,.dv-wrap,.rec-overlay'))return;ts={x:t.clientX,y:t.clientY,t:Date.now()};},{passive:true});content.addEventListener('touchend',e=>{if(!ts)return;const dx=e.changedTouches[0].clientX-ts.x;const dy=e.changedTouches[0].clientY-ts.y;const dt=Date.now()-ts.t;ts=null;if(dt>700)return;if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;const cur=VIEW_ORDER.findIndex(v=>document.getElementById('view-'+v).classList.contains('active'));const next=dx<0?Math.min(cur+1,VIEW_ORDER.length-1):Math.max(cur-1,0);if(next!==cur)setView(VIEW_ORDER[next]);},{passive:true});})();
 let lastScrollY=0;
 window.addEventListener('scroll',()=>{const bn=document.getElementById('bottomNav');if(!bn||getComputedStyle(bn).display==='none')return;const y=window.scrollY;if(y>lastScrollY+10&&y>80)bn.classList.add('hidden-scroll');else if(y<lastScrollY-10||y<40)bn.classList.remove('hidden-scroll');lastScrollY=y;},{passive:true});
-document.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();const typing=tag==='input'||tag==='textarea'||tag==='select';if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openOmni();}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&!typing){e.preventDefault();mirrorToLocalStorage().then(()=>writeAutoBackup('manual')).then(()=>notify('Respaldo guardado','ok'));}else if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();document.getElementById('btnBack').click();}else if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();document.getElementById('btnForward').click();}else if(e.altKey&&/^[1-9]$/.test(e.key)&&!typing){e.preventDefault();const idx=parseInt(e.key)-1;if(VIEW_ORDER[idx])setView(VIEW_ORDER[idx]);}else if(e.key==='?'&&!typing){e.preventDefault();document.getElementById('helpOverlay').classList.remove('hidden');}else if(e.key==='Escape'){document.getElementById('omniOverlay').classList.add('hidden');document.getElementById('recOverlay').classList.add('hidden');document.getElementById('helpOverlay').classList.add('hidden');document.getElementById('taskModal').classList.add('hidden');closeContextMenu();}});
+document.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();const typing=tag==='input'||tag==='textarea'||tag==='select';if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openOmni();}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&!typing){e.preventDefault();mirrorToLocalStorage().then(()=>writeAutoBackup('manual')).then(()=>notify('Respaldo guardado','ok'));}else if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();document.getElementById('btnBack').click();}else if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();document.getElementById('btnForward').click();}else if(e.altKey&&/^[1-9]$/.test(e.key)&&!typing){e.preventDefault();const idx=parseInt(e.key)-1;if(VIEW_ORDER[idx])setView(VIEW_ORDER[idx]);}else if(e.key==='?'&&!typing){e.preventDefault();document.getElementById('helpOverlay').classList.remove('hidden');}else if(e.key==='Escape'){
+  const layers=Array.from(document.querySelectorAll('#omniOverlay:not(.hidden),#recOverlay:not(.hidden),#taskModal:not(.hidden),#helpOverlay:not(.hidden)'));
+  const top=layers.length?layers[layers.length-1]:null;
+  if(top){e.preventDefault();e.stopImmediatePropagation();top.classList.add('hidden');return;}
+  closeContextMenu();
+}});
 
 const DB_NAME='cobranza_suite_db';const STORE='state';
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE);};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
@@ -3604,7 +3635,7 @@ function renderGapsReport(data){
   box.innerHTML=html;
 }
 function cashflowProjection(data){const byMes={};data.forEach(r=>{const m=r.mes||'Sin mes';if(!byMes[m])byMes[m]={pagado:0,debe:0,count:0};byMes[m].pagado+=r.pago;byMes[m].debe+=r.debe;byMes[m].count++;});const totalPagado=data.reduce((s,r)=>s+r.pago,0),totalDebe=data.reduce((s,r)=>s+r.debe,0);const tasa=totalPagado/((totalPagado+totalDebe)||1);return {byMes,tasa,proyeccionTotal:totalDebe*tasa,totalPagado,totalDebe};}
-function drawCashflow(cash){const cid='chCashflow';const ctx=document.getElementById(cid);if(!ctx)return;if(charts[cid])charts[cid].destroy();const mesOrder=Object.keys(cash.byMes);const pagados=mesOrder.map(m=>cash.byMes[m].pagado);const proyectados=mesOrder.map(m=>Math.round(cash.byMes[m].debe*cash.tasa));const pendientes=mesOrder.map(m=>cash.byMes[m].debe-Math.round(cash.byMes[m].debe*cash.tasa));const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';const accent2=getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim()||'#2f7a4f';charts[cid]=new Chart(ctx,{type:'bar',data:{labels:mesOrder,datasets:[{label:'Cobrado',data:pagados,backgroundColor:accent2},{label:'Proyectado',data:proyectados,backgroundColor:accent},{label:'Riesgo',data:pendientes,backgroundColor:'#b3261e88'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}
+function drawCashflow(cash){const cid='chCashflow';const ctx=document.getElementById(cid);if(!ctx)return;if(charts[cid])charts[cid].destroy();const mesOrder=Object.keys(cash.byMes);const pagados=mesOrder.map(m=>cash.byMes[m].pagado);const proyectados=mesOrder.map(m=>Math.round(cash.byMes[m].debe*cash.tasa));const pendientes=mesOrder.map(m=>cash.byMes[m].debe-Math.round(cash.byMes[m].debe*cash.tasa));const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';const accent2=getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim()||'#2f7a4f';charts[cid]=noraNewChart(ctx,{type:'bar',data:{labels:mesOrder,datasets:[{label:'Cobrado',data:pagados,backgroundColor:accent2},{label:'Proyectado',data:proyectados,backgroundColor:accent},{label:'Riesgo',data:pendientes,backgroundColor:'#b3261e88'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}
 function sparkline(values,w,h,color){if(!values||values.length<2)return '';const max=Math.max(...values,1);const step=w/Math.max(1,values.length-1);const pts=values.map((v,i)=>`${(i*step).toFixed(1)},${(h-((v/max)*h)).toFixed(1)}`).join(' ');return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/><polygon fill="${color}" opacity="0.12" points="0,${h} ${pts} ${w},${h}"/></svg>`;}
 function findDuplicates(data){const m={};data.forEach(r=>{const num=String(r.num||'').replace(/\D/g,'').trim();const source=String(r.source||'').trim();if(!num)return;const k=num+'|'+source.toLowerCase();if(!m[k])m[k]={num,source:source||'—',records:[],count:0,sameFile:true};m[k].records.push(r);m[k].count++;});return Object.values(m).filter(v=>v.count>1).sort((a,b)=>b.count-a.count||a.num.localeCompare(b.num));}
 function renderDuplicates(){const dups=findDuplicates(dashboardRows(RECORDS.filter(r=>{const sf=FILES.find(x=>x.name===r.source);return sf&&fileHasDestination(sf,'dashboard');})));document.getElementById('dupTag').textContent=dups.length+' repetido(s)';if(!dups.length){document.getElementById('dupTable').innerHTML='<tr><td class="hint" style="border:none">Sin duplicados.</td></tr>';return;}document.getElementById('dupTable').innerHTML='<tr><th>N°</th><th>Apellido</th><th>Nombre</th><th>Domicilio</th><th>Fuente</th><th style="text-align:right">Acciones</th></tr>'+dups.slice(0,80).map(d=>d.records.map((r,i)=>`<tr>${i===0?`<td rowspan="${d.count}" style="font-weight:700;color:var(--danger);vertical-align:top">${esc(d.num)}</td>`:''}<td>${esc(r.apellido||'—')}</td><td>${esc(r.nombre||'—')}</td><td>${esc(domicilio(r))}</td><td style="color:var(--sub);font-size:11px">${esc(r.source||'-')}</td>${i===0?`<td rowspan="${d.count}" style="text-align:right;vertical-align:top"><button class="ghost miniBtn" data-dup="first" data-key="${esc(d.num)}">1°</button><button class="ghost miniBtn" data-dup="last" data-key="${esc(d.num)}">Últ</button><button class="ghost miniBtn" data-dup="all" data-key="${esc(d.num)}">Todos</button></td>`:''}</tr>`).join('')).join('');document.getElementById('dupTable').querySelectorAll('[data-dup]').forEach(b=>b.onclick=()=>resolveDup(b.dataset.key,b.dataset.dup));}
@@ -3612,7 +3643,7 @@ function resolveDup(key,action){const matches=RECORDS.filter(r=>String(r.num||''
 function groupCount(data,field){const m={};data.forEach(r=>{const k=r[field]||'Sin dato';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function payDistribution(data){const m={};data.forEach(r=>{const k=r.pago+' cuotas';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));}
 function diasCarga(data){const m={};data.forEach(r=>{if(r.fcarga instanceof Date&&!isNaN(r.fcarga)){const k=DIAS[r.fcarga.getDay()];m[k]=(m[k]||0)+1;}});return DIAS.slice(1).concat(DIAS[0]).map(d=>[d,m[d]||0]);}
-function drawBar(canvasId,pairs,drillField){const ctx=document.getElementById(canvasId);if(!ctx)return;if(charts[canvasId])charts[canvasId].destroy();const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{ticks:{autoSkip:false,maxRotation:40,minRotation:0}}}};if(drillField){opts.onClick=(e,els)=>{if(!els.length)return;const label=pairs[els[0].index][0];if(drillField==='sit')document.getElementById('dSit').value=label;else if(drillField==='loc')document.getElementById('dLoc').value=label;else if(drillField==='mes')document.getElementById('dMes').value=label;updateDashboard();};opts.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};}charts[canvasId]=new Chart(ctx,{type:'bar',data:{labels:pairs.map(p=>p[0]),datasets:[{data:pairs.map(p=>p[1]),backgroundColor:accent}]},options:opts});}
+function drawBar(canvasId,pairs,drillField){const ctx=document.getElementById(canvasId);if(!ctx)return;if(charts[canvasId])charts[canvasId].destroy();const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{ticks:{autoSkip:false,maxRotation:40,minRotation:0}}}};if(drillField){opts.onClick=(e,els)=>{if(!els.length)return;const label=pairs[els[0].index][0];if(drillField==='sit')document.getElementById('dSit').value=label;else if(drillField==='loc')document.getElementById('dLoc').value=label;else if(drillField==='mes')document.getElementById('dMes').value=label;updateDashboard();};opts.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};}charts[canvasId]=noraNewChart(ctx,{type:'bar',data:{labels:pairs.map(p=>p[0]),datasets:[{data:pairs.map(p=>p[1]),backgroundColor:accent}]},options:opts});}
 function buildConclusions(data,total,pct,alDia,byCalle,byMes,gaps,dups){if(!total)return['Sin registros.'];const out=[`Se analizaron <b>${total}</b> registros.`];out.push(`El <b>${pct}%</b> de las cuotas ya fueron cobradas.`);out.push(`<b>${alDia}</b> de ${total} (${Math.round(alDia/total*100)}%) están al día.`);if(byCalle.length)out.push(`Calle con más clientes: <b>${byCalle[0][0]}</b> (${byCalle[0][1]}).`);if(byMes.length)out.push(`Mes con más registros: <b>${byMes[0][0]}</b> (${byMes[0][1]}).`);const debeAlto=data.filter(r=>r.debe>=Math.ceil(CFG.cuotas*.8)).length;if(debeAlto)out.push(`<b>${debeAlto}</b> registros (${Math.round(debeAlto/total*100)}%) con 80%+ pendiente.`);if(gaps.missing)out.push(`Hay <b>${gaps.missing}</b> legajos sin usar entre ${gaps.min} y ${gaps.max}.`);if(dups&&dups.length)out.push(`<b>${dups.length}</b> número(s) repetido(s).`);return out;}
 
 const DV={sort:'num',dir:'asc',page:1,pageSize:50,cols:null,currentRows:[],allSorted:[],cardsMode:false};
@@ -3630,7 +3661,7 @@ function renderDataViewer(){
   document.getElementById('dvColCount').textContent=DV.cols.length+'/'+allCols.length;
   box.querySelectorAll('input[data-col]').forEach(inp=>inp.onchange=()=>{const k=inp.dataset.col;if(inp.checked){if(!DV.cols.includes(k))DV.cols.push(k);}else DV.cols=DV.cols.filter(x=>x!==k);inp.closest('label').classList.toggle('on',inp.checked);document.getElementById('dvColCount').textContent=DV.cols.length+'/'+allCols.length;DV.page=1;renderDataViewer();});
   const all=dvFilterData();const sorted=applySort(all,DV.sort,DV.dir);DV.allSorted=sorted;
-  const pageSize=parseInt(document.getElementById('dvPageSize').value)||50;const pages=Math.max(1,Math.ceil(sorted.length/pageSize));if(DV.page>pages)DV.page=pages;
+  const requestedPageSize=parseInt(document.getElementById('dvPageSize').value)||50;const pageSize=(requestedPageSize>=99999&&window.innerWidth<=820)?200:requestedPageSize;const pages=Math.max(1,Math.ceil(sorted.length/pageSize));if(DV.page>pages)DV.page=pages;
   const start=(DV.page-1)*pageSize;const rows=sorted.slice(start,start+pageSize);DV.currentRows=rows;
   const activeCols=allCols.filter(c=>DV.cols.includes(c.k));
   document.getElementById('dvTag').textContent=sorted.length+' filas';
@@ -3650,7 +3681,7 @@ function renderDataViewer(){
   }
   tbl.querySelectorAll('th[data-sort]').forEach(th=>th.onclick=e=>{e.stopPropagation();const k=th.dataset.sort;if(DV.sort===k)DV.dir=DV.dir==='asc'?'desc':'asc';else{DV.sort=k;DV.dir='asc';}renderDataViewer();});
   renderDVCards(rows,activeCols);
-  document.getElementById('dvInfo').textContent=(sorted.length?sorted.length+' fila(s)':'Sin resultados')+' · página '+DV.page+' de '+pages;
+  document.getElementById('dvInfo').textContent=(sorted.length?sorted.length+' fila(s)':'Sin resultados')+' · página '+DV.page+' de '+pages+(requestedPageSize>=99999&&window.innerWidth<=820?' · vista móvil: 200 por página para evitar saturar el navegador':' · filas virtualizadas cuando corresponde');
   const pager=document.getElementById('dvPager');let phtml=`<button data-pg="first" ${DV.page===1?'disabled':''}>«</button><button data-pg="prev" ${DV.page===1?'disabled':''}>‹</button>`;
   const maxb=7;let startP=Math.max(1,DV.page-Math.floor(maxb/2));let endP=Math.min(pages,startP+maxb-1);if(endP-startP<maxb-1)startP=Math.max(1,endP-maxb+1);
   for(let p=startP;p<=endP;p++)phtml+=`<button data-pg="${p}" class="${p===DV.page?'active':''}">${p}</button>`;
@@ -4236,6 +4267,7 @@ function mark(f,d,m,what){const c=ctl(m,f.name);c.drawKey=d.id;if(!c.inicio)c.in
 async function wa(f,d,m){const b=await toJpg(f,d),file=new File([b],fname(f,d,'jpg'),{type:'image/jpeg'}),text=desc(f,d);mark(f,d,m,'jpg');try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});ctl(m,f.name).wa=Date.now();save();renderMonth();return;}}catch(e){if(e.name==='AbortError')return;}await saveJpgBlob(b,file.name);try{await navigator.clipboard.writeText(text);}catch(e){}notify('JPG descargado, texto copiado','ok');window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');ctl(m,f.name).wa=Date.now();save();renderMonth();}
 const drawOf=f=>{const c=ctl(month(),f.name),s=sortedDraws(),m=month();return S.draws.find(d=>d.id===c.drawKey)||s.find(d=>d.date.slice(0,7)===m)||s[0];};
 const status=f=>{const c=ctl(month(),f.name);return c.fin?3:c.wa?2:(c.pdf&&c.jpg)?1:0;};window.getSorteoStatus=status;
+window.addEventListener('nora:data-updated',()=>{if(document.querySelector('#view-sorteos.active')){try{renderFiles();renderMonth();}catch(e){console.warn('Sorteos: actualización de datos',e);}}});
 const stp=(ok,t,ts)=>`<span class="pill ${ok?'ok':'pend'}">${ok?'Listo':'Pend'}${ts?' '+dtf(ts):''}</span>`;
 function renderMonth(){const m=month();if(!m)return;$('cN').value=S.cfg.n;$('cUnsold').value=S.cfg.unsold?'1':'0';if(document.activeElement!==$('cWa'))$('cWa').value=S.cfg.wa;$('mEmpty').classList.toggle('hidden',!!S.files.length);$('mFlow').classList.toggle('hidden',!S.files.length);renderCards();renderNoPresentados();const ds=sortedDraws();$('cList').innerHTML=S.files.map((f,i)=>{const c=ctl(m,f.name),d=drawOf(f),st=status(f),rs=d?rowsFor(f,d,20,true):[],sold=rs.filter(r=>r.p).length,shown=d?rowsOf(f,d):[];const pr=[['gen','Generar PDF + JPG'],['wa','Enviar por WhatsApp'],['fin','Marcar finalizado'],['fin','Reabrir']][st];return `<div class="sw${st===3?' done':''}"><div class="top"><b>${esc(f.title)}</b><span class="pill">${f.cifras} cifras</span></div><div class="meta">${d?`<span class="pill ${sold?'ok':'pend'}">${sold} ganador(es) · ${20-sold} sin vender</span><span class="pill">${esc(d.name)} · ${shown.length} mostrados</span>`:'<span class="pill warn">Sin quiniela para este mes</span>'}</div><div class="meta">${stp(st>=1,'Generado',c.jpg)}${stp(st>=2,'Enviado',c.wa)}${stp(st>=3,'Finalizado',c.fin)}</div><button class="${st===3?'secondary':'primary'} prim" data-a="${pr[0]}" data-i="${i}">${pr[1]}</button><details><summary>Más opciones</summary><div class="field" style="margin-top:10px;max-width:260px"><label>Cantidad de cifras de este archivo</label><select data-cifra-sorteo="${i}" aria-label="Cantidad de cifras para ${esc(f.name)}"><option value="auto"${!f.cifrasManual?' selected':''}>Automática · sugiere ${f.cifrasSugeridas||f.cifras||3}</option><option value="3"${f.cifrasManual&&+f.cifras===3?' selected':''}>3 cifras</option><option value="4"${f.cifrasManual&&+f.cifras===4?' selected':''}>4 cifras</option></select><div class="hint">${f.cifrasManual?'Configuración manual guardada: '+f.cifras+' cifras.':'Sugerencia automática: '+(f.cifrasSugeridas||f.cifras||3)+' cifras.'}</div></div><div class="row" style="margin-top:8px"><div class="field grow"><label>Quiniela</label><select data-dr="${i}"><option value="">— elegir —</option>${ds.map(x=>`<option value="${esc(x.id)}"${d&&x.id===d.id?' selected':''}>${esc(x.name)} · ${x.date}</option>`).join('')}</select></div><div class="field" style="max-width:110px"><label>Ganadores</label><input type="number" min="1" max="20" data-n="${i}" value="${c.n||S.cfg.n}"></div></div><div class="btns"><button class="secondary" data-a="prev" data-i="${i}">Ver</button><button class="secondary" data-a="pdf" data-i="${i}">PDF</button><button class="secondary" data-a="jpg" data-i="${i}">JPG</button><button class="secondary" data-a="wa" data-i="${i}">WhatsApp</button><button class="secondary" data-a="sent" data-i="${i}">Marcar enviado</button>${st===3?'':`<button class="secondary" data-a="fin" data-i="${i}">Finalizar</button>`}</div></details></div>`;}).join('');renderTop();}
 $('cList').addEventListener('change',e=>{const t=e.target,m=month();if(t.dataset.cifraSorteo!==undefined){const f=S.files[+t.dataset.cifraSorteo];if(!f)return;if(t.value==='auto'){let mx=0;f.people.forEach(p=>p.nums.forEach(n=>{mx=Math.max(mx,String(n).length);}));f.cifrasSugeridas=mx>=4?4:3;f.cifras=f.cifrasSugeridas;f.cifrasManual=false;}else{const chosen=+t.value;if(![3,4].includes(chosen))return;f.cifras=chosen;f.cifrasManual=true;}save();renderFiles();renderMonth();try{window.noraAudit&&window.noraAudit('cifras',f.name+': '+(f.cifrasManual?f.cifras+' cifras (manual)':'sugerencia automática ('+(f.cifrasSugeridas||f.cifras)+')'));}catch(e){}return;}if(t.dataset.dr!==undefined){ctl(m,S.files[t.dataset.dr].name).drawKey=t.value;save();renderMonth();}if(t.dataset.n!==undefined){const v=Math.max(1,Math.min(20,+t.value||20));ctl(m,S.files[t.dataset.n].name).n=v;save();renderMonth();}});
@@ -5412,7 +5444,51 @@ async function reloadAll(){
  if(added)await storeCobHandles(cobFileHandles);
  if(!cobFileHandles.length){notify('Todavía no hay Excel vinculados. Elegilos una sola vez.','info');return linkAll();}
  return reloadCobFiles(false);}
-async function reconnectAll(){if(!cobFileHandles.length)cobFileHandles=await getCobHandles();return reconnectCobFiles();}
+function reconnectAll(){
+ /* Esta función se asigna directamente a onclick. No debe haber ningún await antes
+    de llamar requestPermission: los navegadores exigen un gesto reciente del usuario. */
+ const handles=[];
+ const seen=new Set();
+ [...(cobFileHandles||[]),...(sorteoFileHandles||[])].forEach(it=>{
+   const h=it&&it.handle;
+   if(h&&!seen.has(h)){seen.add(h);handles.push(it);}
+ });
+ if(!handles.length){
+   updateCobLinkStatus('Para recuperar los permisos, volvé a vincular los Excel desde el selector del navegador.',true);
+   updateSorteoLinkStatus('Para recuperar los permisos, volvé a vincular los Excel desde el selector del navegador.',true);
+   if(window.showOpenFilePicker)return linkAll(); /* abre el selector dentro del clic */
+   pickPlain();return Promise.resolve({updated:0,failed:0,needsReselect:true});
+ }
+ const permissionJobs=handles.map(it=>{
+   const h=it.handle;
+   if(typeof h.requestPermission!=='function')return Promise.resolve({name:it.name,status:'unsupported'});
+   try{
+     const request=h.requestPermission({mode:'read'}); /* invocación síncrona dentro del gesto */
+     return Promise.resolve(request).then(status=>({name:it.name,status}),error=>({name:it.name,status:'error',error}));
+   }catch(error){return Promise.resolve({name:it.name,status:'error',error});}
+ });
+ return Promise.all(permissionJobs).then(async statuses=>{
+   const granted=statuses.filter(x=>x.status==='granted'||x.status==='unsupported').length;
+   const denied=statuses.filter(x=>x.status!=='granted'&&x.status!=='unsupported').length;
+   const cob=await reloadCobFiles(true);
+   const cobNames=new Set((cobFileHandles||[]).map(x=>x&&x.name));
+   const extraSorteo=(sorteoFileHandles||[]).filter(x=>x&&x.name&&!cobNames.has(x.name));
+   let sor={updated:0,failed:0};
+   if(extraSorteo.length)sor=await reloadSorteoFiles(true);
+   const updated=(cob&&cob.updated||0)+(sor&&sor.updated||0);
+   const failed=(cob&&cob.failed||0)+(sor&&sor.failed||0)+denied;
+   if(!updated){
+     const msg='El navegador no dio acceso a los archivos. Volvé a pulsar “Vincular Excel” y seleccioná los archivos de nuevo. Los datos actuales siguen disponibles.';
+     updateCobLinkStatus(msg,true);updateSorteoLinkStatus(msg,true);
+     notify('Hace falta volver a seleccionar los Excel para renovar el permiso.','warn');
+   }else{
+     const msg=updated+' archivo(s) actualizado(s)'+(failed?' · '+failed+' permiso(s) pendiente(s)':'');
+     updateCobLinkStatus(msg,failed>0);updateSorteoLinkStatus(msg,failed>0);
+     notify(msg,failed?'warn':'ok');
+   }
+   return {updated,failed,permissionResults:statuses};
+ });
+}
 safe('btns',()=>{
  const set=(id,fn)=>{const b=$(id);if(b)b.onclick=fn;},label=(id,t)=>{const b=$(id);if(b){const ic=b.querySelector('.b-ic');b.textContent=t;if(ic)b.prepend(ic);}},hide=id=>{const b=$(id);if(b){b.hidden=true;b.style.display='none';}};
  ['btnLinkCobFiles','btnLinkCobFiles2','btnLinkSorteoFiles','btnLinkSorteoFiles2'].forEach(i=>set(i,linkAll));
@@ -5763,12 +5839,12 @@ window.nrIfPrint=function(iframe,url){
     const c=CONTROL;
     destroyCtlChart('quota');destroyCtlChart('status');destroyCtlChart('locality');
     const qctx=$c('ctlQuotaChart')?.getContext('2d');
-    if(qctx)CTL_CHARTS.quota=new Chart(qctx,{type:'bar',data:{labels:['1','2','3','4','5','6','7','8','9','10'],datasets:[{label:'Boletas',data:[1,2,3,4,5,6,7,8,9,10].map(q=>c.dist[q]||0),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{title:{display:true,text:'Cuotas pagadas'}}}}});
+    if(qctx)CTL_CHARTS.quota=noraNewChart(qctx,{type:'bar',data:{labels:['1','2','3','4','5','6','7','8','9','10'],datasets:[{label:'Boletas',data:[1,2,3,4,5,6,7,8,9,10].map(q=>c.dist[q]||0),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{title:{display:true,text:'Cuotas pagadas'}}}}});
     const sctx=$c('ctlStatusChart')?.getContext('2d');
-    if(sctx)CTL_CHARTS.status=new Chart(sctx,{type:'doughnut',data:{labels:['Controladas','No llegaron','Bajas'],datasets:[{data:[Math.max(0,c.control.length-c.baja.length),c.missing.length,c.baja.length],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+    if(sctx)CTL_CHARTS.status=noraNewChart(sctx,{type:'doughnut',data:{labels:['Controladas','No llegaron','Bajas'],datasets:[{data:[Math.max(0,c.control.length-c.baja.length),c.missing.length,c.baja.length],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
     const lctx=$c('ctlLocalityChart')?.getContext('2d');
     const entries=Object.entries(c.localMap).sort((a,b)=>b[1].sold-a[1].sold).slice(0,12);
-    if(lctx&&entries.length)CTL_CHARTS.locality=new Chart(lctx,{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'Vendidas',data:entries.map(x=>x[1].sold),borderWidth:1},{label:'Controladas',data:entries.map(x=>x[1].controlled),borderWidth:1},{label:'Faltan',data:entries.map(x=>x[1].missing),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+    if(lctx&&entries.length)CTL_CHARTS.locality=noraNewChart(lctx,{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'Vendidas',data:entries.map(x=>x[1].sold),borderWidth:1},{label:'Controladas',data:entries.map(x=>x[1].controlled),borderWidth:1},{label:'Faltan',data:entries.map(x=>x[1].missing),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
   }
 
   function renderControl(){
@@ -6837,7 +6913,9 @@ const $=id=>document.getElementById(id);
   }
 
   const entries=[];
-  const MAX=1000;
+  const MAX=800;
+  const REPEAT_WINDOW=3500;
+  const recentMessages=new Map();
   const ts=()=>{
     const d=new Date();
     return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+
@@ -6860,20 +6938,45 @@ const $=id=>document.getElementById(id);
     r.dataset.lvl=e.tipo;
     r.innerHTML='<span class="log-time"></span><span class="log-lvl '+e.tipo+'">'+e.tipo+'</span><span class="log-msg"></span>';
     r.querySelector('.log-time').textContent=e.time;
-    r.querySelector('.log-msg').textContent=e.msg;
+    r.querySelector('.log-msg').textContent=e.msg+(e.count>1?' (x'+e.count+')':'');
+    if(e.count>1)r.title='Mensaje repetido '+e.count+' veces';
+    e._el=r;
     if(!matches(e))r.style.display='none';
     return r;
   }
 
   function push(msg,tipo){
-    const e={msg:String(msg==null?'':msg),tipo:tipo||'info',time:ts()};
+    const text=String(msg==null?'':msg),level=tipo||'info',now=Date.now(),key=level+'\\u0000'+text;
+    let repeated=recentMessages.get(key);
+    if(repeated&&repeated._alive&&now-repeated.lastAt<=REPEAT_WINDOW){
+      repeated.count=(repeated.count||1)+1;
+      repeated.lastAt=now;
+      repeated.time=ts();
+      if(repeated._el){
+        const timeNode=repeated._el.querySelector('.log-time');
+        const msgNode=repeated._el.querySelector('.log-msg');
+        if(timeNode)timeNode.textContent=repeated.time;
+        if(msgNode)msgNode.textContent=repeated.msg+' (x'+repeated.count+')';
+        repeated._el.title='Mensaje repetido '+repeated.count+' veces';
+      }
+      if(level==='error')checkAutoOpen();
+      return repeated;
+    }
+    const e={msg:text,tipo:level,time:ts(),count:1,lastAt:now,_el:null,key,_alive:true};
     entries.push(e);
-    if(entries.length>MAX)entries.shift();
+    recentMessages.set(key,e);
+    if(entries.length>MAX){
+      const removed=entries.shift();
+      if(removed)removed._alive=false;
+      if(removed&&removed._el&&removed._el.parentNode)removed._el.parentNode.removeChild(removed._el);
+      if(removed&&recentMessages.get(removed.key)===removed)recentMessages.delete(removed.key);
+    }
+    for(const [k,v] of recentMessages){if(now-v.lastAt>REPEAT_WINDOW||!v._alive)recentMessages.delete(k);}
     const empty=box.querySelector('.cmd-empty');if(empty)empty.remove();
     box.appendChild(makeRow(e));
-    while(box.children.length>MAX)box.removeChild(box.firstChild);
+    while(box.children.length>MAX){const first=box.firstChild;if(first&&first.parentNode)first.parentNode.removeChild(first);}
     if(box.dataset.noScroll!=='1')box.scrollTop=box.scrollHeight;
-    if(tipo==='error')checkAutoOpen();
+    if(level==='error')checkAutoOpen();
     return e;
   }
 
@@ -7194,15 +7297,46 @@ const $=id=>document.getElementById(id);
     activate(name);
   };
 
-  /* Poll para detectar cambios en FILES */
+  /* Sincronización inmediata con el inventario global del Centro de Datos.
+     FILES se consulta en el mismo turno del evento; si cambió el Excel activo,
+     se vuelve a parsear su buffer y se repintan localidades, selectores e informes. */
+  const syncControlFromFilesOriginal=window.noraControlSync;
+  window.noraControlSync=async function(forceOrReason){
+    const list=getControlFiles();       // lectura síncrona del FILES vigente
+    refresh();                          // repuebla selector antes de releer el contenido
+    const reason=typeof forceOrReason==='string'?forceOrReason:'';
+    if(reason==='data-cleared'&&!list.length){
+      CONTROL=null;
+      try{localStorage.removeItem(KEY+'_data');}catch(e){}
+      renderControl();
+      return false;
+    }
+    const force=forceOrReason===true||['files-imported','data-cleared','data-center-reloaded','sorteo-reloaded','forced'].includes(reason);
+    if(typeof syncControlFromFilesOriginal==='function'){
+      const result=await syncControlFromFilesOriginal(force);
+      refresh();
+      return result;
+    }
+    const current=(window.noraControlCurrentName&&noraControlCurrentName())||picker.value||'';
+    const match=list.find(x=>x.name===current)||(!current&&list.length?list[0]:null);
+    if(match&&bytesOf(match)&&!activating){await activate(match.name);return true;}
+    return false;
+  };
+  window.addEventListener('nora:data-updated',function(ev){
+    const reason=ev&&ev.detail&&ev.detail.reason||'';
+    if(!['files-imported','data-cleared','data-center-reloaded','sorteo-reloaded','forced'].includes(reason))return;
+    window.noraControlSync(reason).catch(err=>console.warn('Control: sincronización con Centro de Datos',err));
+  });
+
+  /* Poll liviano: respaldo para módulos legacy que aún no emiten eventos. */
   let lastSig='';
   setInterval(function(){
     const list=getControlFiles();
-    const sig=list.length+'|'+list.map(x=>x.name).join('|')+'|'+((window.noraControlCurrentName&&noraControlCurrentName())||'');
+    const sig=list.length+'|'+list.map(x=>x.name+':'+((x.raw&&x.raw.byteLength)||0)+':'+(x.sourceSig||'')).join('|')+'|'+((window.noraControlCurrentName&&noraControlCurrentName())||'');
     if(sig===lastSig)return;
     lastSig=sig;
     refresh();
-  },1500);
+  },1800);
 
   /* Reaccionar al cambio de vista */
   if(typeof window.setView==='function'&&!window.setView.__ctlB6){
@@ -8948,6 +9082,59 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
 })();
 })();
 
+</script>
+
+<script id="nora-reliability-refinements-20261030">
+(function(){
+  'use strict';
+  window.noraNewChart=function(ctx,config){
+    if(!window.Chart)throw new Error('Chart.js no está disponible. Revisá la conexión y recargá Nora.');
+    try{const old=window.Chart.getChart?window.Chart.getChart(ctx):null;if(old)old.destroy();}catch(e){}
+    const cfg=Object.assign({},config||{});
+    cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,resizeDelay:140,devicePixelRatio:Math.min(window.devicePixelRatio||1,2)},cfg.options||{});
+    return new window.Chart(ctx,cfg);
+  };
+
+  let refreshTimer=0,lastSignature='';
+  function emit(reason){
+    const files=typeof FILES!=='undefined'&&Array.isArray(FILES)?FILES:[];
+    const records=typeof RECORDS!=='undefined'&&Array.isArray(RECORDS)?RECORDS:[];
+    const signature=files.length+'|'+records.length+'|'+files.map(f=>f.name+':'+((f.records||[]).length)+':'+(f.sourceSig||'')+':'+((f.raw&&f.raw.byteLength)||0)+':'+(f.lastModified||'')).join('|');
+    const mustNotify=['files-imported','data-cleared','data-center-reloaded','sorteo-reloaded','forced'].includes(reason);
+    if(signature===lastSignature&&!mustNotify)return;
+    lastSignature=signature;
+    window.dispatchEvent(new CustomEvent('nora:data-updated',{detail:{reason:reason||'data-change',files:files.length,records:records.length,at:Date.now()}}));
+  }
+  window.noraEmitDataUpdated=emit;
+  window.addEventListener('nora:data-updated',function(){
+    clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(function(){
+      const active=document.querySelector('.view.active');
+      const view=active&&active.id.replace('view-','');
+      try{
+        if(view==='dash'&&typeof window.updateDashboard==='function')window.updateDashboard();
+        if(view==='datos'&&typeof window.renderDataViewer==='function')window.renderDataViewer();
+        if(view==='home'&&typeof window.renderHome==='function')window.renderHome();
+        if(view==='tasks'&&typeof window.renderTasks==='function')window.renderTasks();
+        if(view==='sorteos'&&typeof window.renderSorteos==='function')window.renderSorteos();
+      }catch(e){console.warn('Nora: actualización de vistas',e);}
+    },90);
+  });
+
+  const wrap=(name,after)=>{
+    const original=window[name];if(typeof original!=='function'||original.__noraWrapped)return;
+    const wrapped=function(){
+      const args=arguments, self=this;
+      const result=original.apply(self,args);
+      if(result&&typeof result.then==='function')return result.then(value=>{after.apply(self,args);return value;},err=>{throw err;});
+      after.apply(self,args);return result;
+    };
+    wrapped.__noraWrapped=true;window[name]=wrapped;
+  };
+  wrap('handleFiles',function(){emit('files-imported');});
+  wrap('clearState',function(){emit('data-cleared');});
+  wrap('saveState',function(){emit('state-saved');});
+})();
 </script>
 </body>
 </html>
