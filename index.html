@@ -1076,7 +1076,8 @@ body.nx-hide-floats .nx-float{display:none}
 #sorteoSnapshotsList .snapshot-winners{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 #sorteoSnapshotsList details>summary{cursor:pointer}
 @media(max-width:600px){#batchOperator{min-width:0}#batchPager{flex-wrap:wrap}#batchAuditCard .row{align-items:flex-start}}
-</style></head>
+</style><meta name="nora-build" content="2026-10-31-cobranza-columnas-pin-no-autofill-v3a">
+</head>
 <body>
 <div class="app">
 <nav class="sidebar" aria-label="Navegación principal">
@@ -3555,37 +3556,54 @@ function generatePdf(data,f,opts){
   const fonts=pdfFontName();const baseSize=pdfFontSize();const accentRgb=hexToRgb(CFG.accent);
   const colStyles={};
   const availableW=W-M*2;
-  const rawWidths=head[0].map((label,i)=>{
-    let max=String(label||'').length;
+  const labels=head[0].map(x=>String(x||''));
+  // Las columnas de cuotas (1, 2, ... 10) tienen SIEMPRE el mismo ancho.
+  // No se fuerza la última columna a ocupar el espacio sobrante: eso hacía
+  // que la columna "10" quedara más ancha que las anteriores.
+  const quotaIndices=labels.map((label,i)=>/^\d+$/.test(label)?i:-1).filter(i=>i>=0);
+  const quotaWidth=Math.max(19,Math.ceil(measureText(doc,'10','normal',baseSize)+pdfRowH()*2+7));
+  const fixedQuotaWidth=quotaWidth*quotaIndices.length;
+  const nonQuotaIndices=labels.map((_,i)=>i).filter(i=>!quotaIndices.includes(i));
+  const nonQuotaAvailable=Math.max(1,availableW-fixedQuotaWidth);
+  const nonQuotaMin=nonQuotaIndices.map(i=>{
+    const label=labels[i];
+    const words=label.split(/\s+/).filter(Boolean);
+    const longestWord=words.length?Math.max(...words.map(w=>measureText(doc,w,'bold',baseSize+.5))):0;
+    // El encabezado puede envolver palabras completas si hay poco espacio.
+    return Math.max(23,Math.ceil(longestWord+pdfRowH()*2+7));
+  });
+  const nonQuotaRaw=nonQuotaIndices.map(i=>{
+    let max=labels[i].length;
     body.forEach(row=>{max=Math.max(max,String(row[i]??'').length);});
-    const k=String(label||'').toLowerCase();
-    let w=Math.min(180,Math.max(24,max*4.7+14));
-    if(k.includes('cuota'))w=Math.min(52,Math.max(24,max*4.2+12));
-    if(k==='n°'||k==='#')w=Math.min(52,Math.max(30,max*4.5+14));
+    const label=labels[i].toLowerCase();
+    let w=Math.min(180,Math.max(nonQuotaMin[nonQuotaIndices.indexOf(i)],max*4.7+14));
+    if(label==='n°'||label==='#'||label==='pago'||label==='debe')w=Math.max(nonQuotaMin[nonQuotaIndices.indexOf(i)],Math.min(52,max*4.5+14));
     return w;
   });
-  const labels=head[0].map(x=>String(x||''));
-  const minWidths=labels.map(label=>/^\d+$/.test(label)?13:(/^(N°|#|Pago|Debe)$/i.test(label)?25:32));
-  const minTotal=minWidths.reduce((a,b)=>a+b,0);
-  let fitted;
-  if(minTotal>=availableW){
-    const k=availableW/minTotal;fitted=minWidths.map(w=>w*k);
+  const minTotal=nonQuotaMin.reduce((a,b)=>a+b,0);
+  let nonQuotaFitted;
+  if(nonQuotaRaw.reduce((a,b)=>a+b,0)<=nonQuotaAvailable){
+    nonQuotaFitted=nonQuotaRaw.slice();
+  }else if(minTotal<nonQuotaAvailable){
+    const extraTotal=nonQuotaRaw.reduce((sum,w,i)=>sum+Math.max(0,w-nonQuotaMin[i]),0);
+    const room=nonQuotaAvailable-minTotal;
+    nonQuotaFitted=nonQuotaRaw.map((w,i)=>nonQuotaMin[i]+(extraTotal>0?Math.max(0,w-nonQuotaMin[i])*room/extraTotal:0));
   }else{
-    const base=rawWidths.map((w,i)=>Math.max(minWidths[i],w));
-    const baseTotal=base.reduce((a,b)=>a+b,0);
-    if(baseTotal<=availableW)fitted=base;
-    else{
-      const extraTotal=base.reduce((a,w,i)=>a+(w-minWidths[i]),0);
-      const room=availableW-minTotal;
-      fitted=base.map((w,i)=>minWidths[i]+(extraTotal>0?(w-minWidths[i])*room/extraTotal:0));
-    }
+    // Caso extremo (p.ej. orientación vertical): comprimir proporcionalmente;
+    // overflow linebreak conserva el texto completo en varias líneas.
+    const scale=nonQuotaAvailable/(minTotal||1);
+    nonQuotaFitted=nonQuotaMin.map(w=>Math.max(12,w*scale));
   }
-  if(fitted.length){const sumExceptLast=fitted.slice(0,-1).reduce((a,b)=>a+b,0);fitted[fitted.length-1]=Math.max(0.5,availableW-sumExceptLast);}
-  labels.forEach((label,i)=>{colStyles[i]={halign:(i<2||/pago|debe|cuota|n°|#/i.test(label))?'center':'left',cellWidth:fitted[i]};});
+  const fitted=labels.map((label,i)=>{
+    if(quotaIndices.includes(i))return quotaWidth;
+    const pos=nonQuotaIndices.indexOf(i);
+    return nonQuotaFitted[pos]||23;
+  });
+  labels.forEach((label,i)=>{colStyles[i]={halign:(i<2||/pago|debe|cuota|n°|#/i.test(label)||quotaIndices.includes(i))?'center':'left',cellWidth:fitted[i]};});
   doc.autoTable({
     theme:'grid',
     head,body,startY,margin:{left:M,right:M,top:M+20,bottom:M-4},
-    styles:{font:fonts.normal,fontSize:baseSize,cellPadding:pdfRowH(),lineColor:[190,193,198],lineWidth:.5,textColor:[20,24,30],fillColor:[255,255,255]},
+    styles:{font:fonts.normal,fontSize:baseSize,cellPadding:pdfRowH(),lineColor:[190,193,198],lineWidth:.5,textColor:[20,24,30],fillColor:[255,255,255],overflow:'linebreak',valign:'middle'},
     headStyles:tonerSave?{fillColor:[255,255,255],textColor:[20,24,30],fontStyle:'bold',halign:'center',lineWidth:.8,lineColor:[20,24,30],font:fonts.bold}:{fillColor:accentRgb,textColor:[255,255,255],fontStyle:'bold',halign:'center',font:fonts.bold},
     bodyStyles:{fontStyle:'italic',font:fonts.italic,fillColor:[255,255,255]},
     alternateRowStyles:{fillColor:[255,255,255]},
@@ -8367,14 +8385,49 @@ function box(title,fields,okTxt,onOk,cancel){
   const desc=title.toLowerCase().includes('nuevo pin')?'Definí un PIN para bloquear el acceso a la interfaz de Nora.':'Ingresá tu PIN para continuar.';
   ov.innerHTML='<section class="nora-lock-card" role="dialog" aria-modal="true" aria-labelledby="nora-lock-title">'+
     '<div class="nora-lock-brand"><span class="nora-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v2"></path></svg></span><span><span class="nora-lock-brand-name">Nora</span><span class="nora-lock-brand-sub">GESTIÓN · ESPACIO PRIVADO</span></span></div>'+
-    '<h2 id="nora-lock-title" class="nora-lock-title">'+title+'</h2><p class="nora-lock-desc">'+desc+'</p><div class="nora-lock-fields">'+fields.map((f,i)=>'<div class="nora-lock-field"><label for="nora-lock-input-'+i+'">'+f+'</label><div class="nora-lock-input-row"><input id="nora-lock-input-'+i+'" class="nora-lock-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="'+f+'" placeholder="'.concat(i===0?'••••••':'Repetí el PIN')+'"><button type="button" class="nora-lock-toggle" data-lk-toggle="'+i+'">Mostrar</button></div></div>').join('')+'</div>'+
+    '<h2 id="nora-lock-title" class="nora-lock-title">'+title+'</h2><p class="nora-lock-desc">'+desc+'</p><div class="nora-lock-fields">'+fields.map((f,i)=>'<div class="nora-lock-field"><label for="nora-lock-input-'+i+'">'+f+'</label><div class="nora-lock-input-row"><input id="nora-lock-input-'+i+'" name="nora-pin-entry-'+i+'" class="nora-lock-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" maxlength="12" aria-label="'+f+'" placeholder="'.concat(i===0?'••••••':'Repetí el PIN')+'"><button type="button" class="nora-lock-toggle" data-lk-toggle="'+i+'">Mostrar</button></div></div>').join('')+'</div>'+
     '<div class="nora-lock-error" role="status" aria-live="polite"></div><button type="button" class="nora-lock-submit">'+okTxt+'</button>'+(cancel?'<button type="button" class="nora-lock-cancel">Cancelar</button>':'')+
     '<p class="nora-lock-foot">El PIN bloquea esta pantalla. Para proteger los datos locales, mantené segura tu cuenta del dispositivo.</p></section>';
   document.body.appendChild(ov);
-  const ins=[...ov.querySelectorAll('input')],err=ov.querySelector('.nora-lock-error');ins[0].focus();
-  const go=async()=>{err.textContent='';const btn=ov&&ov.querySelector('.nora-lock-submit');if(btn)btn.disabled=true;try{const r=await onOk(ins.map(i=>i.value),m=>err.textContent=m);if(r===false)ins.forEach(i=>i.value='');}finally{if(btn&&ov)btn.disabled=false;}};
-  ov.querySelector('.nora-lock-submit').onclick=go;ins.forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')go();});
-  ov.querySelectorAll('[data-lk-toggle]').forEach(b=>b.onclick=()=>{const i=ins[+b.dataset.lkToggle];if(!i)return;i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Mostrar':'Ocultar';i.focus();});
+  const ins=[...ov.querySelectorAll('input')],err=ov.querySelector('.nora-lock-error');
+  // Mantener el PIN real fuera del valor visible del input: así el navegador
+  // no lo interpreta como credencial ni ofrece autocompletado de contraseñas.
+  const pinOf=i=>String(i.dataset.pinValue||'');
+  const paintPin=(i,pos)=>{const value=pinOf(i);i.value=i.classList.contains('is-visible')?value:'•'.repeat(value.length);const p=Math.max(0,Math.min(value.length,pos==null?value.length:pos));try{i.setSelectionRange(p,p);}catch(_){} };
+  const editPin=(i,text,kind)=>{
+    const old=pinOf(i),a=i.selectionStart==null?old.length:i.selectionStart,b=i.selectionEnd==null?a:i.selectionEnd;
+    let from=Math.min(a,b),to=Math.max(a,b),insert='';
+    if(kind==='insert'){insert=String(text||'').replace(/[^0-9]/g,'');}
+    else if(from===to&&kind==='backward')from=Math.max(0,from-1);
+    else if(from===to&&kind==='forward')to=Math.min(old.length,to+1);
+    const next=(old.slice(0,from)+insert+old.slice(to)).slice(0,12);
+    i.dataset.pinValue=next;paintPin(i,from+insert.length);
+  };
+  ins.forEach(i=>{
+    i.dataset.pinValue='';
+    i.addEventListener('beforeinput',e=>{
+      if(e.inputType==='insertText'){e.preventDefault();editPin(i,e.data,'insert');}
+      else if(e.inputType==='deleteContentBackward'){e.preventDefault();editPin(i,'','backward');}
+      else if(e.inputType==='deleteContentForward'){e.preventDefault();editPin(i,'','forward');}
+      else if(e.inputType==='insertFromPaste'){e.preventDefault();}
+    });
+    i.addEventListener('paste',e=>{e.preventDefault();editPin(i,e.clipboardData?.getData('text/plain')||'','insert');});
+    // Respaldo para teclados que no emitan beforeinput.
+    i.addEventListener('input',()=>{
+      if(i.classList.contains('is-visible'))i.dataset.pinValue=i.value.replace(/[^0-9]/g,'').slice(0,12);
+      else if(!/^•*$/.test(i.value)){
+        const old=pinOf(i);let oi=0,next='';
+        for(const ch of i.value){if(ch==='•')next+=old[oi++]||'';else if(/[0-9]/.test(ch))next+=ch;}
+        i.dataset.pinValue=next.slice(0,12);
+      }
+      paintPin(i,i.value.length);
+    });
+    i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};
+  });
+  const go=async()=>{err.textContent='';const btn=ov&&ov.querySelector('.nora-lock-submit');if(btn)btn.disabled=true;try{const r=await onOk(ins.map(pinOf),m=>err.textContent=m);if(r===false)ins.forEach(i=>{i.dataset.pinValue='';paintPin(i,0);});}finally{if(btn&&ov)btn.disabled=false;}};
+  ov.querySelector('.nora-lock-submit').onclick=go;
+  ov.querySelectorAll('[data-lk-toggle]').forEach(b=>b.onclick=()=>{const i=ins[+b.dataset.lkToggle];if(!i)return;const pos=i.selectionStart==null?pinOf(i).length:i.selectionStart;i.classList.toggle('is-visible');const visible=i.classList.contains('is-visible');b.textContent=visible?'Ocultar':'Mostrar';b.setAttribute('aria-pressed',String(visible));paintPin(i,pos);i.focus();});
+  ins[0].focus();
   if(cancel)ov.querySelector('.nora-lock-cancel').onclick=()=>{ov.remove();ov=null;document.body.classList.remove('nora-is-locked');};
 }
 const close=()=>{if(ov){ov.remove();ov=null;}document.body.classList.remove('nora-is-locked');};
