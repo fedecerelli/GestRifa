@@ -1272,12 +1272,15 @@ body.nx-hide-floats .nx-float{display:none}
 
 <section class="view" id="view-dash">
   <div class="card">
-    <h2><span class="h-ic" data-icon="zap"></span>Filtros rápidos</h2>
+    <h2><span class="h-ic" data-icon="zap"></span>Ver solo</h2>
     <div class="chips" id="quickChips">
-      <button class="chip" data-chip="deudores"><span class="b-ic" data-icon="alert"></span>Deudores críticos</button>
-      <button class="chip" data-chip="aldia"><span class="b-ic" data-icon="check"></span>Al día</button>
-      <button class="chip" data-chip="nuevos"><span class="b-ic" data-icon="star"></span>Nuevos (30 días)</button>
-      <button class="chip" data-chip="pago0"><span class="b-ic" data-icon="clock"></span>Sin cuotas</button>
+      <button class="chip" data-cat="cobranza">A cobranza</button>
+      <button class="chip" data-cat="sinvender">Sin Vender</button>
+      <button class="chip" data-cat="bajas">Bajas</button>
+      <button class="chip" data-cat="solic">Solic. Vendedor</button>
+      <button class="chip" data-cat="nopres">No Presentados</button>
+      <button class="chip" data-cat="compl">Completados</button>
+      <button class="chip" data-cat="">Ver todo</button>
     </div>
   </div>
   <div class="card hidden filter-card" id="dashFiltersCard">
@@ -1294,21 +1297,29 @@ body.nx-hide-floats .nx-float{display:none}
   </div>
   <div id="dashEmpty" class="card">El Dashboard se alimenta del Centro de datos: cobranza y archivos de sorteo (L -) quedan integrados acá.</div>
   <div id="dashBody" class="hidden">
-    <div class="card"><h2><span class="h-ic" data-icon="chart"></span>Indicadores</h2><div class="kpis" id="kpis"></div></div>
-    <div class="card"><h2><span class="h-ic" data-icon="chart"></span>Proyección <span class="tag" id="cashflowTag">-</span> <button class="ghost miniBtn" data-fullscreen="chCashflow" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="hint" id="cashflowSummary"></div><div class="chartbox" style="height:280px;margin-top:10px"><canvas id="chCashflow"></canvas></div></div>
+    <div class="card"><h2><span class="h-ic" data-icon="chart"></span>Estado de las ventas <span class="tag" id="ventasTag">-</span></h2><div class="hint" id="ventasHint">Tocá un recuadro para ver solo esa situación en todo el panel.</div><div class="st-grid" id="kpis"></div></div>
+    <div class="card"><h2><span class="h-ic" data-icon="folder"></span>Situaciones por archivo</h2><div class="hint">Así ves en qué archivo está cada situación (Bajas, Solic. Vendedor, No Presentados, etc.). Tocá una fila para filtrar por ese archivo.</div><div class="scrollx" style="margin-top:8px"><table class="mini st-table" id="dashArchivos"></table></div></div>
+    <div class="card"><h2><span class="h-ic" data-icon="pin"></span>Localidades <span class="tag" id="locTag">-</span></h2><div class="hint">Rifas que salieron a cobranza y situación de cada localidad. Tocá una fila para filtrar todo el panel por esa localidad.</div><div class="scrollx" style="margin-top:8px"><table class="mini st-table" id="dashLocTable"></table></div></div>
     <div class="grid2">
       <div class="card"><h2>Por situación <button class="ghost miniBtn" data-fullscreen="chSit" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chSit"></canvas></div></div>
-      <div class="card"><h2>Por localidad <button class="ghost miniBtn" data-fullscreen="chLoc" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chLoc"></canvas></div></div>
-      <div class="card"><h2>Por mes <button class="ghost miniBtn" data-fullscreen="chMes" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chMes"></canvas></div></div>
-      <div class="card"><h2>Cuotas pagadas <button class="ghost miniBtn" data-fullscreen="chPago" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chPago"></canvas></div></div>
-      <div class="card"><h2>Calles top <button class="ghost miniBtn" data-fullscreen="chCalle" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chCalle"></canvas></div></div>
-      <div class="card"><h2>Días de carga <button class="ghost miniBtn" data-fullscreen="chDias" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chDias"></canvas></div></div>
+      <div class="card"><h2>Situaciones por localidad <button class="ghost miniBtn" data-fullscreen="chLoc" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chLoc"></canvas></div></div>
     </div>
-    <div class="card"><h2><span class="h-ic" data-icon="alert"></span>Faltantes <span class="tag" id="gapsTag">-</span></h2>
+    <div class="card"><h2><span class="h-ic" data-icon="map"></span>Calles <span class="tag" id="calleTag">-</span></h2>
+      <div class="hint">Calles con más rifas a cobranza (según los filtros activos).</div>
+      <div class="row" style="margin-top:8px"><div class="field grow"><input type="search" id="dashCalleQ" placeholder="Buscar calle o localidad…" autocomplete="off"></div></div>
+      <div class="scrollx" style="margin-top:8px;max-height:520px;overflow:auto"><table class="mini st-table" id="dashCalleTable"></table></div>
+      <div style="margin-top:8px"><button type="button" class="ghost miniBtn" id="dashCalleMore" style="display:none"></button></div>
+    </div>
+    <div class="card" id="gapsCard"><h2><span class="h-ic" data-icon="alert"></span>Faltantes <span class="tag" id="gapsTag">-</span></h2>
       <div class="falt-tabs" id="faltTabs"><button class="falt-tab active" data-fv="resumen">Resumen</button><button class="falt-tab" data-fv="segmentos">Segmentos</button><button class="falt-tab" data-fv="heatmap">Mapa</button><button class="falt-tab" data-fv="localidades">Localidades</button><button class="falt-tab" data-fv="compacto">Compacto</button></div>
       <div id="gapsReport"></div>
     </div>
     <div class="card"><h2><span class="h-ic" data-icon="copy"></span>Duplicados <span class="tag" id="dupTag">-</span></h2><div class="scrollx" style="margin-top:8px"><table class="mini" id="dupTable"></table></div><div id="excludedInfo" class="hint" style="margin-top:10px"></div></div>
+    <details class="card st-ref" id="dashCobRef"><summary>Cobranza y cuotas (referencia)</summary>
+      <div class="hint" style="margin:6px 0 10px">Datos de cuotas pagadas. El seguimiento real de pagos se hace con el archivo de Control.</div>
+      <div class="card"><h2><span class="h-ic" data-icon="chart"></span>Proyección <span class="tag" id="cashflowTag">-</span> <button class="ghost miniBtn" data-fullscreen="chCashflow" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="hint" id="cashflowSummary"></div><div class="chartbox" style="height:280px;margin-top:10px"><canvas id="chCashflow"></canvas></div></div>
+    <div class="grid2"><div class="card"><h2>Por mes <button class="ghost miniBtn" data-fullscreen="chMes" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chMes"></canvas></div></div><div class="card"><h2>Cuotas pagadas <button class="ghost miniBtn" data-fullscreen="chPago" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chPago"></canvas></div></div><div class="card"><h2>Días de carga <button class="ghost miniBtn" data-fullscreen="chDias" style="margin-left:auto"><span data-icon="zap"></span></button></h2><div class="chartbox"><canvas id="chDias"></canvas></div></div></div>
+    </details>
     <div class="card"><h2><span class="h-ic" data-icon="check"></span>Conclusiones</h2><ul class="concl" id="concl"></ul></div>
   </div>
 </section>
@@ -3597,41 +3608,140 @@ document.getElementById('btnExportJson').onclick=async()=>{const f=currentPdfFil
 document.getElementById('btnExportCsv').onclick=async()=>{const f=currentPdfFilters();const data=buildDataForPdf(f);if(!data.length){notify('Sin registros','warn');return;}const es=v=>{const s=String(v??'');if(/[",\n;]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s;};let csv='N;Apellido;Nombre;Domicilio;Pago;Debe;Mes;Situacion;Localidad\n';data.forEach(r=>{csv+=[r.num,r.apellido,r.nombre,domicilio(r),r.pago,r.debe,r.mes,r.situacion,r.localidad].map(es).join(';')+'\n';});await downloadText('\uFEFF'+csv,buildFilename().replace('.pdf','.csv'),'text/csv;charset=utf-8');notify('CSV exportado','ok');};
 
 ['dSit','dMes','dLoc','dSource'].forEach(id=>{const el=document.getElementById(id);if(el)el.onchange=updateDashboard;});
-document.getElementById('btnResetDash').onclick=()=>{['dSit','dMes','dLoc','dSource'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});quickChip=null;document.querySelectorAll('.chip[data-chip]').forEach(c=>c.classList.remove('active'));updateDashboard();};
+document.getElementById('btnResetDash').onclick=()=>{dashCat=null;dashCalleQ='';try{document.getElementById('dashCalleQ').value='';}catch(e){}dashCalleAll=false;['dSit','dMes','dLoc','dSource'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});quickChip=null;document.querySelectorAll('.chip[data-chip]').forEach(c=>c.classList.remove('active'));updateDashboard();};
 document.querySelectorAll('.chip[data-chip]').forEach(c=>c.onclick=()=>{const k=c.dataset.chip;if(quickChip===k){quickChip=null;c.classList.remove('active');}else{quickChip=k;document.querySelectorAll('.chip[data-chip]').forEach(x=>x.classList.toggle('active',x===c));}updateDashboard();});
 document.querySelectorAll('[data-fullscreen]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.fullscreen;const box=document.getElementById(id)?.closest('.chartbox');if(box)box.classList.toggle('chart-fullscreen');});
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 function hasDashboardNumber(r){const v=String(r&&r.num!==undefined&&r.num!==null?r.num:'').trim();return /^\d+$/.test(v);}
 function dashboardRows(rows){return (rows||[]).filter(hasDashboardNumber);}
-function updateDashboard(){
-  const f={dest:'dashboard',source:document.getElementById('dSource').value,sit:document.getElementById('dSit').value,mes:document.getElementById('dMes').value,loc:document.getElementById('dLoc').value,chip:quickChip};
-  const data=dashboardRows(applySort(applyFilters(f),'num','asc'));
-  const total=data.length;const cuotasPagadas=data.reduce((s,r)=>s+r.pago,0),cuotasDebe=data.reduce((s,r)=>s+r.debe,0);
-  const alDia=data.filter(r=>r.debe===0).length;
-  const pct=total?Math.round(cuotasPagadas/((cuotasPagadas+cuotasDebe)||1)*100):0;
-  const byCalleMap={};data.forEach(r=>{const k=r.calleKey||r.calle||'Sin dato';byCalleMap[k]=(byCalleMap[k]||0)+1;});
-  const byCalle=Object.entries(byCalleMap).sort((a,b)=>b[1]-a[1]);
-  const byMes=groupCount(data,'mes');
-  const mesOrder=[...new Set(data.map(r=>r.mes).filter(Boolean))];
-  const seriesReg=mesOrder.map(m=>data.filter(r=>r.mes===m).length);
-  const seriesPag=mesOrder.map(m=>data.filter(r=>r.mes===m).reduce((s,r)=>s+r.pago,0));
-  const seriesDeb=mesOrder.map(m=>data.filter(r=>r.mes===m).reduce((s,r)=>s+r.debe,0));
-  const seriesAlDia=mesOrder.map(m=>data.filter(r=>r.mes===m&&r.debe===0).length);
-  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c';
-  const cash=cashflowProjection(data);
-  const kpiData=[['Registros',total,seriesReg],['Cuotas pagadas',cuotasPagadas,seriesPag],['Cuotas pendientes',cuotasDebe,seriesDeb],['% cobrado',pct+'%',null],['Al día',alDia,seriesAlDia],['Proyección',Math.round(cash.proyeccionTotal),null],['Cobrabilidad',Math.round(cash.tasa*100)+'%',null],['Calle top',byCalle[0]?byCalle[0][0]:'-',null]];
-  document.getElementById('kpis').innerHTML=kpiData.map(([l,n,s])=>{const spark=s&&s.length>1?sparkline(s,80,20,accent):'';return `<div class="kpi"><div class="n" style="font-size:${(''+n).length>10?'15px':'22px'}">${esc(''+n)}</div><div class="l">${l}</div>${spark?`<div class="spark">${spark}</div>`:''}</div>`;}).join('');
-  drawBar('chSit',groupCount(data,'situacion'),'sit');drawBar('chLoc',groupCount(data,'localidad'),'loc');drawBar('chMes',byMes,'mes');drawBar('chPago',payDistribution(data),null);drawBar('chCalle',byCalle.slice(0,8),null);drawBar('chDias',diasCarga(data),null);
-  drawCashflow(cash);
-  document.getElementById('cashflowTag').textContent=cash.tasa?Math.round(cash.tasa*100)+'%':'—';
-  document.getElementById('cashflowSummary').innerHTML=`Adeudadas: <b>${cash.totalDebe}</b>. Cobrabilidad: <b>${Math.round(cash.tasa*100)}%</b>. Proyección: <b>${Math.round(cash.proyeccionTotal)} cuotas</b>.`;
-  renderGapsReport(data);renderDuplicates();
-  const totalExcluded=FILES.reduce((s,f)=>s+f.records.filter(r=>r._excluded).length,0);
-  const infoEl=document.getElementById('excludedInfo');
-  if(totalExcluded){infoEl.innerHTML=totalExcluded+' registros excluidos. <button class="ghost miniBtn" id="btnRestoreAll">Restaurar todos</button>';infoEl.querySelector('#btnRestoreAll').onclick=()=>{FILES.forEach(f=>f.records.forEach(r=>r._excluded=false));rebuildRecords();updateDashboard();refreshPreview();renderFilesList();saveState();notify('Restaurados','ok');};}else infoEl.textContent='';
-  const gaps=computeGaps(data);
-  document.getElementById('concl').innerHTML=buildConclusions(data,total,pct,alDia,byCalle,byMes,gaps,findDuplicates(data)).map(c=>'<li>'+c+'</li>').join('');
+/* ===== Dashboard orientado a ventas / situación de cada número ===== */
+const SIT_DEFS=[
+ {k:'cuotas',l:'Cuotas',s:'Cuotas',c:'#2f6fb5',t:s=>/^cuotas?$/.test(s)},
+ {k:'medios',l:'Medios Contados',s:'Medios Cont.',c:'#13908a',t:s=>/^(medios?|1 ?\/ ?2) ?contados?$/.test(s)},
+ {k:'contados',l:'Contados',s:'Contados',c:'#2f8f4e',t:s=>/^contados?$/.test(s)},
+ {k:'sinvender',l:'Sin Vender',s:'Sin Vender',c:'#c98a1b',t:s=>/^sin ?vender/.test(s)},
+ {k:'bajas',l:'Bajas',s:'Bajas',c:'#c0392b',t:s=>/^bajas?$/.test(s)},
+ {k:'solic',l:'Solic. Vendedor',s:'Solic. Vend.',c:'#7b4fb8',t:s=>/^solic/.test(s)},
+ {k:'nopres',l:'No Presentados',s:'No Present.',c:'#d9622b',t:s=>/^no presentad/.test(s)}
+];
+const SIT_OTRAS={k:'otras',l:'Otras situaciones',s:'Otras',c:'#7a8794'};
+const SIT_ALL=[...SIT_DEFS,SIT_OTRAS];
+let dashCat=null,dashCalleQ='',dashCalleAll=false,DASH_LAST=null;
+function sitNorm(v){return String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\./g,' ').replace(/\s+/g,' ').trim();}
+function catOf(r){const s=sitNorm(r.situacion);for(const d of SIT_DEFS)if(d.t(s))return d.k;return 'otras';}
+function complIdx(){const h=(window.__HEADERS||[]).find(x=>/^compl/i.test(String(x.name||'').trim()));return h?h.idx:9;}
+function isCompl(r){if(/complet/.test(sitNorm(r.situacion)))return true;const v=r._raw&&r._raw['c'+complIdx()];return !!v&&/^(1|si|x|ok|true|complet\w*)$/.test(sitNorm(v));}
+function catMatch(r,k){if(!k)return true;if(k==='cobranza'){const c=catOf(r);return c==='cuotas'||c==='medios';}if(k==='compl')return isCompl(r);return catOf(r)===k;}
+function shortFile(n){return String(n||'').replace(/\.(xlsx|xlsm|xls|csv)$/i,'');}
+function colorOfCat(k){const d=SIT_ALL.find(x=>x.k===k);return d?d.c:'#7a8794';}
+function rangesText(set,min,max){const parts=[];let st=null;for(let n=min;n<=max+1;n++){const miss=n<=max&&!set.has(n);if(miss){if(st===null)st=n;}else if(st!==null){parts.push(st===n-1?String(st):st+'–'+(n-1));st=null;}}if(!parts.length)return '';return parts.length>25?parts.slice(0,25).join(', ')+' … y '+(parts.length-25)+' tramos más':parts.join(', ');}
+function dashBaseF(){return {dest:'dashboard',source:document.getElementById('dSource').value,mes:document.getElementById('dMes').value};}
+function dashRowsBy(extra){return dashboardRows(applyFilters(Object.assign(dashBaseF(),extra||{})));}
+function dashRows(){const s=document.getElementById('dSit').value,l=document.getElementById('dLoc').value;let d=dashboardRows(applySort(applyFilters(Object.assign(dashBaseF(),{sit:s,loc:l})),'num','asc'));if(dashCat)d=d.filter(r=>catMatch(r,dashCat));return d;}
+function tallyBy(rows,keyFn){const by={};rows.forEach(r=>{const key=keyFn(r);const o=by[key]=by[key]||{n:0,c:{},compl:0};o.n++;const k=catOf(r);o.c[k]=(o.c[k]||0)+1;if(isCompl(r))o.compl++;});return by;}
+const cobOf=o=>(o.c.cuotas||0)+(o.c.medios||0);
+function catHeads(){return '<th class="num">A cobranza</th>'+SIT_ALL.map(d=>'<th class="num" title="'+esc(d.l)+'">'+esc(d.s)+'</th>').join('')+'<th class="num">Compl.</th><th class="num">Total</th>';}
+function catCells(o){const cell=(n,k)=>n?`<td class="num st-c" style="--c:${colorOfCat(k)}">${n.toLocaleString('es-AR')}</td>`:'<td class="num st-zero">·</td>';return `<td class="num st-cob">${cobOf(o)?cobOf(o).toLocaleString('es-AR'):'·'}</td>`+SIT_ALL.map(d=>cell(o.c[d.k]||0,d.k)).join('')+cell(o.compl||0,'contados').replace('--c:#2f8f4e','--c:#1f7a5a')+`<td class="num"><b>${o.n.toLocaleString('es-AR')}</b></td>`;}
+
+function renderSalesTiles(base,gaps){
+  const box=document.getElementById('kpis');if(!box)return;
+  const total=base.length;const files=new Set(base.map(r=>r.source)).size,locs=new Set(base.map(r=>r.localidad).filter(Boolean)).size;
+  const T={};SIT_ALL.forEach(d=>T[d.k]={n:0,f:{},names:{}});T.compl={n:0,f:{},names:{}};
+  base.forEach(r=>{const k=catOf(r),t=T[k];t.n++;t.f[r.source]=(t.f[r.source]||0)+1;if(k==='otras'){const nm=r.situacion||'Sin dato';t.names[nm]=(t.names[nm]||0)+1;}if(isCompl(r)){T.compl.n++;T.compl.f[r.source]=(T.compl.f[r.source]||0)+1;}});
+  const cob=T.cuotas.n+T.medios.n;
+  const pc=n=>total?(Math.round(n/total*1000)/10).toLocaleString('es-AR')+'% del total':'—';
+  const where=t=>{const e=Object.entries(t.f).sort((a,b)=>b[1]-a[1]);if(!e.length)return 'No hay en estos archivos';const sh=e.slice(0,3).map(([n,c])=>esc(shortFile(n))+' <b>'+c+'</b>').join(' · ');return (e.length===1?'Solo en: ':'En: ')+sh+(e.length>3?' · +'+(e.length-3)+' más':'');};
+  const nfiles=t=>{const n=Object.keys(t.f).length;return n?'en '+n+' archivo'+(n===1?'':'s'):'No hay en estos archivos';};
+  const tile=(key,label,n,c,sub,extra)=>`<button type="button" class="st-tile${dashCat===key&&key?' active':''}${n?'':' zero'}" data-cat="${key}" style="--c:${c}"><span class="st-l">${esc(label)}</span><span class="st-n">${n.toLocaleString('es-AR')}</span><span class="st-p">${sub}</span>${extra?`<span class="st-w">${extra}</span>`:''}</button>`;
+  let h=tile('','Total de números',total,'#5b6b7c',files+' archivo'+(files===1?'':'s')+' · '+locs+' localidad'+(locs===1?'':'es'),'');
+  h+=tile('cobranza','A cobranza (Cuotas + Medios Cont.)',cob,'#2f6fb5',pc(cob),'');
+  const rare=['sinvender','bajas','solic','nopres'];
+  SIT_DEFS.forEach(d=>{h+=tile(d.k,d.l,T[d.k].n,d.c,pc(T[d.k].n),rare.includes(d.k)?where(T[d.k]):nfiles(T[d.k]));});
+  h+=tile('compl','Completados',T.compl.n,'#1f7a5a','con todas las cuotas',where(T.compl));
+  if(T.otras.n){const nm=Object.entries(T.otras.names).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,c])=>esc(n)+' <b>'+c+'</b>').join(' · ');h+=tile('otras','Otras situaciones',T.otras.n,SIT_OTRAS.c,pc(T.otras.n),nm);}
+  const missLoc=(gaps.byLoc||[]).reduce((a,x)=>a+x.missing,0),worst=(gaps.byLoc||[]).filter(x=>x.missing).sort((a,b)=>b.missing-a.missing)[0];h+=tile('faltantes','Números faltantes',missLoc,'#b3261e','dentro del rango de cada localidad',missLoc&&worst?('Más en: '+esc(worst.loc)+' <b>'+worst.missing+'</b> · tocá para ver cuáles'):(gaps.present?'Sin faltantes':'sin legajos'));
+  box.innerHTML=h;
+  box.onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;const k=b.dataset.cat;if(k==='faltantes'){const g=document.getElementById('gapsCard');if(g)g.scrollIntoView({behavior:'smooth',block:'start'});return;}dashCat=(!k||dashCat===k)?null:k;updateDashboard();};
+  const tg=document.getElementById('ventasTag');if(tg)tg.textContent=total.toLocaleString('es-AR')+' números · '+cob.toLocaleString('es-AR')+' a cobranza';
+  const ht=document.getElementById('ventasHint');if(ht){const act=dashCat?SIT_ALL.concat([{k:'cobranza',l:'A cobranza'},{k:'compl',l:'Completados'}]).find(x=>x.k===dashCat):null;ht.innerHTML=act?'Mostrando solo: <b>'+esc(act.l)+'</b>. Tocá el recuadro de nuevo o “Ver todo” para quitar el filtro.':'Tocá un recuadro para ver solo esa situación en todo el panel.';}
+  document.querySelectorAll('#quickChips [data-cat]').forEach(c=>c.classList.toggle('active',(c.dataset.cat||null)===dashCat&&!!dashCat));
 }
+function renderFilesTable(base){
+  const t=document.getElementById('dashArchivos');if(!t)return;const by=tallyBy(base,r=>r.source||'—');const rows=Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+  if(!rows.length){t.innerHTML='<tr><td class="hint" style="border:none">Sin datos.</td></tr>';return;}
+  const tot={n:0,c:{},compl:0};rows.forEach(([,o])=>{tot.n+=o.n;tot.compl+=o.compl;Object.entries(o.c).forEach(([k,v])=>tot.c[k]=(tot.c[k]||0)+v);});
+  const cur=document.getElementById('dSource').value;
+  t.innerHTML='<thead><tr><th>Archivo</th>'+catHeads()+'</tr></thead><tbody>'+rows.map(([n,o])=>`<tr data-file="${esc(n)}" class="${cur===n?'sel':''}"><td title="${esc(n)}">${esc(shortFile(n))}</td>${catCells(o)}</tr>`).join('')+`<tr class="st-total"><td>Total</td>${catCells(tot)}</tr></tbody>`;
+  t.querySelectorAll('tr[data-file]').forEach(tr=>tr.onclick=()=>{const s=document.getElementById('dSource');s.value=(s.value===tr.dataset.file)?'':tr.dataset.file;updateDashboard();});
+}
+function renderLocTable(baseAll,gaps,sel){
+  const t=document.getElementById('dashLocTable');if(!t)return;const by=tallyBy(baseAll,r=>r.localidad||'(sin localidad)');
+  const gm={};gaps.byLoc.forEach(x=>gm[x.loc]=x);
+  const rows=Object.entries(by).map(([l,o])=>({l,o})).sort((a,b)=>cobOf(b.o)-cobOf(a.o)||b.o.n-a.o.n||a.l.localeCompare(b.l,'es'));
+  const tg=document.getElementById('locTag');if(tg)tg.textContent=rows.length+' localidad'+(rows.length===1?'':'es')+' · '+rows.reduce((s,x)=>s+cobOf(x.o),0).toLocaleString('es-AR')+' a cobranza';
+  if(!rows.length){t.innerHTML='<tr><td class="hint" style="border:none">Sin datos.</td></tr>';return;}
+  t.innerHTML='<thead><tr><th>Localidad</th>'+catHeads()+'<th class="num" title="Números que faltan dentro del rango de la localidad">Faltan</th></tr></thead><tbody>'+rows.map(({l,o})=>{const g=gm[l];const mis=g?g.missing:0;return `<tr data-loc="${esc(l)}" class="${sel===l?'sel':''}"><td>${esc(l)}</td>${catCells(o)}<td class="num" ${g&&g.ranges?`title="${esc(g.ranges)}"`:''}>${mis?`<span style="color:var(--warn);font-weight:700">${mis}</span>`:'<span class="st-zero">·</span>'}</td></tr>`;}).join('')+'</tbody>';
+  t.querySelectorAll('tr[data-loc]').forEach(tr=>tr.onclick=()=>{const s=document.getElementById('dLoc');const v=tr.dataset.loc;s.value=(s.value===v)?'':v;updateDashboard();});
+}
+function renderLocChart(baseAll){
+  const ctx=document.getElementById('chLoc');if(!ctx)return;try{if(charts.chLoc)charts.chLoc.destroy();}catch(e){}
+  const by=tallyBy(baseAll,r=>r.localidad||'(sin localidad)');const labels=Object.keys(by).sort((a,b)=>by[b].n-by[a].n).slice(0,15);
+  const ds=SIT_ALL.map(d=>({label:d.l,data:labels.map(l=>by[l].c[d.k]||0),backgroundColor:d.c,stack:'s'})).filter(d=>d.data.some(v=>v));
+  charts.chLoc=noraNewChart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,minRotation:0}},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}});
+}
+function renderDashCalles(data){
+  const t=document.getElementById('dashCalleTable');if(!t)return;const q=sitNorm(dashCalleQ);const by={};
+  data.forEach(r=>{const calle=r.calle||'Sin dato';const key=(r.localidad||'')+'|'+(r.calleKey||sitNorm(calle));const o=by[key]=by[key]||{calle,loc:r.localidad||'—',n:0,c:{},compl:0};o.n++;const k=catOf(r);o.c[k]=(o.c[k]||0)+1;if(isCompl(r))o.compl++;});
+  let rows=Object.values(by);if(q)rows=rows.filter(o=>sitNorm(o.calle).includes(q)||sitNorm(o.loc).includes(q));
+  const sk=o=>(dashCat&&dashCat!=='cobranza'&&dashCat!=='compl')?(o.c[dashCat]||0):(dashCat==='compl'?o.compl:cobOf(o));
+  rows.sort((a,b)=>sk(b)-sk(a)||b.n-a.n||a.calle.localeCompare(b.calle,'es'));
+  const tg=document.getElementById('calleTag');if(tg)tg.textContent=rows.length.toLocaleString('es-AR')+' calle'+(rows.length===1?'':'s');
+  const lim=dashCalleAll?rows.length:Math.min(rows.length,40);
+  t.innerHTML=rows.length?'<thead><tr><th>Calle</th><th>Localidad</th>'+catHeads()+'</tr></thead><tbody>'+rows.slice(0,lim).map(o=>`<tr><td>${esc(o.calle)}</td><td>${esc(o.loc)}</td>${catCells(o)}</tr>`).join('')+'</tbody>':'<tr><td class="hint" style="border:none">Sin calles para estos filtros.</td></tr>';
+  const mb=document.getElementById('dashCalleMore');if(mb){if(rows.length>40){mb.style.display='';mb.textContent=dashCalleAll?'Mostrar solo las primeras 40':'Mostrar las '+rows.length.toLocaleString('es-AR')+' calles';mb.onclick=()=>{dashCalleAll=!dashCalleAll;renderDashCalles(DASH_LAST?DASH_LAST.data:data);};}else mb.style.display='none';}
+}
+function buildSalesConclusions(base,data,gaps,dups){
+  const total=base.length;if(!total)return ['Sin registros.'];const out=[];
+  const by=tallyBy(base,()=>'x').x;const n=k=>by.c[k]||0;const cob=n('cuotas')+n('medios');
+  const files=new Set(base.map(r=>r.source)).size,locs=new Set(base.map(r=>r.localidad).filter(Boolean)).size;
+  const pc=v=>Math.round(v/total*100)+'%';
+  out.push(`Se analizaron <b>${total.toLocaleString('es-AR')}</b> números en <b>${files}</b> archivo(s) y <b>${locs}</b> localidad(es).`);
+  out.push(`A cobranza salieron <b>${cob.toLocaleString('es-AR')}</b> rifas (${pc(cob)}): <b>${n('cuotas').toLocaleString('es-AR')}</b> en Cuotas y <b>${n('medios').toLocaleString('es-AR')}</b> en Medios Contados.`);
+  const bl=Object.entries(tallyBy(base,r=>r.localidad||'(sin localidad)')).map(([l,o])=>[l,cobOf(o)]).sort((a,b)=>b[1]-a[1])[0];if(bl&&bl[1])out.push(`Localidad con más rifas a cobranza: <b>${esc(bl[0])}</b> (${bl[1].toLocaleString('es-AR')}).`);
+  const cobRows=base.filter(r=>catMatch(r,'cobranza'));const bc=Object.entries(tallyBy(cobRows,r=>(r.calle||'Sin dato')+' · '+(r.localidad||'—'))).map(([k,o])=>[k,o.n]).sort((a,b)=>b[1]-a[1])[0];if(bc)out.push(`Calle con más rifas a cobranza: <b>${esc(bc[0])}</b> (${bc[1].toLocaleString('es-AR')}).`);
+  out.push(`Contados: <b>${n('contados').toLocaleString('es-AR')}</b> · Sin Vender: <b>${n('sinvender').toLocaleString('es-AR')}</b> (${pc(n('sinvender'))}).`);
+  const where=k=>{const f={};base.filter(r=>catOf(r)===k).forEach(r=>f[r.source]=(f[r.source]||0)+1);return Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([nm,c])=>esc(shortFile(nm))+' ('+c+')').join(', ');};
+  [['bajas','Bajas'],['solic','Solic. Vendedor'],['nopres','No Presentados']].forEach(([k,l])=>{if(n(k))out.push(`<b>${l}:</b> ${n(k).toLocaleString('es-AR')} — en ${where(k)}.`);});
+  if(by.compl)out.push(`Completados: <b>${by.compl.toLocaleString('es-AR')}</b>.`);
+  {const ml=(gaps.byLoc||[]).filter(x=>x.missing).sort((a,b)=>b.missing-a.missing);const tm=ml.reduce((a,x)=>a+x.missing,0);if(tm)out.push(`Faltan <b>${tm.toLocaleString('es-AR')}</b> números dentro del rango de cada localidad; la que más: <b>${esc(ml[0].loc)}</b> (${ml[0].missing}: ${esc((ml[0].ranges||'').slice(0,90))}).`);}
+  if(dups&&dups.length)out.push(`<b>${dups.length}</b> número(s) repetido(s).`);
+  return out;
+}
+function updateDashboard(){
+  const el=id=>document.getElementById(id);const locSel=el('dLoc').value;
+  const baseAll=dashRowsBy({});const base=locSel?baseAll.filter(r=>r.localidad===locSel):baseAll;const data=dashRows();
+  DASH_LAST={data,base,baseAll};
+  const gapsAll=computeGaps(baseAll),gapsBase=locSel?computeGaps(base):gapsAll;
+  const run=(n,fn)=>{try{fn();}catch(e){console.warn('Dashboard · '+n,e);}};
+  run('tiles',()=>renderSalesTiles(base,gapsBase));
+  run('archivos',()=>renderFilesTable(base));
+  run('localidades',()=>renderLocTable(baseAll,gapsAll,locSel));
+  run('graf-loc',()=>renderLocChart(baseAll));
+  run('graf-sit',()=>drawBar('chSit',groupCount(data,'situacion'),'sit'));
+  run('calles',()=>renderDashCalles(data));
+  /* referencia de cobranza (sección plegada) */
+  run('cobranza',()=>{const cash=cashflowProjection(data);drawBar('chMes',groupCount(data,'mes'),'mes');drawBar('chPago',payDistribution(data),null);drawBar('chDias',diasCarga(data),null);drawCashflow(cash);
+    el('cashflowTag').textContent=cash.tasa?Math.round(cash.tasa*100)+'%':'—';
+    el('cashflowSummary').innerHTML=`Adeudadas: <b>${cash.totalDebe}</b>. Cobrabilidad: <b>${Math.round(cash.tasa*100)}%</b>. Proyección: <b>${Math.round(cash.proyeccionTotal)} cuotas</b>.`;});
+  run('faltantes',()=>renderGapsReport(data));run('duplicados',()=>renderDuplicates());
+  const totalExcluded=FILES.reduce((s,f)=>s+f.records.filter(r=>r._excluded).length,0);const infoEl=el('excludedInfo');
+  if(infoEl){if(totalExcluded){infoEl.innerHTML=totalExcluded+' registros excluidos. <button class="ghost miniBtn" id="btnRestoreAll">Restaurar todos</button>';infoEl.querySelector('#btnRestoreAll').onclick=()=>{FILES.forEach(f=>f.records.forEach(r=>r._excluded=false));rebuildRecords();updateDashboard();refreshPreview();renderFilesList();saveState();notify('Restaurados','ok');};}else infoEl.textContent='';}
+  run('conclusiones',()=>{el('concl').innerHTML=buildSalesConclusions(base,data,gapsBase,findDuplicates(data)).map(c=>'<li>'+c+'</li>').join('');});
+}
+(function(){const q=document.getElementById('dashCalleQ');if(q)q.oninput=()=>{dashCalleQ=q.value;if(DASH_LAST)renderDashCalles(DASH_LAST.data);};
+ const qc=document.getElementById('quickChips');if(qc)qc.onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;const k=b.dataset.cat;dashCat=(!k||dashCat===k)?null:k;updateDashboard();};
+ const d=document.getElementById('dashCobRef');if(d)d.addEventListener('toggle',()=>{if(d.open)setTimeout(()=>Object.values(charts).forEach(c=>{try{c&&c.resize&&c.resize();}catch(e){}}),60);});})();
+
 function computeGaps(data){
   const items=data.map(r=>({n:toNum(r.num),loc:r.localidad||'(sin localidad)'})).filter(x=>x.n>0).sort((a,b)=>a.n-b.n);
   if(!items.length)return{min:0,max:0,total:0,present:0,missing:0,segments:[],byLoc:[],ocupacion:0,biggest:null};
@@ -3640,12 +3750,12 @@ function computeGaps(data){
   if(segStart!==null)segments.push({from:segStart,to:max,size:max-segStart+1});
   segments.sort((a,b)=>b.size-a.size);
   const byLocMap={};items.forEach(x=>{if(!byLocMap[x.loc])byLocMap[x.loc]={loc:x.loc,nums:[],set:new Set()};byLocMap[x.loc].nums.push(x.n);byLocMap[x.loc].set.add(x.n);});
-  const byLoc=Object.values(byLocMap).map(g=>{const lmin=Math.min(...g.nums),lmax=Math.max(...g.nums);let lmiss=0;for(let n=lmin;n<=lmax;n++)if(!g.set.has(n))lmiss++;return {loc:g.loc,count:g.nums.length,min:lmin,max:lmax,range:lmax-lmin+1,missing:lmiss,ocupacion:Math.round(g.nums.length/(lmax-lmin+1)*100)};}).sort((a,b)=>b.missing-a.missing);
+  const byLoc=Object.values(byLocMap).map(g=>{const lmin=Math.min(...g.nums),lmax=Math.max(...g.nums);let lmiss=0;for(let n=lmin;n<=lmax;n++)if(!g.set.has(n))lmiss++;return {loc:g.loc,count:g.nums.length,min:lmin,max:lmax,range:lmax-lmin+1,missing:lmiss,ranges:rangesText(g.set,lmin,lmax),ocupacion:Math.round(g.nums.length/(lmax-lmin+1)*100)};}).sort((a,b)=>b.missing-a.missing);
   const totalRange=max-min+1,missing=totalRange-items.length,ocupacion=Math.round(items.length/totalRange*100);const biggest=segments[0]||null;
   return {min,max,total:totalRange,present:items.length,missing,segments,byLoc,ocupacion,biggest};
 }
 let gapsMode='resumen';
-function setGapsMode(m){gapsMode=m;document.querySelectorAll('.falt-tab').forEach(b=>b.classList.toggle('active',b.dataset.fv===m));if(RECORDS.length)renderGapsReport(dashboardRows(applySort(applyFilters({dest:'dashboard',source:document.getElementById('dSource').value,sit:document.getElementById('dSit').value,mes:document.getElementById('dMes').value,loc:document.getElementById('dLoc').value,chip:quickChip}),'num','asc')));}
+function setGapsMode(m){gapsMode=m;document.querySelectorAll('.falt-tab').forEach(b=>b.classList.toggle('active',b.dataset.fv===m));if(RECORDS.length)renderGapsReport(dashRows());}
 document.querySelectorAll('.falt-tab').forEach(b=>b.onclick=()=>setGapsMode(b.dataset.fv));
 function renderGapsReport(data){
   const g=computeGaps(data);const tag=document.getElementById('gapsTag');const box=document.getElementById('gapsReport');
@@ -3654,7 +3764,7 @@ function renderGapsReport(data){
   const mode=gapsMode;
   const cards=`<div class="gaps-grid"><div class="gaps-kpi"><div class="n">${g.min}–${g.max}</div><div class="l">Rango</div></div><div class="gaps-kpi"><div class="n">${g.present}</div><div class="l">Activos</div></div><div class="gaps-kpi"><div class="n" style="color:${g.missing?'var(--warn)':'var(--accent2)'}">${g.missing}</div><div class="l">Faltantes</div></div><div class="gaps-kpi"><div class="n">${g.ocupacion}%</div><div class="l">Ocupación</div></div>${g.biggest?`<div class="gaps-kpi"><div class="n">${g.biggest.size}</div><div class="l">Bache (${g.biggest.from}–${g.biggest.to})</div></div>`:''}</div>`;
   const segTable=`<div class="scrollx"><table class="mini"><thead><tr><th>#</th><th>Desde</th><th>Hasta</th><th>Cantidad</th></tr></thead><tbody>${g.segments.slice(0,60).map((s,i)=>`<tr><td>${i+1}</td><td>${s.from}</td><td>${s.to}</td><td><b>${s.size}</b></td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--accent2)">Sin faltantes</td></tr>'}</tbody></table></div>`;
-  const locTable=`<div class="scrollx"><table class="mini"><thead><tr><th>Localidad</th><th>Legajos</th><th>Desde</th><th>Hasta</th><th>Ocup.</th><th>Falt.</th></tr></thead><tbody>${g.byLoc.map(l=>`<tr><td><b>${esc(l.loc)}</b></td><td>${l.count}</td><td>${l.min}</td><td>${l.max}</td><td>${l.ocupacion}%</td><td>${l.missing?`<span style="color:var(--warn);font-weight:600">${l.missing}</span>`:'<span style="color:var(--accent2)">0</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+  const locTable=`<div class="scrollx"><table class="mini"><thead><tr><th>Localidad</th><th>Legajos</th><th>Desde</th><th>Hasta</th><th>Ocup.</th><th>Falt.</th><th>Números faltantes</th></tr></thead><tbody>${g.byLoc.map(l=>`<tr><td><b>${esc(l.loc)}</b></td><td>${l.count}</td><td>${l.min}</td><td>${l.max}</td><td>${l.ocupacion}%</td><td>${l.missing?`<span style="color:var(--warn);font-weight:600">${l.missing}</span>`:'<span style="color:var(--accent2)">0</span>'}</td><td style="font-size:11px;max-width:380px;overflow-wrap:anywhere">${esc(l.ranges||'—')}</td></tr>`).join('')}</tbody></table></div>`;
   const present=new Set(data.map(r=>toNum(r.num)).filter(x=>x>0));let hm='';
   if(g.max-g.min<=600){const cells=[];for(let n=g.min;n<=g.max;n++){const cls=present.has(n)?'p':'m';cells.push(`<div class="hm ${cls}" title="${n}">${n}</div>`);}hm=`<div class="heatmap">${cells.join('')}</div>`;}
   else{const blocks=[];const blockSize=Math.ceil((g.max-g.min+1)/300);for(let n=g.min;n<=g.max;n+=blockSize){const end=Math.min(n+blockSize-1,g.max);let have=0,miss=0;for(let k=n;k<=end;k++){present.has(k)?have++:miss++;}const cls=miss===0?'p':(have===0?'m':'dup');blocks.push(`<div class="hm ${cls}" title="${n}-${end}">${miss}</div>`);}hm=`<div class="heatmap">${blocks.join('')}</div><div class="hint" style="margin-top:6px">Verde: completo · amarillo: parcial · rojo: sin datos.</div>`;}
@@ -9530,6 +9640,30 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
 })();
 </script>
 
+<style id="nora-dash-ventas">
+.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;margin-top:10px}
+.st-tile{--c:var(--accent);appearance:none;-webkit-appearance:none;position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:11px 12px 10px 14px;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;background:var(--panel2);color:var(--ink);cursor:pointer;min-width:0;font:inherit;transition:transform .12s,box-shadow .12s,background .12s}
+.st-tile:hover{transform:translateY(-1px);box-shadow:0 6px 14px #0002}
+.st-tile.active{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 40%,transparent);background:color-mix(in srgb,var(--c) 10%,var(--panel2))}
+.st-tile.zero{opacity:.55}
+.st-l{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;line-height:1.25}
+.st-n{font-size:28px;font-weight:800;line-height:1.1;color:var(--c)}
+.st-p{font-size:11px;color:var(--sub)}
+.st-w{font-size:10.5px;color:var(--ink);opacity:.9;margin-top:3px;overflow-wrap:anywhere;line-height:1.35}
+table.mini.st-table th.num,table.mini.st-table td.num{text-align:right;white-space:nowrap}
+table.mini.st-table tr[data-file],table.mini.st-table tr[data-loc]{cursor:pointer}
+table.mini.st-table tr[data-file]:hover td,table.mini.st-table tr[data-loc]:hover td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+table.mini.st-table tr.sel td{background:color-mix(in srgb,var(--accent) 14%,transparent);font-weight:600}
+table.mini.st-table td.st-c{font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent)}
+table.mini.st-table td.st-zero{color:var(--sub);opacity:.4}
+table.mini.st-table tr.st-total td{font-weight:800;border-top:2px solid var(--line)}
+table.mini.st-table td.st-cob{font-weight:800}
+#nrSumDash{display:none!important}
+details.st-ref>summary{cursor:pointer;font-weight:700;font-size:14px;padding:2px 0;list-style:revert}
+details.st-ref[open]>summary{margin-bottom:6px}
+@media(max-width:560px){.st-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.st-n{font-size:24px}}
+
+</style>
 <script id="nora-toolbar-dedupe-20261030">
 /* Autocuración de la barra: si algún bloque se ejecuta dos veces, elimina botones/widgets repetidos. */
 (()=>{
