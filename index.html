@@ -5983,8 +5983,11 @@ const _rr=window.renderReports;window.renderReports=function(){const r=_rr.apply
   const del=el.querySelector('[data-del-r]');if(del&&!el.querySelector('[data-nr-pr]')){const b=document.createElement('button');b.className='ghost miniBtn';b.dataset.nrPr=x.id;b.title='Imprimir todo';b.setAttribute('aria-label','Imprimir todo');b.innerHTML=icon('printer');b.onclick=e=>{e.stopPropagation();printAll(x);};del.before(b);}});});return r;};
 const PF=()=>window.PDFLib;
 async function slice(blob,pages){const src=await PF().PDFDocument.load(await blob.arrayBuffer(),{ignoreEncryption:true});const out=await PF().PDFDocument.create();(await out.copyPages(src,pages.map(p=>p-1))).forEach(p=>out.addPage(p));return new Blob([await out.save()],{type:'application/pdf'});}
-function printBlob(blob){if(window.nrIsMobile&&window.nrIsMobile()){window.nrMobilePrint(blob,'reporte.pdf');return;}const url=URL.createObjectURL(blob),f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';f.src=url;document.body.appendChild(f);
- f.onload=()=>setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>{try{URL.revokeObjectURL(url);f.remove();}catch(e){}},60000);},300);}
+function printBlob(blob){
+ if(window.noraSafePrintPdf){window.noraSafePrintPdf(blob,'reporte.pdf').catch(e=>notify('No se pudo imprimir el PDF: '+(e.message||e),'err'));return;}
+ if(window.nrIsMobile&&window.nrIsMobile()&&window.nrMobilePrint){window.nrMobilePrint(blob,'reporte.pdf');return;}
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();setTimeout(()=>URL.revokeObjectURL(url),300000);
+}
 function printAll(r){if(!r.blob){notify('Este reporte no tiene PDF guardado','warn');return;}printBlob(r.blob);}
 function ranges(r){r.batchState.ranges=[];const s=r.batchState.size||2;for(let a=1;a<=r.totalPages;a+=s)r.batchState.ranges.push({start:a,end:Math.min(r.totalPages,a+s-1)});}
 const _pb=window.printBatch;
@@ -6176,7 +6179,7 @@ function mobilePrint(blob,name){
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
  (async()=>{try{
-  const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
+  const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer()),disableWorker:true}).promise;
   for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const v0=pg.getViewport({scale:1});if(p===1)land=v0.width>v0.height;
    const sc=Math.min(2,2200/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;
    await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;pages.push(c.toDataURL('image/jpeg',.9));
@@ -6184,9 +6187,13 @@ function mobilePrint(blob,name){
   t.textContent=pdf.numPages+' página(s) listas. Tocá "Imprimir ahora": se abre una hoja con solo el PDF y el cuadro de impresión.';pb.disabled=false;
  }catch(e){console.warn(e);t.textContent='No pude preparar las páginas. Usá "Compartir" o "Abrir el PDF" y tocá imprimir desde ahí.';}})();}
 window.nrMobilePrint=mobilePrint;
+/* Compartir el cargador PDF.js con el módulo de impresión por lotes. */
+window.nrGetPdfJs=loadPdfJs;
 window.nrIfPrint=function(iframe,url){
- if(!isMobile()){try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}return;}
- fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));};
+ /* El visor PDF embebido es cross-origin. No acceder nunca a contentWindow.print(). */
+ if(isMobile()){fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));return;}
+ try{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();}catch(e){notify('Abrí el PDF y usá el botón Imprimir del visor.','info');}
+};
 })();
 
 
@@ -9868,22 +9875,68 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     wrap.classList.remove('hidden');$('batchBuildProgressBar').style.width=pct+'%';$('batchBuildProgressText').textContent=text;
   }
   function hideBuildProgress(){const w=$('batchBuildProgressWrap');if(w)w.classList.add('hidden');}
-  async function sendPdfToPrinter(blob,filename){
+  function openPrintWindow(){
+    /* Abrir la ventana DURANTE el clic del usuario. Nunca cargar un PDF dentro de
+       un iframe: el visor PDF interno del navegador es un contexto cross-origin. */
+    const w=window.open('about:blank','_blank');
+    if(!w)throw new Error('El navegador bloqueó la ventana de impresión. Permití las ventanas emergentes para fedecerelli.github.io y volvé a intentar.');
+    w.document.open();
+    w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Preparando impresión · Nora</title><style>body{font:15px system-ui,sans-serif;padding:32px;color:#263238}progress{width:min(520px,90vw);height:12px}</style></head><body><h2>Preparando documento para imprimir…</h2><p id=\"st\">Preparando el PDF sin utilizar el visor interno del navegador.</p><progress id=\"pg\" max=100 value=0></progress></body></html>');
+    w.document.close();
+    return w;
+  }
+  async function sendPdfToPrinter(blob,filename,printWindow){
     if(window.nrIsMobile&&window.nrIsMobile()&&typeof window.nrMobilePrint==='function'){
+      if(printWindow&&!printWindow.closed)printWindow.close();
       await Promise.resolve(window.nrMobilePrint(blob,filename||'reporte.pdf'));return;
     }
-    const url=URL.createObjectURL(blob),frame=document.createElement('iframe');
-    frame.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-    await new Promise((resolve,reject)=>{
-      frame.onload=()=>setTimeout(()=>{
-        try{frame.contentWindow.focus();frame.contentWindow.print();resolve();}
-        catch(e){reject(e);}
-        setTimeout(()=>{try{URL.revokeObjectURL(url);frame.remove();}catch(e){}},60000);
-      },350);
-      frame.onerror=()=>reject(new Error('No se pudo abrir el PDF para imprimir.'));
-      frame.src=url;document.body.appendChild(frame);
-    });
+    const w=printWindow&&!printWindow.closed?printWindow:openPrintWindow();
+    const urls=[];
+    try{
+      if(typeof window.nrGetPdfJs!=='function')throw new Error('No está disponible el motor de preparación de impresión (PDF.js). Revisá la conexión y recargá Nora.');
+      const lib=await window.nrGetPdfJs();
+      const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
+      if(!pdf.numPages)throw new Error('El PDF no contiene páginas.');
+      const first=await pdf.getPage(1),firstView=first.getViewport({scale:1});
+      const landscape=firstView.width>firstView.height;
+      const pageW=landscape?'297mm':'210mm',pageH=landscape?'210mm':'297mm';
+      const pages=[];
+      for(let p=1;p<=pdf.numPages;p++){
+        if(w.closed)throw new Error('La ventana de impresión se cerró antes de terminar.');
+        const page=p===1?first:await pdf.getPage(p);
+        const base=page.getViewport({scale:1});
+        const scale=Math.min(2.5,2200/Math.max(base.width,base.height));
+        const viewport=page.getViewport({scale});
+        const canvas=w.document.createElement('canvas');
+        canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+        const ctx=canvas.getContext('2d',{alpha:false});
+        if(!ctx)throw new Error('No se pudo preparar una página del PDF.');
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        await page.render({canvasContext:ctx,viewport}).promise;
+        const imageBlob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('No se pudo convertir una página para imprimir.')),'image/jpeg',.9));
+        urls.push(URL.createObjectURL(imageBlob));
+        pages.push(urls[urls.length-1]);
+        canvas.width=canvas.height=1;
+        try{const st=w.document.getElementById('st'),pg=w.document.getElementById('pg');if(st)st.textContent='Preparando página '+p+' de '+pdf.numPages+'…';if(pg)pg.value=Math.round(p/pdf.numPages*100);}catch(e){}
+        await new Promise(resolve=>requestAnimationFrame(resolve));
+      }
+      if(w.closed)throw new Error('La ventana de impresión se cerró.');
+      const title=String(filename||'reporte.pdf').replace(/[<>&\"']/g,'');
+      w.document.open();
+      w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>'+title+'</title><style>@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#68717b;font:14px system-ui,sans-serif}.toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#202833;color:#fff}.toolbar button{border:0;border-radius:8px;padding:10px 16px;background:#2868c7;color:#fff;font-weight:700;cursor:pointer}.sheet{width:'+pageW+';height:'+pageH+';margin:12px auto;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;break-after:page;page-break-after:always}.sheet img{display:block;width:100%;height:100%;object-fit:contain}.sheet:last-child{break-after:auto;page-break-after:auto}@media print{html,body{background:#fff}.toolbar{display:none!important}.sheet{margin:0;box-shadow:none;break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}}</style></head><body><div class=\"toolbar\"><button type=\"button\" onclick=\"window.print()\">Imprimir</button><span>'+pages.length+' página(s) · '+title+'</span></div>'+pages.map((u,i)=>'<section class=\"sheet\"><img src=\"'+u+'\" alt=\"Página '+(i+1)+'\"></section>').join('')+'<script>window.addEventListener(\'load\',function(){var imgs=Array.from(document.images);Promise.all(imgs.map(function(im){return im.decode?im.decode().catch(function(){}):Promise.resolve();})).then(function(){setTimeout(function(){window.focus();window.print();},300);});});<\/script></body></html>');
+      w.document.close();
+      w.addEventListener('pagehide',()=>urls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}}),{once:true});
+    }catch(error){
+      urls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});
+      if(!w.closed)try{w.close();}catch(e){}
+      throw error;
+    }
   }
+  window.noraSafePrintPdf=function(blob,filename){
+    let target=null;
+    if(!(window.nrIsMobile&&window.nrIsMobile()))target=openPrintWindow();
+    return sendPdfToPrinter(blob,filename||'reporte.pdf',target);
+  };
   function activeReport(){
     try{return typeof getActiveReport==='function'?getActiveReport():null;}catch(e){return null;}
   }
@@ -9971,11 +10024,13 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     if(repeat&&!confirm('Este lote ('+range.start+'–'+range.end+') ya figura como enviado a imprimir. ¿Querés volver a imprimirlo?'))return;
     const blob=reportBlob(r);
     if(!blob){if(typeof notify==='function')notify('No está disponible el PDF original de este reporte. Volvé a generarlo o importalo nuevamente.','err');return;}
+    let printWindow=null;
     try{
+      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
       showBuildProgress(0,'Preparando lote '+(idx+1)+' · páginas '+range.start+'–'+range.end+'…');
       const pages=Array.from({length:range.end-range.start+1},(_,i)=>range.start+i);
       const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando lote '+(idx+1)+': '+done+' de '+n+' páginas…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf');
+      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);
       printed.add(idx);
       if(typeof renderBatchesPaged==='function')await renderBatchesPaged();
       if(typeof updateBatchProgress==='function')updateBatchProgress();
@@ -9987,6 +10042,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de lote':'Lote',firstPage:range.start,lastPage:range.end,totalPages:total});
       if(typeof notify==='function')notify(repeat?'Lote reenviado a imprimir':'Lote enviado a imprimir','ok');
     }catch(e){
+      if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}
       hideBuildProgress();$('printStatus').className='status-line err';$('printStatus').textContent='No se pudo preparar o enviar el lote: '+(e.message||e);
       if(typeof notify==='function')notify('No se pudo imprimir el lote','err');
     }
@@ -10010,14 +10066,16 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     const blob=reportBlob(r);if(!blob){notify('No está disponible el PDF original.','err');return;}
     const repeat=auditRows().some(x=>x.reportId===r.id&&x.firstPage===pages[0]&&x.lastPage===pages[pages.length-1]);
     if(repeat&&!confirm('Este rango ya figura en la auditoría. ¿Querés volver a enviarlo a imprimir?'))return;
+    let printWindow=null;
     try{
+      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
       showBuildProgress(0,'Preparando '+pages.length+' página(s)…');
       const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando páginas '+done+' de '+n+'…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf');
+      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);
       hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de rango':'Rango manual',firstPage:pages[0],lastPage:pages[pages.length-1],totalPages:r.totalPages});
       $('printStatus').className='status-line ok';$('printStatus').textContent='Rango enviado al diálogo de impresión: '+pages.join(', ')+'.';
-    }catch(e){hideBuildProgress();notify('No se pudo imprimir el rango: '+(e.message||e),'err');}
+    }catch(e){if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}hideBuildProgress();notify('No se pudo imprimir el rango: '+(e.message||e),'err');}
   }
   async function printWholeReport(r,asReprint){
     if(!r)return;
@@ -10025,14 +10083,16 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     if(!blob||total<1){notify('No está disponible el PDF completo de este reporte.','warn');return;}
     const sentBefore=auditRows().some(x=>x.reportId===r.id);
     if(asReprint&&sentBefore&&!confirm('Este reporte ya figura en la auditoría. Vas a volver a enviar sus '+total+' páginas a imprimir. ¿Continuar?'))return;
+    let printWindow=null;
     try{
+      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
       showBuildProgress(0,'Preparando el reporte completo…');
       const pages=Array.from({length:total},(_,i)=>i+1);
       const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando reporte: '+done+' de '+n+' páginas…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf');hideBuildProgress();
+      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:'Reporte completo',firstPage:1,lastPage:total,totalPages:total});
       $('printStatus').className='status-line ok';$('printStatus').textContent='Reporte completo enviado al diálogo de impresión.';
-    }catch(e){hideBuildProgress();notify('No se pudo imprimir el reporte: '+(e.message||e),'err');}
+    }catch(e){if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}hideBuildProgress();notify('No se pudo imprimir el reporte: '+(e.message||e),'err');}
   }
 
   /* Bind UI after the original handlers have been installed. */
