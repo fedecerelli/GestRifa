@@ -1085,7 +1085,7 @@ body.nx-hide-floats .nx-float{display:none}
 .nq-build{margin-top:12px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.nq-build-track{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden}.nq-build-track>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .18s}.nq-build small{display:block;color:var(--sub);font-size:10.5px;margin-top:6px}.nq-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.nq-actions button{min-height:38px}.nq-actions button:disabled{opacity:.4;cursor:not-allowed}.nq-message{margin:9px 2px 0;line-height:1.45}.batch-item.selected{outline:2px solid var(--accent);outline-offset:1px}.batch-item.pending{border-color:var(--warn)!important;color:var(--warn)!important}.batch-item.done{border-color:var(--accent2)}
 @media(max-width:620px){#batchQueuePanel{padding:13px}.nq-current{align-items:flex-start;flex-direction:column}.nq-stats{gap:5px}.nq-stats>div{padding:8px}.nq-stats b{font-size:16px}.nq-actions button{flex:1 1 100%}.nq-head{align-items:flex-start}}
 </style>
-<meta name="nora-build" content="2026-11-01-print-queue-v9">
+<meta name="nora-build" content="2026-11-01-print-queue-v10-auto-interval">
 </head>
 <body>
 <div class="app">
@@ -10670,6 +10670,260 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
   }
   [300,1500,4000].forEach(ms=>setTimeout(dedupe,ms));
   window.noraDedupeToolbar=dedupe;
+})();
+</script>
+
+<style id="nora-print-auto-v10-styles">
+.nq-auto{margin-top:13px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.nq-auto-grid{display:grid;grid-template-columns:minmax(190px,1fr) minmax(220px,1.2fr);gap:12px;align-items:end}
+.nq-auto label{display:block;margin-bottom:6px}
+.nq-auto-time{display:flex;gap:7px;align-items:center}
+.nq-auto-time input{width:100px;min-width:80px}
+.nq-auto-time select{max-width:135px}
+.nq-auto-note{font-size:11px;color:var(--sub);line-height:1.45;margin:8px 0 0}
+.nq-auto-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.nq-auto-actions button{min-height:39px}
+.nq-auto-status{margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.nq-auto-status strong{font-size:14px;font-variant-numeric:tabular-nums}
+.nq-auto-status small{display:block;color:var(--sub);font-size:10px}
+.nq-auto-status.running{border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}
+.nq-auto-status.paused{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.nq-auto .nq-auto-actions button:disabled{opacity:.42;cursor:not-allowed}
+@media(max-width:620px){.nq-auto-grid{grid-template-columns:1fr}.nq-auto-time input{flex:1}.nq-auto-status{align-items:flex-start;flex-direction:column}}
+</style>
+<script id="nora-print-auto-v10">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const KEY='nora_print_auto_sequence_v1';
+  const PREF_KEY='nora_print_auto_interval_v1';
+  const hasPending=r=>!!(r&&r.batchState&&Number.isInteger(r.batchState.pendingIndex));
+  const getReport=()=>{try{return typeof getActiveReport==='function'?getActiveReport():null;}catch(e){return null;}};
+  const read=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?d:v;}catch(e){return d;}};
+  const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Nora impresión automática: no se pudo guardar',e);}};
+  let state=read(KEY,null),timer=null,lastSecond=-1,autoLockToken=null,dispatching=false;
+  if(state&&state.active){
+    state.active=false;state.paused=true;state.nextAt=null;state.resumeReason='Nora se volvió a cargar. La secuencia quedó pausada para evitar que se envíe un lote sin supervisión.';write(KEY,state);
+  }
+
+  function intervalMs(){
+    const unit=$('nqAutoUnit')&&$('nqAutoUnit').value||'seconds';
+    const max=unit==='minutes'?60:3600;
+    const n=Math.max(1,Math.min(max,Math.floor(Number($('nqAutoInterval')&&$('nqAutoInterval').value)||30)));
+    return n*(unit==='minutes'?60000:1000);
+  }
+  function intervalText(ms){
+    const sec=Math.max(1,Math.round(ms/1000));
+    return sec>=60?(sec%60?Math.floor(sec/60)+' min '+(sec%60)+' s':Math.floor(sec/60)+' min'):sec+' s';
+  }
+  function fmtLeft(ms){
+    const sec=Math.max(0,Math.ceil(ms/1000));
+    const m=String(Math.floor(sec/60)).padStart(2,'0');
+    const s=String(sec%60).padStart(2,'0');
+    return m+':'+s;
+  }
+  function persist(){if(state)write(KEY,state);}
+  function releaseAutoLock(){
+    if(!autoLockToken)return;
+    try{window.NoraLock&&window.NoraLock.endPrintOperation&&window.NoraLock.endPrintOperation(autoLockToken);}catch(e){}
+    autoLockToken=null;
+  }
+  function holdAutoLock(){
+    if(autoLockToken)return;
+    try{autoLockToken=window.NoraLock&&window.NoraLock.beginPrintOperation?window.NoraLock.beginPrintOperation('Secuencia automática de impresión'):null;}catch(e){autoLockToken=null;}
+  }
+  function clearCountdown(){if(timer){clearInterval(timer);timer=null;}lastSecond=-1;}
+  function sameReport(r){return !!(state&&r&&state.reportId===r.id);}
+  function nextUnprinted(r){
+    if(!r||!r.batchState||!Array.isArray(r.batchState.ranges))return -1;
+    const printed=r.batchState.printed instanceof Set?r.batchState.printed:new Set(r.batchState.printed||[]);
+    return r.batchState.ranges.findIndex((_,i)=>!printed.has(i));
+  }
+  function savePreference(){
+    const unit=$('nqAutoUnit')&&$('nqAutoUnit').value||'seconds';
+    const max=unit==='minutes'?60:3600;
+    const pref={value:Math.max(1,Math.min(max,Math.floor(Number($('nqAutoInterval')&&$('nqAutoInterval').value)||30))),unit};
+    write(PREF_KEY,pref);
+  }
+  function setStatus(message,mode){
+    const line=$('nqAutoMessage'),status=$('nqAutoStatus');
+    if(line)line.textContent=message||'';
+    if(status)status.className='nq-auto-status'+(mode?' '+mode:'');
+  }
+  function updateUI(){
+    const r=getReport(),own=sameReport(r),active=!!(own&&state.active),paused=!!(own&&state.paused),pending=hasPending(r);
+    const start=$('btnBatchAutoStart'),pause=$('btnBatchAutoPause'),input=$('nqAutoInterval'),unit=$('nqAutoUnit'),countdown=$('nqAutoCountdown');
+    if(!start||!pause)return;
+    const idx=own?nextUnprinted(r):-1;
+    const busy=!!(active&&dispatching);
+    const usable=!!(r&&r.batchState&&r.batchState.ranges&&r.batchState.ranges.length);
+    start.disabled=!usable||busy||(active)||(pending&&!(paused&&own));
+    start.textContent=paused?'Reanudar impresión automática':'Imprimir todos los lotes';
+    pause.disabled=!active;
+    pause.textContent='Pausar secuencia';
+    if(input)input.disabled=active;
+    if(unit)unit.disabled=active;
+    const manual=$('btnBatchPrintNext');
+    if(manual&&active)manual.disabled=true;
+    if(countdown){
+      let title='LISTA PARA COMENZAR',detail='Configurá el intervalo y pulsá “Imprimir todos los lotes”.';
+      if(own&&active&&pending){title='ESPERANDO CONFIRMACIÓN';detail='Imprimí el lote abierto y confirmá en Nora. Después comienza la espera de '+intervalText(state.intervalMs)+'.';}
+      else if(own&&active&&state.nextAt){title='PRÓXIMO LOTE EN';detail=fmtLeft(state.nextAt-Date.now());}
+      else if(own&&active&&busy){title='ENVIANDO LOTE';detail='Preparando y abriendo el siguiente PDF…';}
+      else if(own&&active&&idx<0){title='SECUENCIA COMPLETA';detail='Todos los lotes están confirmados.';}
+      else if(own&&paused){title='SECUENCIA PAUSADA';detail=state.resumeReason||'Podés reanudarla o continuar manualmente.';}
+      else if(pending){title='LOTE PENDIENTE';detail='Confirmá el lote abierto o indicá que no se imprimió.';}
+      countdown.innerHTML='<small>'+title+'</small><strong>'+(active&&state.nextAt?fmtLeft(state.nextAt-Date.now()):detail)+'</strong>';
+    }
+    if(own&&active){
+      if(pending)setStatus('La secuencia está activa, pero espera tu confirmación del lote actual. No enviará otro PDF antes de que confirmes.', 'running');
+      else if(state.nextAt)setStatus('Secuencia activa. El próximo lote se abrirá automáticamente cuando termine la cuenta regresiva.', 'running');
+      else setStatus('Secuencia activa. Preparando el próximo lote…', 'running');
+    }else if(own&&paused){setStatus(state.resumeReason||'Secuencia pausada. Podés reanudarla cuando quieras.', 'paused');}
+    else setStatus('Después de confirmar cada impresión, Nora espera el intervalo elegido y abre el siguiente lote. La impresión física se confirma en el visor del navegador.', '');
+  }
+  function pauseAuto(reason){
+    if(!state)return;
+    clearCountdown();state.active=false;state.paused=true;state.nextAt=null;
+    if(reason)state.resumeReason=reason;
+    persist();releaseAutoLock();updateUI();
+  }
+  function stopAuto(reason){
+    clearCountdown();
+    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason=reason||'Secuencia detenida.';persist();}
+    releaseAutoLock();updateUI();
+  }
+  function finishAuto(){
+    clearCountdown();
+    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason='Todos los lotes fueron confirmados.';persist();}
+    releaseAutoLock();
+    if($('printStatus')){$('printStatus').className='status-line ok';$('printStatus').textContent='Impresión automática finalizada: todos los lotes están confirmados.';}
+    updateUI();
+    try{window.notify&&notify('Todos los lotes fueron confirmados','ok');}catch(e){}
+  }
+  async function dispatchNext(){
+    if(dispatching||!state||!state.active)return;
+    const r=getReport();
+    if(!sameReport(r)){pauseAuto('Cambiaste de reporte. La secuencia quedó pausada para evitar mezclar documentos.');return;}
+    if(hasPending(r)){state.nextAt=null;persist();updateUI();return;}
+    const idx=nextUnprinted(r);
+    if(idx<0){finishAuto();return;}
+    dispatching=true;state.nextAt=null;persist();updateUI();
+    try{
+      if(typeof window.noraPrintBatch!=='function')throw new Error('No está disponible el módulo de impresión por lotes.');
+      await window.noraPrintBatch(idx);
+      if(!hasPending(r)||r.batchState.pendingIndex!==idx){
+        pauseAuto('No se pudo abrir el siguiente lote automáticamente. Revisá las ventanas emergentes y reanudá la secuencia.');
+        try{window.notify&&notify('La secuencia se pausó porque no se pudo abrir el lote.','warn');}catch(e){}
+      }else{
+        state.resumeReason='';persist();updateUI();
+      }
+    }catch(e){
+      pauseAuto('No se pudo enviar el lote: '+(e&&e.message||e));
+      try{window.notify&&notify('La secuencia se pausó: '+(e&&e.message||e),'err');}catch(_){}
+    }finally{dispatching=false;updateUI();}
+  }
+  function scheduleNext(){
+    if(!state||!state.active)return;
+    const r=getReport();
+    if(!sameReport(r)){pauseAuto('Cambiaste de reporte. La secuencia quedó pausada.');return;}
+    const idx=nextUnprinted(r);
+    if(idx<0){finishAuto();return;}
+    clearCountdown();
+    state.nextAt=Date.now()+Math.max(1000,Number(state.intervalMs)||30000);
+    state.resumeReason='';persist();
+    timer=setInterval(()=>{
+      if(!state||!state.active){clearCountdown();return;}
+      if(!sameReport(getReport())){pauseAuto('Cambiaste de reporte. La secuencia quedó pausada.');return;}
+      const left=state.nextAt-Date.now();
+      const second=Math.ceil(left/1000);
+      if(second!==lastSecond){lastSecond=second;updateUI();}
+      if(left<=0){clearCountdown();dispatchNext();}
+    },250);
+    updateUI();
+  }
+  async function startOrResume(){
+    const r=getReport();
+    if(!r||!r.batchState||!Array.isArray(r.batchState.ranges)||!r.batchState.ranges.length){window.notify&&notify('Primero prepará los lotes del reporte.','warn');return;}
+    if(hasPending(r)&&!(sameReport(r)&&state&&state.paused)){window.notify&&notify('Primero resolvé el lote que está pendiente de confirmación.','warn');return;}
+    const ms=intervalMs();savePreference();
+    const isResume=sameReport(r)&&state&&state.paused;
+    if(!isResume){
+      const idx=nextUnprinted(r);
+      if(idx<0){window.notify&&notify('Todos los lotes ya están confirmados.','ok');return;}
+      if(state&&state.active)pauseAuto('Se inició otra secuencia.');
+      state={reportId:r.id,active:true,paused:false,intervalMs:ms,nextAt:null,startedAt:Date.now(),resumeReason:''};
+      persist();holdAutoLock();updateUI();
+      // El primer lote se envía directamente desde el clic del usuario para
+      // que el navegador permita abrir la pestaña de impresión.
+      await dispatchNext();
+      return;
+    }
+    state.active=true;state.paused=false;state.intervalMs=ms;state.nextAt=null;state.resumeReason='';persist();holdAutoLock();
+    if(hasPending(r)){updateUI();window.notify&&notify('Secuencia reanudada. Esperando que confirmes el lote actual.','info');return;}
+    window.notify&&notify('Secuencia reanudada','ok');scheduleNext();
+  }
+
+  function injectUI(){
+    const panel=$('batchQueuePanel');if(!panel||$('nqAutoControls'))return;
+    const anchor=$('batchQueueBuildWrap');
+    const box=document.createElement('div');box.className='nq-auto';box.id='nqAutoControls';
+    box.innerHTML=`
+      <div class="nq-auto-grid">
+        <div><label for="nqAutoInterval">Tiempo de espera entre lotes</label><div class="nq-auto-time"><input id="nqAutoInterval" type="number" min="1" max="3600" step="1" value="30"><select id="nqAutoUnit" aria-label="Unidad de tiempo"><option value="seconds">Segundos</option><option value="minutes">Minutos</option></select></div></div>
+        <div><label>Automatización de la cola</label><div class="hint" style="margin:0">Después de confirmar un lote impreso, Nora espera este tiempo y abre automáticamente el siguiente.</div></div>
+      </div>
+      <div class="nq-auto-actions"><button type="button" class="primary" id="btnBatchAutoStart">Imprimir todos los lotes</button><button type="button" class="secondary" id="btnBatchAutoPause" disabled>Pausar secuencia</button></div>
+      <div class="nq-auto-status" id="nqAutoStatus"><div><small>ESTADO DE LA SECUENCIA</small><span id="nqAutoMessage" class="hint">La cola está lista para comenzar.</span></div><div id="nqAutoCountdown" aria-live="polite"><small>LISTA PARA COMENZAR</small><strong>—</strong></div></div>
+      <p class="nq-auto-note">Importante: el navegador no permite imprimir en silencio desde una página web. Nora abre cada PDF automáticamente, pero el operador debe pulsar Imprimir en el visor y confirmar en Nora que el lote salió. El intervalo comienza después de esa confirmación. Mantené abierta la pestaña del PDF para que Nora pueda reutilizarla.</p>`;
+    if(anchor)panel.insertBefore(box,anchor);else panel.appendChild(box);
+    const pref=read(PREF_KEY,{value:30,unit:'seconds'});
+    $('nqAutoUnit').value=pref.unit==='minutes'?'minutes':'seconds';
+    $('nqAutoInterval').value=Math.max(1,Math.min($('nqAutoUnit').value==='minutes'?60:3600,Number(pref.value)||30));
+    $('nqAutoInterval').addEventListener('change',savePreference);
+    $('nqAutoUnit').addEventListener('change',savePreference);
+    $('btnBatchAutoStart').addEventListener('click',startOrResume);
+    $('btnBatchAutoPause').addEventListener('click',()=>pauseAuto('Secuencia pausada por el operador.'));
+  }
+
+  function wrapHandler(id,after){
+    const el=$(id);if(!el)return;
+    const original=el.onclick;
+    if(typeof original!=='function')return;
+    el.onclick=function(ev){const result=original.call(this,ev);setTimeout(()=>{try{after();}catch(e){console.warn(e);}},30);return result;};
+  }
+
+  injectUI();
+  wrapHandler('btnBatchConfirm',()=>{
+    const r=getReport();
+    if(!sameReport(r)||!state||!state.active||hasPending(r))return;
+    if(nextUnprinted(r)<0){finishAuto();return;}
+    scheduleNext();
+  });
+  wrapHandler('btnBatchNotPrinted',()=>{
+    if(state&&state.active)pauseAuto('El lote no se imprimió. La secuencia quedó pausada para que puedas reintentarlo.');
+  });
+  wrapHandler('btnBatchFinish',()=>{
+    if(state&&state.active)stopAuto('Sesión finalizada por el operador.');
+  });
+
+  // Elegir un lote manualmente o cambiar de reporte detiene la automatización.
+  document.addEventListener('click',e=>{
+    if(e.target.closest&&e.target.closest('#batchList .batch-item')&&state&&state.active)pauseAuto('Elegiste un lote manualmente. La secuencia automática quedó pausada.');
+    if(e.target.closest&&e.target.closest('#reportsList .report-item')&&state&&state.active)pauseAuto('Cambiaste de reporte. La secuencia automática quedó pausada.');
+  },true);
+  $('btnResetBatches')&&$('btnResetBatches').addEventListener('click',()=>{if(state&&state.active)stopAuto('El control de lotes fue reiniciado.');},true);
+  $('batchSize')&&$('batchSize').addEventListener('change',()=>{if(state&&state.active)stopAuto('Cambió la cantidad de páginas por lote. Prepará nuevamente la secuencia.');},true);
+
+  const originalRender=window.renderBatchList;
+  if(typeof originalRender==='function'&&!originalRender.__noraAutoWrapped){
+    const wrapped=function(){const result=originalRender.apply(this,arguments);if(result&&typeof result.then==='function')result.finally(updateUI);else setTimeout(updateUI,0);return result;};
+    wrapped.__noraAutoWrapped=true;window.renderBatchList=wrapped;
+  }
+  window.addEventListener('focus',updateUI);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state&&state.active){if(state.nextAt&&state.nextAt<=Date.now()){clearCountdown();dispatchNext();}else updateUI();}});
+  window.addEventListener('pagehide',()=>{if(state&&state.active)pauseAuto('Nora se cerró o recargó. La secuencia quedó pausada.');});
+  updateUI();
 })();
 </script>
 
