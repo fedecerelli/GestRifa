@@ -6159,33 +6159,13 @@ function mobilePrint(blob,name){
  name=name||'documento.pdf';
  document.getElementById('nrPM')?.remove();
  const url=URL.createObjectURL(blob),m=document.createElement('div');m.id='nrPM';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');
- m.innerHTML=`<div class="b"><h3>Imprimir PDF</h3><p id="nrPMt">Preparando las páginas del PDF…</p><div class="bar"><i id="nrPMb"></i></div>
- <div class="g"><button class="pr" id="nrPMp" disabled>🖨️ Imprimir ahora</button><button id="nrPMs">📤 Compartir / enviar a imprimir</button><a class="nb" href="${url}" target="_blank" rel="noopener">📄 Abrir el PDF</a><a class="nb" href="${url}" download="${name.replace(/"/g,'')}">⬇️ Descargar</a><button id="nrPMx">Cerrar</button></div></div>`;
+ m.innerHTML=`<div class="b"><h3>PDF listo</h3><p>El archivo ya está preparado. Abrilo para imprimirlo desde el visor del navegador o compartilo.</p>
+ <div class="g"><a class="nb pr" id="nrPMopen" href="${url}" target="_blank" rel="noopener">📄 Abrir PDF para imprimir</a><button id="nrPMs">📤 Compartir / enviar a imprimir</button><a class="nb" href="${url}" download="${name.replace(/[\"<>]/g,'')}">⬇️ Descargar PDF</a><button id="nrPMx">Cerrar</button></div></div>`;
  document.body.appendChild(m);
- const t=m.querySelector('#nrPMt'),bar=m.querySelector('#nrPMb'),pb=m.querySelector('#nrPMp');let pages=[],land=false;
- const close=()=>{m.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);};
+ const close=()=>{m.remove();setTimeout(()=>URL.revokeObjectURL(url),10*60*1000);};
  m.querySelector('#nrPMx').onclick=close;
- m.querySelector('#nrPMs').onclick=async()=>{try{const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:name});else window.open(url,'_blank');}catch(e){}};
- /* El botón abre una pestaña NUEVA que contiene solo las hojas del PDF: lo único que puede imprimir es el PDF. */
- pb.onclick=()=>{
-  const w=window.open('','_blank');
-  if(!w){t.textContent='Tu navegador bloqueó la ventana nueva. Permitila o usá "Abrir el PDF".';return;}
-  const W=land?'297mm':'210mm',Hh=land?'210mm':'297mm',ttl=name.replace(/[<>&"]/g,'');
-  w.document.open();
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${ttl}</title><style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}html,body{margin:0;background:#6b6b6b}.bar{position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:center;padding:10px 12px;background:#1d1d1d;color:#fff;font:15px system-ui,sans-serif}.bar button{padding:12px 18px;border:0;border-radius:10px;background:#2f7bff;color:#fff;font-size:16px;font-weight:700}img{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}@media print{.bar{display:none}html,body{background:#fff;margin:0;padding:0}img{display:block;width:${W};height:${Hh};object-fit:contain;margin:0 auto;break-inside:avoid;page-break-inside:avoid;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}img:last-of-type{break-after:auto;page-break-after:auto}}</style></head><body><div class="bar"><button onclick="print()">Imprimir</button><span>${pages.length} página(s) · ${ttl}</span></div>${pages.map(p=>'<img src="'+p+'" alt="">').join('')}
-
-
-</body></html>`);
-  w.document.close();
-  setTimeout(()=>{try{w.focus();w.print();}catch(e){}},700);};
- (async()=>{try{
-  const lib=await loadPdfJs();const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer()),disableWorker:true}).promise;
-  for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const v0=pg.getViewport({scale:1});if(p===1)land=v0.width>v0.height;
-   const sc=Math.min(2,2200/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;
-   await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;pages.push(c.toDataURL('image/jpeg',.9));
-   bar.style.width=Math.round(p/pdf.numPages*100)+'%';t.textContent='Preparando página '+p+' de '+pdf.numPages+'…';}
-  t.textContent=pdf.numPages+' página(s) listas. Tocá "Imprimir ahora": se abre una hoja con solo el PDF y el cuadro de impresión.';pb.disabled=false;
- }catch(e){console.warn(e);t.textContent='No pude preparar las páginas. Usá "Compartir" o "Abrir el PDF" y tocá imprimir desde ahí.';}})();}
+ m.querySelector('#nrPMs').onclick=async()=>{try{const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:name});else window.open(url,'_blank','noopener');}catch(e){if(e.name!=='AbortError')notify('No se pudo compartir el PDF. Usá Abrir PDF o Descargar.','warn');}};
+ }
 window.nrMobilePrint=mobilePrint;
 /* Compartir el cargador PDF.js con el módulo de impresión por lotes. */
 window.nrGetPdfJs=loadPdfJs;
@@ -9881,55 +9861,49 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     const w=window.open('about:blank','_blank');
     if(!w)throw new Error('El navegador bloqueó la ventana de impresión. Permití las ventanas emergentes para fedecerelli.github.io y volvé a intentar.');
     w.document.open();
-    w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Preparando impresión · Nora</title><style>body{font:15px system-ui,sans-serif;padding:32px;color:#263238}progress{width:min(520px,90vw);height:12px}</style></head><body><h2>Preparando documento para imprimir…</h2><p id=\"st\">Preparando el PDF sin utilizar el visor interno del navegador.</p><progress id=\"pg\" max=100 value=0></progress></body></html>');
+    w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Preparando impresión · Nora</title><style>body{font:15px system-ui,sans-serif;padding:32px;color:#263238}progress{width:min(520px,90vw);height:12px}</style></head><body><h2>Preparando documento para imprimir…</h2><p id=\"st\">Separando las páginas del lote. Después se abrirá el PDF original en el visor del navegador.</p><progress id=\"pg\" max=100 value=0></progress></body></html>');
     w.document.close();
     return w;
   }
-  async function sendPdfToPrinter(blob,filename,printWindow){
-    if(window.nrIsMobile&&window.nrIsMobile()&&typeof window.nrMobilePrint==='function'){
-      if(printWindow&&!printWindow.closed)printWindow.close();
-      await Promise.resolve(window.nrMobilePrint(blob,filename||'reporte.pdf'));return;
+  const activePrintObjectUrls=new Map();
+  let printUrlCleanupTimer=null;
+  function trackPrintObjectUrl(printWindow,url){
+    activePrintObjectUrls.set(printWindow,url);
+    if(!printUrlCleanupTimer){
+      printUrlCleanupTimer=setInterval(()=>{
+        for(const [win,ownedUrl] of activePrintObjectUrls){
+          let closed=true;try{closed=!win||win.closed;}catch(e){closed=true;}
+          if(closed){try{URL.revokeObjectURL(ownedUrl);}catch(e){}activePrintObjectUrls.delete(win);}
+        }
+        if(!activePrintObjectUrls.size){clearInterval(printUrlCleanupTimer);printUrlCleanupTimer=null;}
+      },10000);
     }
+  }
+  window.addEventListener('pagehide',()=>{
+    for(const url of activePrintObjectUrls.values()){try{URL.revokeObjectURL(url);}catch(e){}}
+    activePrintObjectUrls.clear();
+    if(printUrlCleanupTimer){clearInterval(printUrlCleanupTimer);printUrlCleanupTimer=null;}
+  },{once:true});
+  async function sendPdfToPrinter(blob,filename,printWindow){
+    if(!(blob instanceof Blob)||blob.type!=='application/pdf')throw new Error('El archivo preparado no es un PDF válido.');
+    if(window.nrIsMobile&&window.nrIsMobile()&&typeof window.nrMobilePrint==='function'){
+      if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(e){}
+      window.nrMobilePrint(blob,filename||'reporte.pdf');
+      return true;
+    }
+    /* No rasterizar páginas con PDF.js. Se conserva el PDF original y el visor nativo
+       del navegador ofrece sus controles de impresión sin acceder a iframes cross-origin. */
     const w=printWindow&&!printWindow.closed?printWindow:openPrintWindow();
-    const urls=[];
+    const url=URL.createObjectURL(blob);
+    trackPrintObjectUrl(w,url);
     try{
-      if(typeof window.nrGetPdfJs!=='function')throw new Error('No está disponible el motor de preparación de impresión (PDF.js). Revisá la conexión y recargá Nora.');
-      const lib=await window.nrGetPdfJs();
-      const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
-      if(!pdf.numPages)throw new Error('El PDF no contiene páginas.');
-      const first=await pdf.getPage(1),firstView=first.getViewport({scale:1});
-      const landscape=firstView.width>firstView.height;
-      const pageW=landscape?'297mm':'210mm',pageH=landscape?'210mm':'297mm';
-      const pages=[];
-      for(let p=1;p<=pdf.numPages;p++){
-        if(w.closed)throw new Error('La ventana de impresión se cerró antes de terminar.');
-        const page=p===1?first:await pdf.getPage(p);
-        const base=page.getViewport({scale:1});
-        const scale=Math.min(2.5,2200/Math.max(base.width,base.height));
-        const viewport=page.getViewport({scale});
-        const canvas=w.document.createElement('canvas');
-        canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-        const ctx=canvas.getContext('2d',{alpha:false});
-        if(!ctx)throw new Error('No se pudo preparar una página del PDF.');
-        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
-        await page.render({canvasContext:ctx,viewport}).promise;
-        const imageBlob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('No se pudo convertir una página para imprimir.')),'image/jpeg',.9));
-        urls.push(URL.createObjectURL(imageBlob));
-        pages.push(urls[urls.length-1]);
-        canvas.width=canvas.height=1;
-        try{const st=w.document.getElementById('st'),pg=w.document.getElementById('pg');if(st)st.textContent='Preparando página '+p+' de '+pdf.numPages+'…';if(pg)pg.value=Math.round(p/pdf.numPages*100);}catch(e){}
-        await new Promise(resolve=>requestAnimationFrame(resolve));
-      }
-      if(w.closed)throw new Error('La ventana de impresión se cerró.');
-      const title=String(filename||'reporte.pdf').replace(/[<>&\"']/g,'');
-      w.document.open();
-      w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>'+title+'</title><style>@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#68717b;font:14px system-ui,sans-serif}.toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#202833;color:#fff}.toolbar button{border:0;border-radius:8px;padding:10px 16px;background:#2868c7;color:#fff;font-weight:700;cursor:pointer}.sheet{width:'+pageW+';height:'+pageH+';margin:12px auto;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;break-after:page;page-break-after:always}.sheet img{display:block;width:100%;height:100%;object-fit:contain}.sheet:last-child{break-after:auto;page-break-after:auto}@media print{html,body{background:#fff}.toolbar{display:none!important}.sheet{margin:0;box-shadow:none;break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}}</style></head><body><div class=\"toolbar\"><button type=\"button\" onclick=\"window.print()\">Imprimir</button><span>'+pages.length+' página(s) · '+title+'</span></div>'+pages.map((u,i)=>'<section class=\"sheet\"><img src=\"'+u+'\" alt=\"Página '+(i+1)+'\"></section>').join('')+'<script>window.addEventListener(\'load\',function(){var imgs=Array.from(document.images);Promise.all(imgs.map(function(im){return im.decode?im.decode().catch(function(){}):Promise.resolve();})).then(function(){setTimeout(function(){window.focus();window.print();},300);});});<\/script></body></html>');
-      w.document.close();
-      w.addEventListener('pagehide',()=>urls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}}),{once:true});
+      w.location=url;
+      try{w.focus();}catch(e){}
+      return true;
     }catch(error){
-      urls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});
-      if(!w.closed)try{w.close();}catch(e){}
-      throw error;
+      try{URL.revokeObjectURL(url);}catch(e){}
+      activePrintObjectUrls.delete(w);
+      throw new Error('No se pudo abrir el PDF en el visor del navegador: '+(error.message||error));
     }
   }
   window.noraSafePrintPdf=function(blob,filename){
@@ -10070,7 +10044,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     try{
       if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
       showBuildProgress(0,'Preparando '+pages.length+' página(s)…');
-      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando páginas '+done+' de '+n+'…'));
+      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Armando PDF: '+done+' de '+n+' páginas…'));
       await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);
       hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de rango':'Rango manual',firstPage:pages[0],lastPage:pages[pages.length-1],totalPages:r.totalPages});
@@ -10088,7 +10062,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
       showBuildProgress(0,'Preparando el reporte completo…');
       const pages=Array.from({length:total},(_,i)=>i+1);
-      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando reporte: '+done+' de '+n+' páginas…'));
+      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Armando PDF: '+done+' de '+n+' páginas…'));
       await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:'Reporte completo',firstPage:1,lastPage:total,totalPages:total});
       $('printStatus').className='status-line ok';$('printStatus').textContent='Reporte completo enviado al diálogo de impresión.';
