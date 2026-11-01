@@ -1076,7 +1076,16 @@ body.nx-hide-floats .nx-float{display:none}
 #sorteoSnapshotsList .snapshot-winners{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 #sorteoSnapshotsList details>summary{cursor:pointer}
 @media(max-width:600px){#batchOperator{min-width:0}#batchPager{flex-wrap:wrap}#batchAuditCard .row{align-items:flex-start}}
-</style><meta name="nora-build" content="2026-10-31-cobranza-columnas-pin-no-autofill-v3a">
+</style><style id="nora-print-queue-v9">
+#batchQueuePanel{border-color:color-mix(in srgb,var(--accent) 28%,var(--line));background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel2) 82%,var(--accent) 18%));padding:18px}
+.nq-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.nq-eyebrow{font-size:9px;font-weight:850;letter-spacing:.14em;color:var(--accent);margin-bottom:5px}.nq-head h3{font-size:17px;margin:0 0 3px}.nq-head p{margin:0}.nq-count{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nq-progress{height:9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:14px 0 10px}.nq-progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:999px;transition:width .25s ease}
+.nq-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.nq-stats>div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}.nq-stats small{display:block;color:var(--sub);font-size:10px}.nq-stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums;margin-top:2px}
+.nq-current{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:13px;margin-top:12px}.nq-current>div{min-width:0}.nq-current small{display:block;color:var(--sub);font-size:9px;font-weight:800;letter-spacing:.1em}.nq-current strong{display:block;font-size:22px;line-height:1.2;margin:3px 0;font-variant-numeric:tabular-nums}.nq-current .hint{margin:0}.nq-state{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:10px;font-weight:750;color:var(--sub)}.nq-state.pending{background:color-mix(in srgb,var(--warn) 10%,var(--panel));color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,var(--line))}.nq-state.done{background:color-mix(in srgb,var(--accent2) 10%,var(--panel));color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 35%,var(--line))}
+.nq-build{margin-top:12px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.nq-build-track{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden}.nq-build-track>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .18s}.nq-build small{display:block;color:var(--sub);font-size:10.5px;margin-top:6px}.nq-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.nq-actions button{min-height:38px}.nq-actions button:disabled{opacity:.4;cursor:not-allowed}.nq-message{margin:9px 2px 0;line-height:1.45}.batch-item.selected{outline:2px solid var(--accent);outline-offset:1px}.batch-item.pending{border-color:var(--warn)!important;color:var(--warn)!important}.batch-item.done{border-color:var(--accent2)}
+@media(max-width:620px){#batchQueuePanel{padding:13px}.nq-current{align-items:flex-start;flex-direction:column}.nq-stats{gap:5px}.nq-stats>div{padding:8px}.nq-stats b{font-size:16px}.nq-actions button{flex:1 1 100%}.nq-head{align-items:flex-start}}
+</style>
+<meta name="nora-build" content="2026-11-01-print-queue-v9">
 </head>
 <body>
 <div class="app">
@@ -1341,13 +1350,22 @@ body.nx-hide-floats .nx-float{display:none}
     <div class="row">
       <div class="field" style="max-width:190px"><label>Hojas por lote (1 a 500)</label><input id="batchSize" type="number" min="1" max="500" step="1" value="100"></div>
       <div class="field grow" style="min-width:190px"><label>Usuario / operador</label><input id="batchOperator" type="text" maxlength="80" placeholder="Nombre del operador"></div>
-      <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches"><span class="b-ic" data-icon="refresh"></span>Preparar / recalcular</button></div>
+      <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches"><span class="b-ic" data-icon="refresh"></span>Preparar lotes</button></div>
       <div class="field" style="max-width:230px"><button class="secondary" id="btnResetBatches"><span class="b-ic" data-icon="refresh"></span>Reiniciar control</button></div>
       <div class="field" style="max-width:230px"><button class="secondary" id="btnReprintAll"><span class="b-ic" data-icon="printer"></span>Reimprimir todo el reporte</button></div>
     </div>
     <div id="batchProgressWrap" class="hidden" style="margin-top:16px"><div class="batch-progress"><div class="batch-progress-bar" id="batchProgressBar"></div></div><div class="hint" id="batchProgressText"></div></div>
     <div id="batchBuildProgressWrap" class="hidden" style="margin-top:10px"><div class="batch-progress"><div class="batch-progress-bar" id="batchBuildProgressBar"></div></div><div class="hint" id="batchBuildProgressText"></div></div>
     <div id="printStatus" class="status-line"></div>
+    <div id="batchQueuePanel" class="card hidden" aria-live="polite">
+      <div class="nq-head"><div><div class="nq-eyebrow">SESIÓN DE IMPRESIÓN</div><h3>Cola de trabajo</h3><p id="batchQueueReport" class="hint">Prepará los lotes para comenzar.</p></div><span id="batchQueueCount" class="nq-count">0 / 0</span></div>
+      <div class="nq-progress"><div id="batchQueueFill"></div></div>
+      <div class="nq-stats"><div><small>Confirmados</small><b id="batchQueueDone">0</b></div><div><small>Pendientes</small><b id="batchQueuePending">0</b></div><div><small>Páginas confirmadas</small><b id="batchQueuePages">0</b></div></div>
+      <div class="nq-current"><div><small id="batchQueueLabel">SIGUIENTE LOTE</small><strong id="batchQueueRange">—</strong><span id="batchQueueDetail" class="hint">Elegí un reporte y prepará los lotes.</span></div><span id="batchQueueState" class="nq-state">Sin preparar</span></div>
+      <div id="batchQueueBuildWrap" class="nq-build hidden"><div class="nq-build-track"><div id="batchQueueBuildBar"></div></div><small id="batchQueueBuildText">Preparando PDF…</small></div>
+      <div class="nq-actions"><button type="button" class="primary" id="btnBatchPrintNext"><span class="b-ic" data-icon="printer"></span>Imprimir siguiente lote</button><button type="button" class="primary" id="btnBatchConfirm" disabled><span class="b-ic" data-icon="check"></span>Confirmar lote impreso</button><button type="button" class="secondary" id="btnBatchNotPrinted" disabled>No se imprimió</button><button type="button" class="ghost" id="btnBatchFinish">Finalizar sesión</button></div>
+      <p id="batchQueueMessage" class="hint nq-message">Nora registra un lote como confirmado únicamente cuando vos lo indicás.</p>
+    </div>
     <div class="batchlist" id="batchList"></div>
     <div class="row" id="batchPager" style="display:none;justify-content:space-between;align-items:center;margin-top:8px">
       <button type="button" class="secondary miniBtn" id="batchPrevPage">Lotes anteriores</button>
@@ -5972,7 +5990,7 @@ safe('topbar',()=>{const ta=$('.topbar-actions');if(!ta||ta.dataset.nr)return;ta
 const DB={open(){return new Promise((ok,no)=>{const r=indexedDB.open('nora_pdf_lib',1);r.onupgradeneeded=()=>r.result.createObjectStore('pdfs',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});},
  async tx(m,f){const db=await this.open();return new Promise((ok,no)=>{const t=db.transaction('pdfs',m);const rq=f(t.objectStore('pdfs'));t.oncomplete=()=>ok(rq&&rq.result);t.onerror=()=>no(t.error);});},
  put(x){return this.tx('readwrite',s=>s.put(x));},del(id){return this.tx('readwrite',s=>s.delete(id));},all(){return this.tx('readonly',s=>s.getAll());}};
-const rec=r=>({id:r.id,name:r.name,filename:r.filename,blob:r.blob,totalPages:r.totalPages,count:r.count!=null?r.count:(r.data||[]).length,ts:r.ts,size:r.batchState.size,printed:[...r.batchState.printed],imported:!!r.imported});
+const rec=r=>({id:r.id,name:r.name,filename:r.filename,blob:r.blob,totalPages:r.totalPages,count:r.count!=null?r.count:(r.data||[]).length,ts:r.ts,size:r.batchState.size,printed:[...r.batchState.printed],pendingIndex:Number.isInteger(r.batchState.pendingIndex)?r.batchState.pendingIndex:null,pendingAuditId:r.batchState.pendingAuditId||null,imported:!!r.imported});
 const persist=r=>safe('persist',()=>{if(!r.blob&&r.doc&&r.doc.output)r.blob=r.doc.output('blob');if(r.blob)DB.put(rec(r)).then(info).catch(()=>{});});
 const _add=window.addReport;window.addReport=function(){const r=_add.apply(this,arguments);persist(r);return r;};
 const _del=window.deleteReport;window.deleteReport=function(id){safe('del',()=>DB.del(id));return _del.apply(this,arguments);};
@@ -6025,7 +6043,7 @@ safe('printui',()=>{const card=document.querySelector('#view-print .card');if(!c
  info();});
 safe('restore',async()=>{if(!window.indexedDB)return;if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
  const all=(await DB.all()).sort((a,b)=>b.ts-a.ts);const keep=all.slice(0,40);for(const x of all.slice(40))DB.del(x.id);
- keep.forEach(x=>{if(REPORTS.some(r=>r.id===x.id))return;const r={id:x.id,name:x.name,filename:x.filename,data:[],filters:{},doc:{output:()=>x.blob},blob:x.blob,restored:true,imported:x.imported,count:x.count,rowPageMap:[],totalPages:x.totalPages,ts:x.ts,batchState:{size:x.size||2,printed:new Set(x.printed||[]),ranges:[]}};ranges(r);REPORTS.push(r);});
+ keep.forEach(x=>{if(REPORTS.some(r=>r.id===x.id))return;const r={id:x.id,name:x.name,filename:x.filename,data:[],filters:{},doc:{output:()=>x.blob},blob:x.blob,restored:true,imported:x.imported,count:x.count,rowPageMap:[],totalPages:x.totalPages,ts:x.ts,batchState:{size:x.size||2,printed:new Set(x.printed||[]),pendingIndex:Number.isInteger(x.pendingIndex)?x.pendingIndex:null,pendingAuditId:x.pendingAuditId||null,ranges:[]}};ranges(r);REPORTS.push(r);});
  REPORTS.sort((a,b)=>b.ts-a.ts);if(!activeReportId&&REPORTS[0])activeReportId=REPORTS[0].id;renderReports();renderBatchList();updateBatchProgress();info();});
 
 safe('boot',()=>applyCfg());
@@ -6155,14 +6173,15 @@ const css=document.createElement('style');css.textContent=`
 #nrPM .pr{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
 `;
 document.head.appendChild(css);
-function mobilePrint(blob,name){
+function mobilePrint(blob,name,onClose){
  name=name||'documento.pdf';
  document.getElementById('nrPM')?.remove();
  const url=URL.createObjectURL(blob),m=document.createElement('div');m.id='nrPM';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');
  m.innerHTML=`<div class="b"><h3>PDF listo</h3><p>El archivo ya está preparado. Abrilo para imprimirlo desde el visor del navegador o compartilo.</p>
  <div class="g"><a class="nb pr" id="nrPMopen" href="${url}" target="_blank" rel="noopener">📄 Abrir PDF para imprimir</a><button id="nrPMs">📤 Compartir / enviar a imprimir</button><a class="nb" href="${url}" download="${name.replace(/[\"<>]/g,'')}">⬇️ Descargar PDF</a><button id="nrPMx">Cerrar</button></div></div>`;
  document.body.appendChild(m);
- const close=()=>{m.remove();setTimeout(()=>URL.revokeObjectURL(url),10*60*1000);};
+ let wasClosed=false;
+ const close=()=>{if(wasClosed)return;wasClosed=true;m.remove();setTimeout(()=>URL.revokeObjectURL(url),10*60*1000);try{if(typeof onClose==='function')onClose();}catch(e){}};
  m.querySelector('#nrPMx').onclick=close;
  m.querySelector('#nrPMs').onclick=async()=>{try{const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:name});else window.open(url,'_blank','noopener');}catch(e){if(e.name!=='AbortError')notify('No se pudo compartir el PDF. Usá Abrir PDF o Descargar.','warn');}};
  }
@@ -6171,8 +6190,25 @@ window.nrMobilePrint=mobilePrint;
 window.nrGetPdfJs=loadPdfJs;
 window.nrIfPrint=function(iframe,url){
  /* El visor PDF embebido es cross-origin. No acceder nunca a contentWindow.print(). */
- if(isMobile()){fetch(url).then(r=>r.blob()).then(b=>mobilePrint(b,'reporte.pdf')).catch(()=>notify('No pude abrir el PDF para imprimir','err'));return;}
- try{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();}catch(e){notify('Abrí el PDF y usá el botón Imprimir del visor.','info');}
+ const lockApi=window.NoraLock,token=lockApi&&lockApi.beginPrintOperation?lockApi.beginPrintOperation('PDF'):null;
+ const release=()=>{try{if(token&&lockApi&&lockApi.endPrintOperation)lockApi.endPrintOperation(token);}catch(e){}};
+ if(isMobile()){
+   fetch(url).then(r=>{if(!r.ok)throw new Error('No se pudo leer el PDF.');return r.blob();})
+     .then(b=>mobilePrint(b,'reporte.pdf',release)).catch(()=>{release();notify('No pude abrir el PDF para imprimir','err');});
+   return;
+ }
+ try{
+   const w=window.open(url,'_blank');
+   if(w&&token&&lockApi&&lockApi.holdPrintOperationUntilClosed){lockApi.holdPrintOperationUntilClosed(token,w);return;}
+   if(w)return;
+   // Respaldo si el navegador bloquea window.open: conservar la apertura histórica,
+   // pero liberar la protección al volver o al vencer un tiempo prudente.
+   const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();
+   let done=false;const finish=()=>{if(done)return;done=true;document.removeEventListener('visibilitychange',onVisible);clearTimeout(fallbackTimer);release();};
+   const onVisible=()=>{if(!document.hidden)setTimeout(finish,1200);};
+   document.addEventListener('visibilitychange',onVisible);
+   const fallbackTimer=setTimeout(finish,10*60*1000);
+ }catch(e){release();notify('Abrí el PDF y usá el botón Imprimir del visor.','info');}
 };
 })();
 
@@ -8364,7 +8400,8 @@ const get=()=>{try{return JSON.parse(localStorage.getItem(K)||'null');}catch(e){
 const b64=b=>btoa(String.fromCharCode.apply(null,new Uint8Array(b)));
 const unb=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
 async function hash(pin,salt){const k=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:150000},k,256));}
-let resolve,fails=0,timer,ov=null,hiddenAt=0;
+let resolve,fails=0,timer,ov=null,hiddenAt=0,printOperationSeq=0;
+const activePrintOperations=new Map();
 window.NoraLockReady=new Promise(r=>resolve=r);
 function box(title,fields,okTxt,onOk,cancel){
   if(ov)ov.remove();
@@ -8425,11 +8462,79 @@ function ask(then){
     if(await hash(pin,unb(c.salt))===c.hash){fails=0;close();then&&then();return true;}
     fails++;say('PIN incorrecto'+(fails>2?' · esperá unos segundos entre intentos':''));return false;});
 }
-function lock(){if(get()&&!ov)ask(()=>{resolve();bump();});}
-function bump(){clearTimeout(timer);if(get())timer=setTimeout(lock,IDLE);}
+function printIsActive(){return activePrintOperations.size>0;}
+function lock(){
+  // No bloquear la interfaz mientras se está preparando o usando el visor de impresión.
+  if(printIsActive()){clearTimeout(timer);return false;}
+  if(get()&&!ov)ask(()=>{resolve();bump();});
+  return true;
+}
+function bump(){
+  clearTimeout(timer);
+  if(printIsActive())return;
+  if(get())timer=setTimeout(lock,IDLE);
+}
+function beginPrintOperation(label){
+  const token='print-'+(++printOperationSeq)+'-'+Date.now();
+  activePrintOperations.set(token,{label:String(label||'PDF'),startedAt:Date.now()});
+  clearTimeout(timer);
+  return token;
+}
+function endPrintOperation(token){
+  if(!token||!activePrintOperations.has(token))return false;
+  activePrintOperations.delete(token);
+  if(!printIsActive()){
+    if(!document.hidden){hiddenAt=0;bump();}
+    // Si Nora sigue en segundo plano, visibilitychange comprobará el tiempo
+    // transcurrido cuando el usuario vuelva a la pestaña.
+  }
+  return true;
+}
+function holdPrintOperationUntilClosed(token,printWindow,maxMs){
+  if(!token||!activePrintOperations.has(token))return ()=>{};
+  let finished=false,poll=null,watchdog=null,focusTimer=null,leftNora=false;
+  const finish=()=>{
+    if(finished)return;finished=true;
+    if(poll)clearInterval(poll);if(watchdog)clearTimeout(watchdog);if(focusTimer)clearTimeout(focusTimer);
+    document.removeEventListener('visibilitychange',onVisibility);
+    window.removeEventListener('blur',onBlur);window.removeEventListener('focus',onFocus);
+    endPrintOperation(token);
+  };
+  const finishAfterReturn=()=>{
+    if(finished||!leftNora)return;
+    if(focusTimer)clearTimeout(focusTimer);
+    focusTimer=setTimeout(()=>{
+      let focused=true;try{focused=!document.hidden&&(!document.hasFocus||document.hasFocus());}catch(e){focused=!document.hidden;}
+      if(focused)finish();
+    },1400);
+  };
+  function onVisibility(){if(document.hidden){leftNora=true;return;}finishAfterReturn();}
+  function onBlur(){leftNora=true;}
+  function onFocus(){finishAfterReturn();}
+  if(!printWindow){finish();return finish;}
+  document.addEventListener('visibilitychange',onVisibility);
+  window.addEventListener('blur',onBlur);window.addEventListener('focus',onFocus);
+  poll=setInterval(()=>{
+    let closed=true;
+    try{closed=!printWindow||printWindow.closed;}catch(e){closed=true;}
+    if(closed)finish();
+  },700);
+  // Límite de seguridad: nunca dejar el bloqueo suspendido indefinidamente.
+  watchdog=setTimeout(finish,Math.max(60000,Number(maxMs)||45*60*1000));
+  return finish;
+}
 ['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,()=>{if(!ov)bump();},{passive:true}));
-document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(get()&&hiddenAt&&Date.now()-hiddenAt>IDLE)lock();});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){hiddenAt=Date.now();return;}
+  const away=hiddenAt?Date.now()-hiddenAt:0;hiddenAt=0;
+  if(printIsActive())return;
+  if(get()&&away>IDLE)lock();else bump();
+});
 window.NoraLock={
+  beginPrintOperation,
+  endPrintOperation,
+  holdPrintOperationUntilClosed,
+  isPrintOperationActive:printIsActive,
   setup(){const doSet=()=>box('Nuevo PIN',['PIN nuevo (6 a 12 dígitos)','Repetir PIN'],'Guardar PIN',async([a,b],say)=>{
       if(!/^\d{6,12}$/.test(a)){say('Usá entre 6 y 12 dígitos.');return false;}if(a!==b){say('Los PIN no coinciden');return false;}
       const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(a,salt)}));
@@ -9781,6 +9886,8 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
   const OPERATOR_KEY='nora_print_operator_v1';
   const TERMINAL_KEY='nora_print_terminal_v1';
   const BATCH_UI={page:1,pageSize:100,token:0};
+  const PRINT_QUEUE={window:null,protection:null,busy:false,reportId:null,selectedIndex:null};
+  const PRINT_WINDOW_NAME='NoraBatchPrintSession';
   const $=id=>document.getElementById(id);
   const waitFrame=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
   const jsonRead=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v==null?fallback:v;}catch(e){return fallback;}};
@@ -9818,98 +9925,202 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
   function addPrintAudit(info){
     const operator=(($('batchOperator')&&$('batchOperator').value)||jsonRead(OPERATOR_KEY,'Usuario local')||'Usuario local').trim()||'Usuario local';
     const terminal=(navigator.platform||'Dispositivo')+' · '+terminalId();
-    const row={id:'pa-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),at:new Date().toISOString(),reportId:info.reportId||'',reportName:info.reportName||'Reporte',type:info.type||'lote',firstPage:info.firstPage,lastPage:info.lastPage,totalPages:info.totalPages,operator,terminal,result:'Enviado al diálogo de impresión'};
+    const row={id:'pa-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),at:new Date().toISOString(),reportId:info.reportId||'',reportName:info.reportName||'Reporte',type:info.type||'lote',firstPage:info.firstPage,lastPage:info.lastPage,totalPages:info.totalPages,operator,terminal,result:info.result||'Enviado al diálogo de impresión'};
     const all=auditRows();all.unshift(row);saveAudit(all);renderPrintAudit();
     try{window.AppLog&&window.AppLog.success('Impresión por lotes: '+row.reportName+' · páginas '+row.firstPage+'–'+row.lastPage+' de '+row.totalPages+' · '+operator+' · '+terminal);}catch(e){}
     return row;
+  }
+  function updatePrintAuditResult(id,result){
+    if(!id)return false;
+    const rows=auditRows(),row=rows.find(x=>x.id===id);
+    if(!row)return false;
+    row.result=String(result||'Actualizado');row.updatedAt=new Date().toISOString();
+    saveAudit(rows);renderPrintAudit();return true;
   }
   function renderPrintAudit(){
     const box=$('printAuditList');if(!box)return;
     const rows=auditRows();
     if(!rows.length){box.textContent='Todavía no hay impresiones registradas.';return;}
-    box.innerHTML=rows.slice(0,15).map(x=>`<div class="audit-line"><b>${escHtml(x.reportName)}</b><span class="pill">${escHtml(x.type)}</span><span class="pill">Páginas ${x.firstPage}–${x.lastPage} / ${x.totalPages}</span><span class="hint">${escHtml(fmtDate(x.at))}</span><span class="hint">${escHtml(x.operator)} · ${escHtml(x.terminal)}</span></div>`).join('');
+    box.innerHTML=rows.slice(0,15).map(x=>`<div class="audit-line"><b>${escHtml(x.reportName)}</b><span class="pill">${escHtml(x.type)}</span><span class="pill">Páginas ${x.firstPage}–${x.lastPage} / ${x.totalPages}</span><span class="hint">${escHtml(fmtDate(x.at))}</span><span class="hint">${escHtml(x.operator)} · ${escHtml(x.terminal)}</span><span class="pill">${escHtml(x.result||'Enviado al diálogo')}</span></div>`).join('');
   }
   function downloadJson(name,data){
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   }
+  /* Cacheamos el PDF fuente por Blob: al imprimir los lotes siguientes no hace falta
+     volver a analizar el documento completo. WeakMap evita retener reportes borrados. */
+  const pdfSourceCache=new WeakMap();
+  async function getPdfSource(blob){
+    let pending=pdfSourceCache.get(blob);
+    if(!pending){
+      pending=(async()=>{
+        await waitFrame();
+        const bytes=await blob.arrayBuffer();
+        return window.PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true,updateMetadata:false,throwOnInvalidObject:false});
+      })();
+      pdfSourceCache.set(blob,pending);
+      pending.catch(()=>pdfSourceCache.delete(blob));
+    }
+    return pending;
+  }
   async function pdfSlice(blob,pages,onProgress){
     if(!window.PDFLib||!window.PDFLib.PDFDocument)throw new Error('La librería PDF no está disponible.');
-    const PDFDocument=window.PDFLib.PDFDocument;
-    const source=await PDFDocument.load(await blob.arrayBuffer(),{ignoreEncryption:true});
+    if(onProgress)onProgress(2,0,pages.length,'Leyendo el PDF original…');
+    const source=await getPdfSource(blob);
     const count=source.getPageCount();
     const clean=[...new Set(pages.map(Number))].sort((a,b)=>a-b);
     if(!clean.length||clean.some(p=>!Number.isInteger(p)||p<1||p>count))throw new Error('El rango contiene páginas fuera del PDF (1–'+count+').');
-    const out=await PDFDocument.create(),chunkSize=30;
+    const out=await window.PDFLib.PDFDocument.create();
+    /* Bloques pequeños: ceden el hilo a la interfaz con más frecuencia y evitan
+       congelamientos perceptibles en equipos modestos. */
+    const chunkSize=8;
     for(let i=0;i<clean.length;i+=chunkSize){
       const part=clean.slice(i,i+chunkSize);
       const copied=await out.copyPages(source,part.map(p=>p-1));
       copied.forEach(page=>out.addPage(page));
-      if(onProgress)onProgress(Math.min(100,Math.round(Math.min(clean.length,i+part.length)/clean.length*100)),Math.min(clean.length,i+part.length),clean.length);
+      const done=Math.min(clean.length,i+part.length);
+      if(onProgress)onProgress(Math.min(94,Math.round(done/clean.length*90)+4),done,clean.length,'Armando PDF: '+done+' de '+clean.length+' páginas…');
       await waitFrame();
     }
-    return new Blob([await out.save()],{type:'application/pdf'});
+    if(onProgress)onProgress(96,clean.length,clean.length,'Guardando el PDF preparado…');
+    const bytes=await out.save({useObjectStreams:true});
+    if(onProgress)onProgress(100,clean.length,clean.length,'PDF listo. Abriendo el visor de impresión…');
+    return new Blob([bytes],{type:'application/pdf'});
+  }
+  let activePreparationWindow=null;
+  function updatePreparationWindow(pct,message){
+    const w=activePreparationWindow;if(!w||w.closed)return;
+    try{if(typeof w.noraSetProgress==='function')w.noraSetProgress(pct,message);}catch(e){}
   }
   function showBuildProgress(pct,text){
-    const wrap=$('batchBuildProgressWrap');if(!wrap)return;
-    wrap.classList.remove('hidden');$('batchBuildProgressBar').style.width=pct+'%';$('batchBuildProgressText').textContent=text;
+    const wrap=$('batchBuildProgressWrap');
+    if(wrap){wrap.classList.remove('hidden');const bar=$('batchBuildProgressBar'),label=$('batchBuildProgressText');if(bar)bar.style.width=pct+'%';if(label)label.textContent=text;}
+    const queueWrap=$('batchQueueBuildWrap');
+    if(queueWrap&&PRINT_QUEUE.busy){queueWrap.classList.remove('hidden');const bar=$('batchQueueBuildBar'),label=$('batchQueueBuildText');if(bar)bar.style.width=Math.max(0,Math.min(100,Number(pct)||0))+'%';if(label)label.textContent=text||'Preparando PDF…';}
+    updatePreparationWindow(pct,text);
   }
-  function hideBuildProgress(){const w=$('batchBuildProgressWrap');if(w)w.classList.add('hidden');}
-  function openPrintWindow(){
-    /* Abrir la ventana DURANTE el clic del usuario. Nunca cargar un PDF dentro de
-       un iframe: el visor PDF interno del navegador es un contexto cross-origin. */
-    const w=window.open('about:blank','_blank');
+  function hideBuildProgress(){const w=$('batchBuildProgressWrap');if(w)w.classList.add('hidden');const q=$('batchQueueBuildWrap');if(q)q.classList.add('hidden');}
+  function openPrintWindow(info={},targetName='_blank'){
+    /* La primera impresión abre la pestaña nombrada. Los lotes siguientes reutilizan
+       esa misma ventana: se navega a about:blank sin tocar el documento del visor PDF,
+       evitando tanto pestañas nuevas como accesos cross-origin al visor interno. */
+    const reuse=targetName===PRINT_WINDOW_NAME&&PRINT_QUEUE.window&&!PRINT_QUEUE.window.closed;
+    const w=reuse?PRINT_QUEUE.window:window.open('about:blank',targetName||'_blank');
     if(!w)throw new Error('El navegador bloqueó la ventana de impresión. Permití las ventanas emergentes para fedecerelli.github.io y volvé a intentar.');
+    if(reuse){try{w.location='about:blank';}catch(e){throw new Error('No se pudo reutilizar la pestaña de impresión. Cerrala y volvé a intentar.');}return w;}
+    if(targetName===PRINT_WINDOW_NAME){return w;}
+    const title=escHtml(info.title||'Preparando documento');
+    const detail=escHtml(info.detail||'Estamos organizando las páginas del archivo.');
+    const kind=escHtml(info.kind||'IMPRESIÓN NORA');
+    const accent=(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#1f4e8c').replace(/[^#(),.%\w\s-]/g,'');
     w.document.open();
-    w.document.write('<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Preparando impresión · Nora</title><style>body{font:15px system-ui,sans-serif;padding:32px;color:#263238}progress{width:min(520px,90vw);height:12px}</style></head><body><h2>Preparando documento para imprimir…</h2><p id=\"st\">Separando las páginas del lote. Después se abrirá el PDF original en el visor del navegador.</p><progress id=\"pg\" max=100 value=0></progress></body></html>');
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} · Nora</title><style>
+      :root{color-scheme:light;--accent:${accent};--ink:#172235;--muted:#68758a;--line:#e4e9f0;--panel:#fff}
+      *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+      body{min-height:100vh;background:radial-gradient(ellipse at 85% 8%,#dce8f8 0,transparent 34%),linear-gradient(145deg,#f5f8fc,#edf2f8);display:flex;align-items:center;justify-content:center;padding:28px}
+      .shell{width:min(760px,100%)}.top{display:flex;align-items:center;justify-content:space-between;margin:0 4px 18px;gap:12px}
+      .brand{display:flex;align-items:center;gap:10px}.mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,var(--accent),#16345e);display:grid;place-items:center;color:white;font-size:20px;font-weight:800;box-shadow:0 8px 18px #173d7028}.brand b{display:block;font-size:16px;letter-spacing:-.3px}.brand small{display:block;margin-top:2px;color:var(--muted);font-size:11px}
+      .secure{display:inline-flex;align-items:center;gap:7px;border:1px solid #dce5ef;background:#ffffffa8;color:#52657e;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:650}.secure i{width:7px;height:7px;background:#36a477;border-radius:50%;box-shadow:0 0 0 3px #36a47720}
+      .card{background:var(--panel);border:1px solid #e4eaf1;border-radius:22px;padding:clamp(22px,5vw,42px);box-shadow:0 24px 70px #243b5b12}
+      .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,white);border:1px solid color-mix(in srgb,var(--accent) 14%,white);border-radius:999px;padding:7px 10px}
+      .hero{display:flex;gap:18px;align-items:flex-start;margin:20px 0 22px}.doc-icon{width:54px;height:62px;flex:0 0 auto;border:1px solid #dce5f0;background:#f6f9fd;border-radius:13px;display:grid;place-items:center;color:var(--accent)}.doc-icon svg{width:27px;height:27px}.hero h1{font-size:clamp(22px,4vw,30px);letter-spacing:-.8px;line-height:1.12;margin:0 0 8px}.hero p{font-size:13px;color:var(--muted);line-height:1.55;margin:0;overflow-wrap:anywhere}
+      .meta{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px 72px}.chip{border:1px solid var(--line);background:#fbfcfe;border-radius:8px;padding:7px 10px;color:#56647a;font-size:11px}
+      .progress-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.progress-head b{font-size:12px}.pct{font-size:12px;color:var(--accent);font-weight:800;font-variant-numeric:tabular-nums}
+      .track{height:10px;padding:2px;background:#edf1f6;border-radius:999px;overflow:hidden}.fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--accent),#5a91d3);transition:width .22s ease;box-shadow:0 1px 5px #1f4e8c22}
+      .status{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:12px;min-height:34px;margin-top:9px}.spin{width:15px;height:15px;flex:0 0 auto;border:2px solid #d8e2ee;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+      .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:23px;padding-top:20px;border-top:1px solid #edf0f4}.step{display:flex;align-items:center;gap:8px;color:#9aa5b4;font-size:10.5px;font-weight:650}.dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:#f1f4f8;color:#8290a2;font-size:10px}.step.active{color:var(--accent)}.step.active .dot,.step.done .dot{background:color-mix(in srgb,var(--accent) 12%,white);color:var(--accent)}.step.done{color:#38866b}
+      .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:17px 4px 0;color:#7c899b;font-size:10.5px;line-height:1.45}.foot b{color:#526176;font-weight:700}
+      .error{display:none;margin-top:14px;padding:12px 14px;border-radius:11px;background:#fff4f3;border:1px solid #f1ceca;color:#9c3028;font-size:12px;line-height:1.5}.error button{margin-top:10px;border:1px solid #e8b8b3;border-radius:8px;background:#fff;color:#8d3029;padding:7px 10px;font-weight:700;cursor:pointer}
+      @media(max-width:560px){body{padding:16px}.top{align-items:flex-start}.secure{font-size:0;padding:9px}.secure i{width:8px;height:8px}.hero{gap:12px}.doc-icon{width:44px;height:52px}.meta{margin-left:0}.steps{gap:3px}.step{font-size:9px;gap:5px}.foot{display:block}.foot span{display:block;margin-top:5px}}
+    </style></head><body><main class="shell"><header class="top"><div class="brand"><div class="mark">N</div><div><b>Nora</b><small>Suite de Gestión</small></div></div><div class="secure"><i></i> PROCESAMIENTO LOCAL</div></header><section class="card"><div class="eyebrow">${kind}</div><div class="hero"><div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.8h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5.3A1.5 1.5 0 0 1 7.5 3.8Z"/><path d="M14 4v4h4M9 13h6M9 16.5h6"/></svg></div><div><h1>${title}</h1><p>${detail}</p></div></div><div class="meta"><span class="chip">PDF · Archivo original</span><span class="chip">Nora sigue abierta en la pestaña anterior</span></div><div class="progress-head"><b>Preparación del documento</b><span class="pct" id="pct">0%</span></div><div class="track"><div class="fill" id="fill"></div></div><div class="status"><span class="spin" id="spin"></span><span id="message">Iniciando preparación…</span></div><div class="steps"><div class="step active" id="step1"><span class="dot">1</span>Leer PDF</div><div class="step" id="step2"><span class="dot">2</span>Separar páginas</div><div class="step" id="step3"><span class="dot">3</span>Listo para imprimir</div></div><div class="error" id="error"><div id="errorText"></div><button type="button" id="errorClose">Cerrar esta pestaña</button></div></section><footer class="foot"><b>Tu documento no se modifica.</b><span>Cuando termine, se abrirá el visor PDF para que elijas la impresora.</span></footer></main></body></html>`);
     w.document.close();
+    w.noraSetProgress=(pct,message)=>{
+      try{
+        const n=Math.max(0,Math.min(100,Number(pct)||0)),fill=w.document.getElementById('fill'),pc=w.document.getElementById('pct'),msg=w.document.getElementById('message');
+        if(fill)fill.style.width=n+'%';if(pc)pc.textContent=Math.round(n)+'%';if(msg)msg.textContent=message||'Preparando…';
+        const steps=[w.document.getElementById('step1'),w.document.getElementById('step2'),w.document.getElementById('step3')];
+        const stage=n<8?0:n<96?1:2;steps.forEach((el,i)=>{if(!el)return;el.classList.toggle('active',i===stage);el.classList.toggle('done',i<stage);});
+        if(n>=100){const spin=w.document.getElementById('spin');if(spin)spin.style.display='none';}
+      }catch(e){}
+    };
+    w.noraSetError=(message)=>{
+      try{const box=w.document.getElementById('error');if(box){box.style.display='block';const txt=w.document.getElementById('errorText');if(txt)txt.textContent=message||'No se pudo preparar el documento.';}const close=w.document.getElementById('errorClose');if(close)close.onclick=()=>w.close();const spin=w.document.getElementById('spin');if(spin)spin.style.display='none';const msg=w.document.getElementById('message');if(msg)msg.textContent='La preparación se detuvo.';}catch(e){}
+    };
+    activePreparationWindow=w;
     return w;
   }
   const activePrintObjectUrls=new Map();
   let printUrlCleanupTimer=null;
   function trackPrintObjectUrl(printWindow,url){
-    activePrintObjectUrls.set(printWindow,url);
+    const entries=activePrintObjectUrls.get(printWindow)||[];
+    entries.push({url,created:Date.now()});
+    activePrintObjectUrls.set(printWindow,entries);
     if(!printUrlCleanupTimer){
       printUrlCleanupTimer=setInterval(()=>{
-        for(const [win,ownedUrl] of activePrintObjectUrls){
+        const now=Date.now();
+        for(const [win,owned] of activePrintObjectUrls){
           let closed=true;try{closed=!win||win.closed;}catch(e){closed=true;}
-          if(closed){try{URL.revokeObjectURL(ownedUrl);}catch(e){}activePrintObjectUrls.delete(win);}
+          const keep=[];
+          owned.forEach((entry,index)=>{
+            const isCurrent=index===owned.length-1;
+            if(closed||(!isCurrent&&now-entry.created>90000)){try{URL.revokeObjectURL(entry.url);}catch(e){}}
+            else keep.push(entry);
+          });
+          if(closed)activePrintObjectUrls.delete(win);else activePrintObjectUrls.set(win,keep);
         }
         if(!activePrintObjectUrls.size){clearInterval(printUrlCleanupTimer);printUrlCleanupTimer=null;}
       },10000);
     }
   }
   window.addEventListener('pagehide',()=>{
-    for(const url of activePrintObjectUrls.values()){try{URL.revokeObjectURL(url);}catch(e){}}
+    for(const entries of activePrintObjectUrls.values())for(const entry of entries){try{URL.revokeObjectURL(entry.url);}catch(e){}}
     activePrintObjectUrls.clear();
     if(printUrlCleanupTimer){clearInterval(printUrlCleanupTimer);printUrlCleanupTimer=null;}
   },{once:true});
-  async function sendPdfToPrinter(blob,filename,printWindow){
+  function beginPrintProtection(label){
+    const api=window.NoraLock;
+    const token=api&&typeof api.beginPrintOperation==='function'?api.beginPrintOperation(label||'PDF'):null;
+    let released=false,releaseOnClose=null;
+    return {
+      release(){if(released)return;released=true;if(releaseOnClose){try{releaseOnClose();}catch(e){}releaseOnClose=null;}else if(token&&api&&typeof api.endPrintOperation==='function'){try{api.endPrintOperation(token);}catch(e){}}},
+      holdWindow(win){if(released)return;if(token&&api&&typeof api.holdPrintOperationUntilClosed==='function')releaseOnClose=api.holdPrintOperationUntilClosed(token,win,45*60*1000);else this.release();},
+      get active(){return !released;}
+    };
+  }
+  async function sendPdfToPrinter(blob,filename,printWindow,printProtection){
     if(!(blob instanceof Blob)||blob.type!=='application/pdf')throw new Error('El archivo preparado no es un PDF válido.');
     if(window.nrIsMobile&&window.nrIsMobile()&&typeof window.nrMobilePrint==='function'){
       if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(e){}
-      window.nrMobilePrint(blob,filename||'reporte.pdf');
+      window.nrMobilePrint(blob,filename||'reporte.pdf',()=>{if(printProtection)printProtection.release();});
       return true;
     }
     /* No rasterizar páginas con PDF.js. Se conserva el PDF original y el visor nativo
        del navegador ofrece sus controles de impresión sin acceder a iframes cross-origin. */
-    const w=printWindow&&!printWindow.closed?printWindow:openPrintWindow();
+    const w=printWindow&&!printWindow.closed?printWindow:openPrintWindow({title:'Documento listo',detail:'El PDF ya está preparado y se abrirá en el visor para imprimir.'});
     const url=URL.createObjectURL(blob);
     trackPrintObjectUrl(w,url);
     try{
+      try{if(typeof w.noraSetProgress==='function')w.noraSetProgress(100,'PDF listo. Abriendo el visor de impresión…');}catch(e){}
+      await new Promise(resolve=>setTimeout(resolve,180));
       w.location=url;
+      if(activePreparationWindow===w)activePreparationWindow=null;
+      if(printProtection)printProtection.holdWindow(w);
       try{w.focus();}catch(e){}
       return true;
     }catch(error){
+      if(printProtection)printProtection.release();
       try{URL.revokeObjectURL(url);}catch(e){}
       activePrintObjectUrls.delete(w);
       throw new Error('No se pudo abrir el PDF en el visor del navegador: '+(error.message||error));
     }
   }
-  window.noraSafePrintPdf=function(blob,filename){
-    let target=null;
-    if(!(window.nrIsMobile&&window.nrIsMobile()))target=openPrintWindow();
-    return sendPdfToPrinter(blob,filename||'reporte.pdf',target);
+  window.noraSafePrintPdf=async function(blob,filename){
+    const protection=beginPrintProtection('PDF individual');
+    try{
+      let target=null;
+      if(!(window.nrIsMobile&&window.nrIsMobile()))target=openPrintWindow();
+      return await sendPdfToPrinter(blob,filename||'reporte.pdf',target,protection);
+    }catch(error){protection.release();throw error;}
   };
   function activeReport(){
     try{return typeof getActiveReport==='function'?getActiveReport():null;}catch(e){return null;}
@@ -9934,10 +10145,69 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     if($('batchPrevPage'))$('batchPrevPage').disabled=BATCH_UI.page<=1;
     if($('batchNextPage'))$('batchNextPage').disabled=BATCH_UI.page>=pages;
   }
+  function selectedBatchIndex(r){
+    if(!r||!r.batchState||!r.batchState.ranges)return -1;
+    const pending=Number.isInteger(r.batchState.pendingIndex)?r.batchState.pendingIndex:null;
+    if(pending!==null)return pending;
+    if(PRINT_QUEUE.reportId!==r.id){PRINT_QUEUE.reportId=r.id;PRINT_QUEUE.selectedIndex=null;}
+    const total=r.batchState.ranges.length;
+    if(Number.isInteger(PRINT_QUEUE.selectedIndex)&&PRINT_QUEUE.selectedIndex>=0&&PRINT_QUEUE.selectedIndex<total)return PRINT_QUEUE.selectedIndex;
+    const printed=r.batchState.printed instanceof Set?r.batchState.printed:new Set(r.batchState.printed||[]);
+    const next=r.batchState.ranges.findIndex((_,i)=>!printed.has(i));
+    return next;
+  }
+  function renderBatchQueuePanel(){
+    const panel=$('batchQueuePanel'),r=activeReport();if(!panel)return;
+    const ranges=r&&r.batchState&&r.batchState.ranges||[];
+    if(!r||!ranges.length){panel.classList.add('hidden');return;}
+    panel.classList.remove('hidden');
+    const printed=r.batchState.printed instanceof Set?r.batchState.printed:(r.batchState.printed=new Set(r.batchState.printed||[]));
+    const total=ranges.length,done=printed.size,pct=total?Math.round(done/total*100):0;
+    const pagesDone=ranges.reduce((sum,x,i)=>sum+(printed.has(i)?x.end-x.start+1:0),0);
+    const pendingIndex=Number.isInteger(r.batchState.pendingIndex)?r.batchState.pendingIndex:null;
+    const idx=selectedBatchIndex(r),range=idx>=0?ranges[idx]:null;
+    const sent=pendingIndex!==null;
+    $('batchQueueReport').textContent=(r.name||r.filename||'Reporte seleccionado')+' · '+r.totalPages+' páginas · '+total+' lotes';
+    $('batchQueueCount').textContent=done+' / '+total;
+    $('batchQueueFill').style.width=pct+'%';
+    $('batchQueueDone').textContent=String(done);
+    $('batchQueuePending').textContent=String(total-done);
+    $('batchQueuePages').textContent=pagesDone.toLocaleString('es-AR');
+    $('batchQueueLabel').textContent=sent?'LOTE ENVIADO · FALTA CONFIRMAR':idx<0?'TRABAJO COMPLETADO':'SIGUIENTE LOTE';
+    $('batchQueueRange').textContent=range?'Lote '+(idx+1)+' · páginas '+range.start+'–'+range.end:'Todos los lotes confirmados';
+    $('batchQueueDetail').textContent=range?(range.end-range.start+1)+' hoja(s) · '+(r.totalPages?Math.round((range.end-range.start+1)/r.totalPages*100):0)+'% del reporte':'El reporte ya no tiene lotes pendientes.';
+    const state=$('batchQueueState');
+    state.className='nq-state'+(sent?' pending':idx<0?' done':'');
+    state.textContent=sent?'En espera':idx<0?'Completo':'Listo';
+    const printBtn=$('btnBatchPrintNext'),confirmBtn=$('btnBatchConfirm'),retryBtn=$('btnBatchNotPrinted'),finishBtn=$('btnBatchFinish');
+    if(printBtn){const manuallySelected=PRINT_QUEUE.reportId===r.id&&Number.isInteger(PRINT_QUEUE.selectedIndex);printBtn.disabled=PRINT_QUEUE.busy||sent||idx<0;printBtn.innerHTML=(typeof icon==='function'?icon('printer'):'')+(idx>=0&&printed.has(idx)?'Reimprimir lote seleccionado':manuallySelected?'Imprimir lote seleccionado':'Imprimir siguiente lote');}
+    if(confirmBtn)confirmBtn.disabled=PRINT_QUEUE.busy||!sent;
+    if(retryBtn)retryBtn.disabled=PRINT_QUEUE.busy||!sent;
+    if(finishBtn)finishBtn.disabled=PRINT_QUEUE.busy;
+    const msg=$('batchQueueMessage');
+    if(PRINT_QUEUE.busy)msg.textContent='Preparando el PDF del lote. No cierres Nora ni la ventana de impresión.';
+    else if(sent)msg.textContent='El PDF está abierto en el visor. Imprimilo allí; después volvé a Nora y confirmá si salió correctamente. Si no salió, elegí “No se imprimió”.';
+    else if(idx<0)msg.textContent='Todos los lotes están confirmados por el operador. Podés exportar la auditoría o reiniciar el control para una nueva pasada.';
+    else msg.textContent='La cola está lista. Se reutilizará la misma pestaña PDF para los siguientes lotes. Nora no marcará un lote como impreso hasta que lo confirmes.';
+    document.querySelectorAll('#batchList .batch-item').forEach(b=>{
+      const bi=Number(b.dataset.batchIndex),itemRange=ranges[bi];
+      const itemDone=printed.has(bi),itemPending=bi===pendingIndex;
+      b.classList.toggle('selected',bi===idx&&!sent);
+      b.classList.toggle('pending',itemPending);
+      if(itemRange){
+        const itemPages=itemRange.end-itemRange.start+1;
+        const statusText=itemPending?' · ENVIADO':itemDone?' · CONFIRMADO':'';
+        b.innerHTML=(typeof icon==='function'?icon('printer'):'')+'Lote '+(bi+1)+': páginas '+itemRange.start+'–'+itemRange.end+' <span style="opacity:.65;font-weight:500">('+itemPages+' hoja'+(itemPages>1?'s':'')+')</span>'+statusText;
+      }
+    });
+    const progressText=$('batchProgressText');
+    if(progressText)progressText.textContent=done+' de '+total+' lotes confirmados ('+pct+'%) · '+pagesDone+' de '+r.totalPages+' páginas.';
+    if($('batchProgressBar'))$('batchProgressBar').style.width=pct+'%';
+  }
   async function renderBatchesPaged(){
     const list=$('batchList'),r=activeReport();if(!list)return;
     const token=++BATCH_UI.token;list.replaceChildren();
-    if(!r||!r.batchState||!r.batchState.ranges||!r.batchState.ranges.length){renderBatchPager(0,0);return;}
+    if(!r||!r.batchState||!r.batchState.ranges||!r.batchState.ranges.length){renderBatchPager(0,0);renderBatchQueuePanel();return;}
     const ranges=r.batchState.ranges,total=ranges.length,start=(BATCH_UI.page-1)*BATCH_UI.pageSize,end=Math.min(total,start+BATCH_UI.pageSize);
     renderBatchPager(r.totalPages,total);
     const status=$('printStatus');
@@ -9947,20 +10217,34 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       if(token!==BATCH_UI.token)return;
       const fragment=document.createDocumentFragment(),stop=Math.min(end,i+40);
       for(;i<stop;i++){
-        const idx=i,range=ranges[idx],done=r.batchState.printed&&r.batchState.printed.has(idx);
-        const btn=document.createElement('button');btn.type='button';btn.className='secondary batch-item'+(done?' done':'');
+        const idx=i,range=ranges[idx],done=r.batchState.printed&&r.batchState.printed.has(idx),pending=Number.isInteger(r.batchState.pendingIndex)&&r.batchState.pendingIndex===idx;
+        const btn=document.createElement('button');btn.type='button';btn.dataset.batchIndex=String(idx);btn.className='secondary batch-item'+(done?' done':'')+(pending?' pending':'');
         const pages=range.end-range.start+1;
-        btn.innerHTML=(typeof icon==='function'?icon('printer'):'')+'Lote '+(idx+1)+': páginas '+range.start+'–'+range.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>';
-        btn.onclick=()=>window.noraPrintBatch(idx);
+        btn.innerHTML=(typeof icon==='function'?icon('printer'):'')+'Lote '+(idx+1)+': páginas '+range.start+'–'+range.end+' <span style="opacity:.65;font-weight:500">('+pages+' hoja'+(pages>1?'s':'')+')</span>'+(pending?' · ENVIADO':done?' · CONFIRMADO':'');
+        btn.onclick=()=>selectQueueBatch(idx);
         fragment.appendChild(btn);
       }
       list.appendChild(fragment);
-      const pct=Math.round((i-start)/Math.max(1,end-start)*100);
-      if($('batchBuildProgressWrap'))showBuildProgress(pct,'Mostrando lotes '+(i-start)+' de '+(end-start)+'…');
       await waitFrame();
     }
     hideBuildProgress();
     if(status&&status.textContent==='Preparando la lista de lotes…')status.textContent='';
+    renderBatchQueuePanel();
+  }
+  function releaseQueueProtection(){
+    const p=PRINT_QUEUE.protection;PRINT_QUEUE.protection=null;
+    if(p&&typeof p.release==='function'){try{p.release();}catch(e){}}
+  }
+  function persistQueueState(r){
+    try{if(typeof updateBatchProgress==='function')updateBatchProgress();}catch(e){}
+    try{if(typeof renderReports==='function')renderReports();}catch(e){}
+    renderBatchQueuePanel();
+  }
+  function selectQueueBatch(idx){
+    const r=activeReport();if(!r||!r.batchState||!r.batchState.ranges[idx])return;
+    if(Number.isInteger(r.batchState.pendingIndex)){notify('Primero confirmá el lote que ya está en el visor o indicá que no se imprimió.','warn');return;}
+    PRINT_QUEUE.reportId=r.id;PRINT_QUEUE.selectedIndex=idx;
+    renderBatchQueuePanel();
   }
   function prepareBatchesExact(silent){
     const r=activeReport(),st=$('printStatus');
@@ -9971,13 +10255,16 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     $('batchSize').value=String(size);
     const next=buildPageRanges(total,size);
     if(!assertRanges(next,total))throw new Error('No se pudo verificar la cobertura completa del PDF.');
-    const old=JSON.stringify(r.batchState&&r.batchState.ranges||[]);
-    const fresh=JSON.stringify(next);
-    const priorPrinted=r.batchState&&r.batchState.printed instanceof Set?r.batchState.printed:new Set();
+    const old=JSON.stringify(r.batchState&&r.batchState.ranges||[]),fresh=JSON.stringify(next);
+    const priorPrinted=r.batchState&&r.batchState.printed instanceof Set?r.batchState.printed:new Set(r.batchState&&r.batchState.printed||[]);
     r.batchState=r.batchState||{size,printed:new Set(),ranges:[]};
+    if(old!==fresh&&Number.isInteger(r.batchState.pendingIndex)){
+      updatePrintAuditResult(r.batchState.pendingAuditId,'Pendiente descartado: se recalculó la división de lotes');
+      r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;releaseQueueProtection();
+    }
     r.batchState.size=size;r.batchState.ranges=next;
     r.batchState.printed=old===fresh?priorPrinted:new Set();
-    BATCH_UI.page=1;
+    PRINT_QUEUE.reportId=r.id;PRINT_QUEUE.selectedIndex=null;BATCH_UI.page=1;
     renderBatchesPaged();
     if(typeof updateBatchProgress==='function')updateBatchProgress();
     if($('batchProgressWrap'))$('batchProgressWrap').classList.remove('hidden');
@@ -9987,40 +10274,96 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       if(typeof notify==='function')notify(next.length+' lote(s) preparados','ok');
     }
     try{if(typeof renderReports==='function')renderReports();}catch(e){}
+    renderBatchQueuePanel();
+  }
+  function keepPreparationError(w,message){
+    try{if(w&&!w.closed&&typeof w.noraSetError==='function')w.noraSetError(message);}catch(e){}
+    if(activePreparationWindow===w)activePreparationWindow=null;
   }
   async function printBatchExact(idx){
     const r=activeReport();if(!r)return;
     const range=r.batchState&&r.batchState.ranges&&r.batchState.ranges[idx];if(!range)return;
     const total=Math.floor(Number(r.totalPages)||0);
     if(!assertRanges(r.batchState.ranges,total)){if(typeof notify==='function')notify('Los rangos no son consistentes. Volvé a preparar los lotes.','err');return;}
+    if(PRINT_QUEUE.busy)return;
+    const unresolved=(typeof REPORTS!=='undefined'?REPORTS:[]).find(x=>x&&x.batchState&&Number.isInteger(x.batchState.pendingIndex));
+    if(unresolved&&unresolved.id!==r.id){notify('Primero resolvé el lote pendiente del reporte “'+(unresolved.name||unresolved.filename||'anterior')+'”. No conviene mezclar dos colas.','warn');return;}
+    if(Number.isInteger(r.batchState.pendingIndex)){notify('Hay un lote pendiente de confirmación. Resolvelo antes de enviar otro.','warn');return;}
     const printed=r.batchState.printed instanceof Set?r.batchState.printed:(r.batchState.printed=new Set(r.batchState.printed||[]));
     const repeat=printed.has(idx);
-    if(repeat&&!confirm('Este lote ('+range.start+'–'+range.end+') ya figura como enviado a imprimir. ¿Querés volver a imprimirlo?'))return;
+    if(repeat&&!confirm('Este lote ('+range.start+'–'+range.end+') ya está confirmado. ¿Querés volver a imprimirlo?'))return;
     const blob=reportBlob(r);
     if(!blob){if(typeof notify==='function')notify('No está disponible el PDF original de este reporte. Volvé a generarlo o importalo nuevamente.','err');return;}
     let printWindow=null;
+    const printProtection=beginPrintProtection('Impresión por lotes');
+    PRINT_QUEUE.busy=true;PRINT_QUEUE.reportId=r.id;PRINT_QUEUE.selectedIndex=idx;renderBatchQueuePanel();
     try{
-      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
+      if(!(window.nrIsMobile&&window.nrIsMobile())){
+        printWindow=openPrintWindow({kind:'IMPRESIÓN POR LOTES',title:'Preparando lote '+(idx+1),detail:'Páginas '+range.start+'–'+range.end+' del reporte '+(r.name||r.filename||'seleccionado')+'.'},PRINT_WINDOW_NAME);
+        PRINT_QUEUE.window=printWindow;
+      }
       showBuildProgress(0,'Preparando lote '+(idx+1)+' · páginas '+range.start+'–'+range.end+'…');
-      const pages=Array.from({length:range.end-range.start+1},(_,i)=>range.start+i);
-      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Preparando lote '+(idx+1)+': '+done+' de '+n+' páginas…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);
-      printed.add(idx);
-      if(typeof renderBatchesPaged==='function')await renderBatchesPaged();
-      if(typeof updateBatchProgress==='function')updateBatchProgress();
-      if(typeof renderReports==='function')renderReports();
+      let part=blob;
+      if(range.start!==1||range.end!==total){
+        const pages=Array.from({length:range.end-range.start+1},(_,i)=>range.start+i);
+        part=await pdfSlice(blob,pages,(pct,done,n,message)=>showBuildProgress(pct,message||('Preparando lote '+(idx+1)+': '+done+' de '+n+' páginas…')));
+      }else showBuildProgress(100,'El lote contiene el reporte completo. No hace falta reconstruir el PDF.');
+      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow,printProtection);
+      PRINT_QUEUE.protection=printProtection;
+      r.batchState.pendingIndex=idx;
+      const audit=addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de lote':'Lote',firstPage:range.start,lastPage:range.end,totalPages:total,result:'Enviado al visor · pendiente de confirmación'});
+      r.batchState.pendingAuditId=audit.id;
       hideBuildProgress();
-      const remaining=r.batchState.ranges.length-printed.size;
+      persistQueueState(r);
       $('printStatus').className='status-line ok';
-      $('printStatus').textContent='Lote '+(idx+1)+' (páginas '+range.start+'–'+range.end+') enviado al diálogo de impresión. '+remaining+' pendiente(s).';
-      addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de lote':'Lote',firstPage:range.start,lastPage:range.end,totalPages:total});
-      if(typeof notify==='function')notify(repeat?'Lote reenviado a imprimir':'Lote enviado a imprimir','ok');
+      $('printStatus').textContent='Lote '+(idx+1)+' enviado al visor. Confirmá cuando la impresión haya salido correctamente.';
+      if(typeof notify==='function')notify('Lote enviado al visor · falta confirmar','ok');
     }catch(e){
-      if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}
+      printProtection.release();
+      if(PRINT_QUEUE.protection===printProtection)PRINT_QUEUE.protection=null;
+      keepPreparationError(printWindow,'No se pudo preparar o enviar el lote: '+(e.message||e));
       hideBuildProgress();$('printStatus').className='status-line err';$('printStatus').textContent='No se pudo preparar o enviar el lote: '+(e.message||e);
       if(typeof notify==='function')notify('No se pudo imprimir el lote','err');
+    }finally{
+      PRINT_QUEUE.busy=false;renderBatchQueuePanel();
     }
   }
+  function confirmBatchPrinted(){
+    const r=activeReport();if(!r||!Number.isInteger(r.batchState.pendingIndex))return;
+    const idx=r.batchState.pendingIndex,range=r.batchState.ranges[idx];if(!range)return;
+    const set=r.batchState.printed instanceof Set?r.batchState.printed:(r.batchState.printed=new Set(r.batchState.printed||[]));
+    set.add(idx);updatePrintAuditResult(r.batchState.pendingAuditId,'Confirmado por operador');
+    r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;releaseQueueProtection();
+    PRINT_QUEUE.selectedIndex=null;
+    persistQueueState(r);
+    $('printStatus').className='status-line ok';$('printStatus').textContent='Lote '+(idx+1)+' confirmado por el operador. El siguiente lote ya está seleccionado.';
+    renderBatchesPaged();notify('Lote '+(idx+1)+' confirmado','ok');
+  }
+  function markBatchNotPrinted(){
+    const r=activeReport();if(!r||!Number.isInteger(r.batchState.pendingIndex))return;
+    const idx=r.batchState.pendingIndex,range=r.batchState.ranges[idx];
+    updatePrintAuditResult(r.batchState.pendingAuditId,'No impreso · vuelve a quedar pendiente');
+    r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;releaseQueueProtection();
+    PRINT_QUEUE.selectedIndex=idx;
+    persistQueueState(r);
+    $('printStatus').className='status-line';$('printStatus').textContent='El lote '+(idx+1)+' quedó pendiente. Podés volver a enviarlo cuando quieras.';
+    renderBatchesPaged();notify('Lote pendiente, no se marcó como impreso','info');
+  }
+  function finishPrintSession(){
+    if(PRINT_QUEUE.busy)return;
+    const r=activeReport(),hasPending=!!(r&&r.batchState&&Number.isInteger(r.batchState.pendingIndex));
+    if(hasPending&&!confirm('Hay un lote enviado que todavía no confirmaste. Si cerrás la sesión, seguirá pendiente y podrás resolverlo después. ¿Cerrar igualmente?'))return;
+    const w=PRINT_QUEUE.window;PRINT_QUEUE.window=null;
+    try{if(w&&!w.closed)w.close();}catch(e){}
+    releaseQueueProtection();
+    const msg=hasPending?'Visor cerrado. El lote no confirmado se conserva como pendiente.':'Sesión de impresión finalizada.';
+    if($('printStatus')){$('printStatus').className='status-line';$('printStatus').textContent=msg;}
+    renderBatchQueuePanel();
+  }
+  window.addEventListener('focus',()=>{
+    try{if(PRINT_QUEUE.window&&PRINT_QUEUE.window.closed){PRINT_QUEUE.window=null;releaseQueueProtection();}}catch(e){}
+  });
+
   function parsePagesStrict(value,max){
     const tokens=String(value||'').split(/[,;\s]+/).filter(Boolean),pages=[];
     if(!tokens.length)return [];
@@ -10041,15 +10384,18 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     const repeat=auditRows().some(x=>x.reportId===r.id&&x.firstPage===pages[0]&&x.lastPage===pages[pages.length-1]);
     if(repeat&&!confirm('Este rango ya figura en la auditoría. ¿Querés volver a enviarlo a imprimir?'))return;
     let printWindow=null;
+    const printProtection=beginPrintProtection('Impresión por rango');
     try{
-      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
-      showBuildProgress(0,'Preparando '+pages.length+' página(s)…');
-      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Armando PDF: '+done+' de '+n+' páginas…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);
+      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow({kind:'RANGO DE PÁGINAS',title:'Preparando selección',detail:'Se van a imprimir '+pages.length+' página(s) del reporte '+(r.name||r.filename||'seleccionado')+'.'});
+      let part=blob;
+      if(pages.length!==r.totalPages||pages[0]!==1||pages[pages.length-1]!==r.totalPages){
+        part=await pdfSlice(blob,pages,(pct,done,n,message)=>showBuildProgress(pct,message||('Armando PDF: '+done+' de '+n+' páginas…')));
+      }else showBuildProgress(100,'Seleccionaste el reporte completo. Se usa el PDF original.');
+      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow,printProtection);
       hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de rango':'Rango manual',firstPage:pages[0],lastPage:pages[pages.length-1],totalPages:r.totalPages});
       $('printStatus').className='status-line ok';$('printStatus').textContent='Rango enviado al diálogo de impresión: '+pages.join(', ')+'.';
-    }catch(e){if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}hideBuildProgress();notify('No se pudo imprimir el rango: '+(e.message||e),'err');}
+    }catch(e){printProtection.release();keepPreparationError(printWindow,'No se pudo imprimir el rango: '+(e.message||e));hideBuildProgress();notify('No se pudo imprimir el rango: '+(e.message||e),'err');}
   }
   async function printWholeReport(r,asReprint){
     if(!r)return;
@@ -10058,15 +10404,14 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     const sentBefore=auditRows().some(x=>x.reportId===r.id);
     if(asReprint&&sentBefore&&!confirm('Este reporte ya figura en la auditoría. Vas a volver a enviar sus '+total+' páginas a imprimir. ¿Continuar?'))return;
     let printWindow=null;
+    const printProtection=beginPrintProtection('Impresión de reporte completo');
     try{
-      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow();
-      showBuildProgress(0,'Preparando el reporte completo…');
-      const pages=Array.from({length:total},(_,i)=>i+1);
-      const part=await pdfSlice(blob,pages,(pct,done,n)=>showBuildProgress(pct,'Armando PDF: '+done+' de '+n+' páginas…'));
-      await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow);hideBuildProgress();
+      if(!(window.nrIsMobile&&window.nrIsMobile()))printWindow=openPrintWindow({kind:'REPORTE COMPLETO',title:'Preparando reporte completo',detail:'Se abrirán '+total+' páginas de '+(r.name||r.filename||'este reporte')+'.'});
+      showBuildProgress(100,'El PDF original está listo. No hace falta reconstruir sus '+total+' páginas.');
+      await sendPdfToPrinter(blob,r.filename||r.name||'reporte.pdf',printWindow,printProtection);hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:'Reporte completo',firstPage:1,lastPage:total,totalPages:total});
       $('printStatus').className='status-line ok';$('printStatus').textContent='Reporte completo enviado al diálogo de impresión.';
-    }catch(e){if(printWindow&&!printWindow.closed)try{printWindow.close();}catch(_){}hideBuildProgress();notify('No se pudo imprimir el reporte: '+(e.message||e),'err');}
+    }catch(e){printProtection.release();keepPreparationError(printWindow,'No se pudo imprimir el reporte: '+(e.message||e));hideBuildProgress();notify('No se pudo imprimir el reporte: '+(e.message||e),'err');}
   }
 
   /* Bind UI after the original handlers have been installed. */
@@ -10075,6 +10420,24 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     $('batchOperator').addEventListener('change',()=>{try{localStorage.setItem(OPERATOR_KEY,JSON.stringify($('batchOperator').value.trim()||'Usuario local'));}catch(e){}});
   }
   $('btnPrepBatches')&&($('btnPrepBatches').onclick=()=>prepareBatchesExact(false));
+  $('btnBatchPrintNext')&&($('btnBatchPrintNext').onclick=()=>{const r=activeReport();if(!r)return;const idx=selectedBatchIndex(r);if(idx>=0)printBatchExact(idx);});
+  $('btnBatchConfirm')&&($('btnBatchConfirm').onclick=confirmBatchPrinted);
+  $('btnBatchNotPrinted')&&($('btnBatchNotPrinted').onclick=markBatchNotPrinted);
+  $('btnBatchFinish')&&($('btnBatchFinish').onclick=finishPrintSession);
+  $('btnResetBatches')&&($('btnResetBatches').onclick=()=>{
+    const r=activeReport();if(!r)return;
+    const pending=Number.isInteger(r.batchState.pendingIndex);
+    const message=pending?'Hay un lote enviado que aún no confirmaste. Se dejará como no confirmado y se reiniciará el control. ¿Continuar?':'¿Reiniciar el control de impresión de este reporte?';
+    if(!confirm(message))return;
+    if(pending)updatePrintAuditResult(r.batchState.pendingAuditId,'No confirmado · control reiniciado');
+    r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;r.batchState.printed=new Set();
+    releaseQueueProtection();
+    try{if(PRINT_QUEUE.window&&!PRINT_QUEUE.window.closed)PRINT_QUEUE.window.close();}catch(e){}
+    PRINT_QUEUE.window=null;PRINT_QUEUE.selectedIndex=null;
+    persistQueueState(r);renderBatchesPaged();
+    $('printStatus').textContent='Control reiniciado. Todos los lotes vuelven a quedar pendientes.';
+    notify('Control de impresión reiniciado','ok');
+  });
   $('batchSize')&&$('batchSize').addEventListener('change',e=>{e.stopImmediatePropagation();prepareBatchesExact(true);},true);
   $('batchPrevPage')&&($('batchPrevPage').onclick=()=>{BATCH_UI.page=Math.max(1,BATCH_UI.page-1);renderBatchesPaged();});
   $('batchNextPage')&&($('batchNextPage').onclick=()=>{const r=activeReport(),n=r&&r.batchState?r.batchState.ranges.length:0;BATCH_UI.page=Math.min(Math.ceil(n/BATCH_UI.pageSize),BATCH_UI.page+1);renderBatchesPaged();});
@@ -10089,6 +10452,16 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
   window.noraPrintBatch=printBatchExact;
   window.printBatch=printBatchExact;
   window.renderBatchList=renderBatchesPaged;
+  if(typeof window.selectReport==='function'&&!window.selectReport.__noraQueueGuard){
+    const _selectReport=window.selectReport;
+    const guardedSelectReport=function(id){
+      const unresolved=(typeof REPORTS!=='undefined'?REPORTS:[]).find(x=>x&&x.batchState&&Number.isInteger(x.batchState.pendingIndex));
+      if(unresolved&&unresolved.id!==id){notify('Primero confirmá o liberá el lote pendiente del reporte “'+(unresolved.name||unresolved.filename||'anterior')+'”.','warn');return;}
+      const result=_selectReport.apply(this,arguments);PRINT_QUEUE.reportId=id;PRINT_QUEUE.selectedIndex=null;setTimeout(renderBatchQueuePanel,0);return result;
+    };
+    guardedSelectReport.__noraQueueGuard=true;window.selectReport=guardedSelectReport;
+  }
+  document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#reportsList .report-item'))setTimeout(()=>{const ar=activeReport();if(ar){PRINT_QUEUE.reportId=ar.id;renderBatchQueuePanel();}},0);},true);
   renderPrintAudit();
   if($('batchList')&&typeof activeReport==='function'&&activeReport())renderBatchesPaged();
 
