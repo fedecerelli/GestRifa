@@ -9585,6 +9585,23 @@ function analyzeBuffer(buf){
     if(nums.length){r.withNums++;nums.forEach(n=>{r.maxLen=Math.max(r.maxLen,n.length);r.minLen=Math.min(r.minLen,n.length);});}
     else{r.noNums++;if(r.noNumsSample.length<6)r.noNumsSample.push((ape+' '+nom).trim()+' (fila '+(i+1)+')');}
   }
+  /* Control de calidad (cubre datos pegados, donde Excel no valida): repetidos, N° que no es primero de rifa, datos clave vacíos */
+  try{
+    r.dup=[];r.badRifa=[];r.missing=[];r.rifaCfg=null;
+    const pc=hd.indexOf('N°');
+    let nR=1,st=0,haveCfg=false;
+    const cs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));
+    if(cs)for(const cr of XLSX.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:''})){const a=(cr[0]+'').toLowerCase();
+      if(a.startsWith('cant. de nro')){nR=Math.max(1,parseInt((cr[1]+'').replace(/\D/g,''),10)||1);haveCfg=true;}
+      else if(a.startsWith('comienza')){const v=parseInt((cr[1]+'').replace(/\D/g,''),10);st=isNaN(v)?0:v;}}
+    r.rifaCfg=haveCfg?{n:nR,start:st}:null;
+    if(pc>=0){const seen={};
+      for(let i=h+1;i<rows.length;i++){const row=rows[i],ape=(row[1]+'').trim(),nom=(row[2]+'').trim(),raw=(row[pc]+'').replace(/\D/g,'');
+        if(!raw)continue;const n=parseInt(raw,10),fila=i+1;
+        if(seen[n]!==undefined){r.dup.push('N° '+raw+' (filas '+seen[n]+' y '+fila+')');}else seen[n]=fila;
+        if(haveCfg&&(n<st||(n-st)%nR!==0))r.badRifa.push('N° '+raw+' (fila '+fila+')');
+        if(!ape||!(row[3]+'').trim())r.missing.push((ape||nom||('N° '+raw))+' (fila '+fila+')');}}
+  }catch(e){}
   return r;
 }
 function getDeep(f){
@@ -9620,6 +9637,11 @@ function diagForFile(f){
         else if(!d.withNums)issues.push({sev:'err',t:'Ninguna fila tiene número asignado.'});
         else ok.push('Estructura correcta · '+d.nCols+' columna(s) N° · '+d.withNums+' fila(s) con número');
         if(d.noNums)issues.push({sev:'warn',t:d.noNums+' participante(s) sin número (no participan): '+d.noNumsSample.join('; ')+(d.noNums>d.noNumsSample.length?'…':'')});
+        const smp=a=>a.slice(0,5).join('; ')+(a.length>5?'…':'');
+        if(d.dup&&d.dup.length)issues.push({sev:'err',t:d.dup.length+' N° repetido(s) en la planilla: '+smp(d.dup)});
+        if(d.badRifa&&d.badRifa.length)issues.push({sev:'warn',t:d.badRifa.length+' N° que no es el primero de su rifa (con '+d.rifaCfg.n+' número(s) por rifa comenzando en '+d.rifaCfg.start+'): '+smp(d.badRifa)});
+        if(d.missing&&d.missing.length)issues.push({sev:'warn',t:d.missing.length+' fila(s) sin Apellido o sin Calle: '+smp(d.missing)});
+        if(d.dup&&!d.dup.length&&d.badRifa&&!d.badRifa.length&&d.missing&&!d.missing.length)ok.push('Control de datos: sin repetidos, rifas coherentes y sin datos clave vacíos');
       }
     }else if(!f.raw)issues.push({sev:'info',t:'Sin copia del Excel guardada: usá "Actualizar / releer" para análisis completo.'});
     if(f.source==='onedrive')ok.push('Origen OneDrive'+(f.sourcePath?' · '+f.sourcePath:''));
