@@ -1596,7 +1596,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
       </div>
       <div class="field" style="max-width:330px">
         <label>Origen de contados</label>
-        <div class="control-source-note">Base de Datos Original · celda M4</div>
+        <div class="control-source-note">Total de contados (Configuración, o celda M4 de Base de Datos Original)</div>
       </div>
     </div>
     <div class="control-kpis" id="ctlKpis"></div>
@@ -3440,12 +3440,17 @@ async function handleFiles(files,silent,opts){
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(buf,{type:'array',cellDates:false});
       const sheetName=wb.SheetNames.find(n=>n.trim().toLowerCase()==='datos')||wb.SheetNames[0];
+      /* Excel unificado: además de Datos trae una hoja Control (cabecera N°, Pag, Bajas) que alimenta la sección Control. */
+      let hasCtlSheet=false;
+      try{const cn=wb.SheetNames.find(n=>n.trim().toLowerCase()==='control');
+        if(cn){const top=XLSX.utils.sheet_to_json(wb.Sheets[cn],{header:1,defval:'',raw:true,range:'A1:Z30'});
+          hasCtlSheet=top.some(r=>{const t=r.map(x=>String(x==null?'':x).toLowerCase()).join('|');return t.includes('n°')&&t.includes('pag')&&t.includes('bajas');});}}catch(_){}
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:'',raw:false,dateNF:'yyyy-mm-dd'});
       const result=parseRecords(rows,file.name);
       if(result.errors.length){allErrors.push({file:file.name,errors:result.errors});if(!result.records.length)continue;}
       if(!result.records.length){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:'Sin filas válidas'}]});continue;}
       const idx=FILES.findIndex(f=>f.name===file.name);
-      const prevEntry=FILES.find(f=>f.name===file.name); const entry={...__sourceProps,name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:normalizeDestinationsForFile({name:file.name,kind:'data',sourceType:classifyFileName(file.name)},prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name))),raw:buf};
+      const prevEntry=FILES.find(f=>f.name===file.name); const entry={...__sourceProps,name:file.name,records:result.records,sourceType:classifyFileName(file.name),kind:'data',destinations:normalizeDestinationsForFile({name:file.name,kind:'data',sourceType:classifyFileName(file.name)},(()=>{const bd=prevEntry?.destinations||defaultDestinations(file.name,classifyFileName(file.name));return (hasCtlSheet&&!(prevEntry&&prevEntry.hasControlSheet))?[...new Set([...bd,'control'])]:bd;})()),hasControlSheet:hasCtlSheet,raw:buf};
       if(idx>=0){FILES[idx]=entry;replaced.push(file.name);}else{FILES.push(entry);added.push(file.name);}
     }catch(err){allErrors.push({file:file.name,errors:[{row:0,col:'-',msg:err.message||String(err)}]});}
   }
@@ -6417,7 +6422,7 @@ window.nrIfPrint=function(iframe,url){
       /* Recalcular el modelo para que el mismo criterio impacte inmediatamente
          KPIs, dashboard, gráficos, localidad, cobradores y todos los informes. */
       if(CONTROL&&CONTROL._rawSource){
-        CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows);
+        CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows,{counted:CONTROL._rawSource.counted});
         try{localStorage.setItem(KEY+'_data',JSON.stringify(Object.assign({},CONTROL,{_rawSource:undefined})));}catch(err){}
       }
       if(CONTROL)renderControl();
@@ -6429,7 +6434,7 @@ window.nrIfPrint=function(iframe,url){
     $c('ctlClearBtn').onclick=()=>{CONTROL=null;try{localStorage.removeItem(KEY+'_data');}catch(e){}renderControl();notify('Control limpiado','ok');};
     $c('ctlSummaryPdf').onclick=()=>CONTROL?generateControlSummaryPdf():notify('Cargá primero la Planilla Control','warn');
     $c('ctlMissingPdf').onclick=()=>CONTROL?generateControlMissingPdf():notify('Cargá primero la Planilla Control','warn');
-    $c('ctlRecalcBtn').onclick=async()=>{if(typeof syncFromFiles==='function'&&await syncFromFiles(true)){notify('Control recalculado','ok');return;}if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
+    $c('ctlRecalcBtn').onclick=async()=>{if(typeof syncFromFiles==='function'&&await syncFromFiles(true)){notify('Control recalculado','ok');return;}if(!CONTROL)return notify('Cargá primero la Planilla Control','warn');CONTROL=CONTROL._rawSource?buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows,{counted:CONTROL._rawSource.counted}):CONTROL;try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}renderControl();notify('Control recalculado','ok');};
     $c('ctlFullPdf').onclick=()=>CONTROL?generateControlFullPdf():notify('Cargá primero la Planilla Control','warn');
     $c('ctlExportXlsx').onclick=()=>CONTROL?exportControlXlsx():notify('Cargá primero la Planilla Control','warn');
     $c('ctlLogoBtn').onclick=()=>$c('ctlLogoFile').click();
@@ -6445,11 +6450,17 @@ window.nrIfPrint=function(iframe,url){
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(buf,{type:'array',cellDates:true});
       const shControl=sheetName(wb,'Control');
-      const shBase=sheetName(wb,'Base de Datos Original');
-      if(!shControl||!shBase)throw new Error('El Excel debe tener las hojas “Control” y “Base de Datos Original”.');
+      const shBaseOrig=sheetName(wb,'Base de Datos Original');
+      const shBase=shBaseOrig||sheetName(wb,'Datos');
+      if(!shControl||!shBase)throw new Error('El Excel debe tener las hojas “Control” y “Base de Datos Original” (o “Datos”).');
       const controlRows=XLSX.utils.sheet_to_json(wb.Sheets[shControl],{header:1,defval:null,raw:true});
       const baseRows=XLSX.utils.sheet_to_json(wb.Sheets[shBase],{header:1,defval:null,raw:true});
-      CONTROL=buildControlModel(file.name,controlRows,baseRows);
+      /* Excel unificado: el total de contados sale de Configuración › "Total de contados". */
+      let countedOverride=null;
+      if(!shBaseOrig){const cfs=wb.SheetNames.find(n=>/^configuraci/i.test(n.trim()));
+        if(cfs)for(const cr of XLSX.utils.sheet_to_json(wb.Sheets[cfs],{header:1,defval:'',raw:true})){
+          if(nrm(cr[0]).toLowerCase().replace(/[:.]/g,'').trim().startsWith('total de contados'))countedOverride=Math.max(0,Math.round(numVal(cr[1])));}}
+      CONTROL=buildControlModel(file.name,controlRows,baseRows,{counted:countedOverride});
       try{const persist=Object.assign({},CONTROL,{_rawSource:undefined});localStorage.setItem(KEY+'_data',JSON.stringify(persist));}catch(e){}
       renderControl();
       $c('ctlStatus').className='status-line ok';
@@ -6472,7 +6483,7 @@ window.nrIfPrint=function(iframe,url){
     }
     return -1;
   }
-  function buildControlModel(fileName,controlRows,baseRows){
+  function buildControlModel(fileName,controlRows,baseRows,opts){
     const ch0=findHeader(controlRows,['n°','pag','bajas']);
     const bh0=findHeader(baseRows,['n°','apellido','nombre','calle']);
     const ch=ch0>=0?ch0:5, bh=bh0>=0?bh0:6;
@@ -6481,7 +6492,7 @@ window.nrIfPrint=function(iframe,url){
     const ci=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(cm[k]!=null)return cm[k];}return def};
     const bi=(names,def)=>{for(const x of names){const k=x.toLowerCase();if(bm[k]!=null)return bm[k];}return def};
     const cidx={num:ci(['n°','n'],'0'),pag:ci(['pag','pago'],1),baja:ci(['bajas','baja'],2),cobrador:ci(['cobrador'],3),dup:ci(['duplicados','duplicado'],4),cond:ci(['condicion','condición','situacion','situación'],5)};
-    const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes'],8),compl:bi(['compl','completo'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],12)};
+    const bidx={num:bi(['n°','n'],'0'),ape:bi(['apellido'],1),nom:bi(['nombre'],2),calle:bi(['calle'],3),nro:bi(['nro/calle','nros','nro','numero','número'],4),piso:bi(['piso'],5),dpto:bi(['dpto','departamento'],6),pago:bi(['pago'],7),mes:bi(['f. cobranza','fecha cobranza','mes de cobro','mes'],8),compl:bi(['compl','completo','completado'],9),sit:bi(['situacion','situación'],10),loc:bi(['localidad'],11),dup:bi(['duplicados','duplicado'],opts&&opts.counted!=null?-1:12)};
 
     const control=[];
     for(let i=ch+1;i<controlRows.length;i++){
@@ -6498,7 +6509,7 @@ window.nrIfPrint=function(iframe,url){
 
     /* Regla fija del negocio: la cantidad de contados está en M4 de Base de Datos Original. */
     const countedCell=baseRows?.[3]?.[12];
-    const counted=Math.max(0,Math.round(numVal(countedCell)));
+    const counted=(opts&&opts.counted!=null)?opts.counted:Math.max(0,Math.round(numVal(countedCell)));
 
     const controlCount=new Map(),uniqueSet=new Set(),conditionMap={},cobradorMap={},paymentDist={};
     control.forEach(r=>{
@@ -6591,8 +6602,8 @@ window.nrIfPrint=function(iframe,url){
       firstPayment:effectiveFirstPayment,fullPayment:effectiveFullPayment,uniqueControl:effectiveUniqueControl,localities,
       missingAsPaid,syntheticMissing,
       source:{controlSheet:shControlName(controlRows),baseSheet:shBaseName(baseRows)},
-      sourceCounted:'Base de Datos Original!M4',
-      _rawSource:{controlRows,baseRows}
+      sourceCounted:(opts&&opts.counted!=null)?'Configuración › Total de contados':'Base de Datos Original!M4',
+      _rawSource:{controlRows,baseRows,counted:opts&&opts.counted!=null?opts.counted:null}
     };
   }
   function shControlName(rows){return 'Control'} function shBaseName(rows){return 'Base de Datos Original'}
@@ -6649,7 +6660,7 @@ window.nrIfPrint=function(iframe,url){
       ['Faltan controlar',c.missing.length,'danger'],
       ['Cuotas cobradas',c.totalPaid,''],
       ['Bajas',c.baja.length,'danger'],
-      ['Contados · M4',c.counted,'ok']
+      ['Contados',c.counted,'ok']
     ].map(x=>`<div class="control-kpi ${x[2]}"><div class="v">${money(x[1])}</div><div class="l">${x[0]}</div></div>`).join('');
     renderBreakdown();renderLocalities();renderCollectors();renderQuality();renderInsights();renderMissing();renderControlCharts();
     const lt=$c('ctlLocalityTitle'),ls=$c('ctlLocalitySubtitle');
@@ -6828,7 +6839,7 @@ window.nrIfPrint=function(iframe,url){
   function safeCtl(v){return String(v).replace(/[\\/:*?"<>|]/g,'-').trim()||'control'}
 
   /* recuperar último procesamiento */
-  try{const raw=localStorage.getItem(KEY+'_data');if(raw){CONTROL=JSON.parse(raw);if(CONTROL&&CONTROL._rawSource){CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows);}}}catch(e){}
+  try{const raw=localStorage.getItem(KEY+'_data');if(raw){CONTROL=JSON.parse(raw);if(CONTROL&&CONTROL._rawSource){CONTROL=buildControlModel(CONTROL.fileName,CONTROL._rawSource.controlRows,CONTROL._rawSource.baseRows,{counted:CONTROL._rawSource.counted});}}}catch(e){}
   window.noraControlLoadFile=loadControlFile;
   async function syncFromFiles(force){
     try{
@@ -7932,7 +7943,7 @@ const $=id=>document.getElementById(id);
     '<div id="ctlDrop" class="control-drop" role="button" tabindex="0" aria-label="Cargar Planilla Control">'
     +'<span class="b-ic" data-icon="upload"></span>'
     +'<b>Arrastrá la Planilla Control acá</b>'
-    +'<div class="hint">Excel con hojas <b>Control</b> y <b>Base de Datos Original</b>. También se detecta automáticamente si la cargás desde <b>Carga de Datos</b>.</div>'
+    +'<div class="hint">Excel con hojas <b>Control</b> y <b>Base de Datos Original</b>, o el Excel unificado (<b>Datos</b> + <b>Control</b>). También se detecta automáticamente si lo cargás desde <b>Carga de Datos</b>.</div>'
     +'</div>'
     +'<div id="ctlAvail" class="hidden" style="margin-top:10px">'
     +'<label for="ctlPicker" style="display:block;font-size:12px;color:var(--sub);margin-bottom:4px">Planillas Control detectadas</label>'
