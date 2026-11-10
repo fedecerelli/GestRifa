@@ -1134,6 +1134,26 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   @media (max-width:820px){.modal-card,.nr-modal,.dialog{max-height:calc(100dvh - 24px)}}
 }
 </style>
+<style id="nora-lean">
+/* Impresión por lotes: solo lo necesario */
+@media(max-width:600px){#reportsList .report-item{flex-wrap:wrap;gap:8px}#reportsList .rp-body{flex:1 1 55%;min-width:0}#reportsList .rp-name{white-space:normal}}
+#view-print #batchProgressWrap,#view-print .nq-stats,#view-print .nq-eyebrow,#view-print #batchQueueDetail,#view-print #batchQueueLabel{display:none!important}
+#view-print .nq-message:empty{display:none}
+#view-print .lean-more{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:6px 12px}
+#view-print .lean-more>summary{cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;min-height:24px}
+/* Indicador de actividad (se ve en todas las secciones) */
+.nora-busy{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:100000;display:flex;align-items:center;gap:10px;max-width:min(560px,calc(100vw - 24px));padding:11px 16px 13px;border-radius:14px;background:var(--panel,#fff);color:var(--ink,#222);border:1px solid var(--line,#ddd);box-shadow:0 8px 28px rgba(0,0,0,.22);font-size:14px;font-weight:600;overflow:hidden;cursor:pointer}
+.nora-busy[hidden]{display:none}
+.nb-spin,.pk-spin{width:17px;height:17px;border:2.5px solid rgba(128,128,128,.35);border-top-color:var(--accent,#1f4e8c);border-radius:50%;animation:nbspin .8s linear infinite;flex:0 0 auto;display:inline-block}
+@keyframes nbspin{to{transform:rotate(360deg)}}
+.nb-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-time{opacity:.6;font-weight:500;font-size:12.5px;flex:0 0 auto}
+.nb-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(128,128,128,.2)}
+.nb-bar i{display:block;height:100%;width:35%;background:var(--accent,#1f4e8c);animation:nbind 1.2s ease-in-out infinite}
+.nb-bar.det i{animation:none;width:0;transition:width .25s}
+@keyframes nbind{0%{margin-left:-35%}100%{margin-left:100%}}
+.pk-empty .pk-spin{width:28px;height:28px;margin-bottom:8px}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1392,39 +1412,37 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 <section class="view" id="view-print">
   <div class="card">
-    <h2><span class="h-ic" data-icon="printer"></span>Impresión por lotes <span class="tag">seleccioná el reporte</span></h2>
-    <p class="hint">Elegí cuál de los reportes generados querés imprimir por lotes. Cada uno guarda su propio progreso.</p>
+    <h2><span class="h-ic" data-icon="printer"></span>Impresión por lotes</h2>
     <div id="reportsList" style="margin-bottom:14px"></div>
     <div class="row">
-      <div class="field" style="max-width:190px"><label>Hojas por lote (1 a 500)</label><input id="batchSize" type="number" min="1" max="500" step="1" value="100"></div>
-      <div class="field grow" style="min-width:190px"><label>Usuario / operador</label><input id="batchOperator" type="text" maxlength="80" placeholder="Nombre del operador"></div>
-      <div class="field" style="max-width:230px"><button class="primary" id="btnPrepBatches"><span class="b-ic" data-icon="refresh"></span>Preparar lotes</button></div>
-      <div class="field" style="max-width:230px"><button class="secondary" id="btnResetBatches"><span class="b-ic" data-icon="refresh"></span>Reiniciar control</button></div>
-      <div class="field" style="max-width:230px"><button class="secondary" id="btnReprintAll"><span class="b-ic" data-icon="printer"></span>Reimprimir todo el reporte</button></div>
+      <div class="field" style="max-width:150px"><label>Hojas por lote</label><input id="batchSize" type="number" min="1" max="500" step="1" value="100"></div>
+      <div class="field grow" style="min-width:150px"><label>Operador</label><input id="batchOperator" type="text" maxlength="80" placeholder="Nombre"></div>
+      <div class="field" style="max-width:200px"><button class="primary" id="btnPrepBatches"><span class="b-ic" data-icon="refresh"></span>Preparar lotes</button></div>
     </div>
+    <details class="lean-more"><summary>Más opciones</summary><div class="row" style="margin-top:8px"><button class="secondary" id="btnResetBatches">Reiniciar control</button><button class="secondary" id="btnReprintAll">Reimprimir todo</button></div></details>
     <div id="batchProgressWrap" class="hidden" style="margin-top:16px"><div class="batch-progress"><div class="batch-progress-bar" id="batchProgressBar"></div></div><div class="hint" id="batchProgressText"></div></div>
     <div id="batchBuildProgressWrap" class="hidden" style="margin-top:10px"><div class="batch-progress"><div class="batch-progress-bar" id="batchBuildProgressBar"></div></div><div class="hint" id="batchBuildProgressText"></div></div>
     <div id="printStatus" class="status-line"></div>
     <div id="batchQueuePanel" class="card hidden" aria-live="polite">
-      <div class="nq-head"><div><div class="nq-eyebrow">SESIÓN DE IMPRESIÓN</div><h3>Cola de trabajo</h3><p id="batchQueueReport" class="hint">Prepará los lotes para comenzar.</p></div><span id="batchQueueCount" class="nq-count">0 / 0</span></div>
+      <div class="nq-head"><div><p id="batchQueueReport" class="hint"></p></div><span id="batchQueueCount" class="nq-count">0 / 0</span></div>
       <div class="nq-progress"><div id="batchQueueFill"></div></div>
       <div class="nq-stats"><div><small>Confirmados</small><b id="batchQueueDone">0</b></div><div><small>Pendientes</small><b id="batchQueuePending">0</b></div><div><small>Páginas confirmadas</small><b id="batchQueuePages">0</b></div></div>
-      <div class="nq-current"><div><small id="batchQueueLabel">SIGUIENTE LOTE</small><strong id="batchQueueRange">—</strong><span id="batchQueueDetail" class="hint">Elegí un reporte y prepará los lotes.</span></div><span id="batchQueueState" class="nq-state">Sin preparar</span></div>
-      <div id="batchQueueBuildWrap" class="nq-build hidden"><div class="nq-build-track"><div id="batchQueueBuildBar"></div></div><small id="batchQueueBuildText">Preparando PDF…</small></div>
-      <div class="nq-actions"><button type="button" class="primary" id="btnBatchPrintNext"><span class="b-ic" data-icon="printer"></span>Imprimir siguiente lote</button><button type="button" class="primary" id="btnBatchConfirm" disabled><span class="b-ic" data-icon="check"></span>Confirmar lote impreso</button><button type="button" class="secondary" id="btnBatchNotPrinted" disabled>No se imprimió</button><button type="button" class="ghost" id="btnBatchFinish">Finalizar sesión</button></div>
-      <p id="batchQueueMessage" class="hint nq-message">Nora registra un lote como confirmado únicamente cuando vos lo indicás.</p>
+      <div class="nq-current"><div><small id="batchQueueLabel">SIGUIENTE LOTE</small><strong id="batchQueueRange">—</strong><span id="batchQueueDetail" class="hint"></span></div><span id="batchQueueState" class="nq-state">—</span></div>
+      <div id="batchQueueBuildWrap" class="nq-build hidden"><div class="nq-build-track"><div id="batchQueueBuildBar"></div></div><small id="batchQueueBuildText">Preparando…</small></div>
+      <div class="nq-actions"><button type="button" class="primary" id="btnBatchPrintNext"><span class="b-ic" data-icon="printer"></span>Imprimir</button><button type="button" class="primary" id="btnBatchConfirm" disabled><span class="b-ic" data-icon="check"></span>Confirmar</button><button type="button" class="secondary" id="btnBatchNotPrinted" disabled>No salió</button><button type="button" class="ghost" id="btnBatchFinish">Cerrar</button></div>
+      <p id="batchQueueMessage" class="hint nq-message"></p>
     </div>
+    <details class="lean-more"><summary>Ver todos los lotes</summary>
     <div class="batchlist" id="batchList"></div>
     <div class="row" id="batchPager" style="display:none;justify-content:space-between;align-items:center;margin-top:8px">
-      <button type="button" class="secondary miniBtn" id="batchPrevPage">Lotes anteriores</button>
+      <button type="button" class="secondary miniBtn" id="batchPrevPage">Anteriores</button>
       <span class="hint" id="batchPagerInfo"></span>
-      <button type="button" class="secondary miniBtn" id="batchNextPage">Más lotes</button>
-    </div>
-    <div class="card" id="batchAuditCard" style="margin-top:14px">
-      <div class="row" style="align-items:center"><div class="grow"><h3 style="margin:0">Auditoría de impresión</h3><div class="hint">Registra cada lote o rango enviado al diálogo de impresión, con fecha, operador y terminal local.</div></div>
-      <button type="button" class="ghost miniBtn" id="btnExportPrintAudit">Exportar JSON</button></div>
-      <div id="printAuditList" class="hint" style="margin-top:10px">Todavía no hay impresiones registradas.</div>
-    </div>
+      <button type="button" class="secondary miniBtn" id="batchNextPage">Siguientes</button>
+    </div></details>
+    <details class="lean-more" id="batchAuditCard"><summary>Auditoría</summary>
+      <div class="row" style="align-items:center;margin-top:8px"><div class="grow"></div><button type="button" class="ghost miniBtn" id="btnExportPrintAudit">Exportar</button></div>
+      <div id="printAuditList" class="hint" style="margin-top:8px">Sin registros.</div>
+    </details>
   </div>
 </section>
 
@@ -3414,11 +3432,18 @@ window.__noraControlPendingFiles=window.__noraControlPendingFiles||[];
 
 async function handleFiles(files,silent,opts){
   if(!files||!files.length)return;
+  try{if(window.NoraBusy)NoraBusy.show('Leyendo '+files.length+' archivo(s)…',{current:0,total:files.length});}catch(_){}
+  try{return await __handleFilesCore(files,silent,opts);}
+  finally{try{if(window.NoraBusy)NoraBusy.hide();}catch(_){}}
+}
+async function __handleFilesCore(files,silent,opts){
+  if(!files||!files.length)return;
   const statusEl=document.getElementById('status');
   if(statusEl){statusEl.className='status-line';statusEl.textContent='Analizando '+files.length+' archivo(s)…';}
   let added=[],replaced=[],allErrors=[],controlFiles=[],filePosition=0;
   for(const file of files){
     filePosition++;
+    try{if(window.NoraBusy)NoraBusy.update('Leyendo '+file.name+' ('+filePosition+' de '+files.length+')',filePosition-1,files.length);}catch(_){}
     try{if(typeof opts?.onProgress==='function')opts.onProgress({current:filePosition,total:files.length,name:file.name});}catch(_){}
     try{
       const __source=opts?.source||'local';
@@ -3741,7 +3766,7 @@ function selectReport(id){activeReportId=id;renderReports();renderBatchList();up
 function deleteReport(id){const i=REPORTS.findIndex(r=>r.id===id);if(i<0)return;REPORTS.splice(i,1);if(activeReportId===id)activeReportId=REPORTS[0]?REPORTS[0].id:null;renderReports();renderBatchList();updateBatchProgress();}
 function renderReports(){
   const box=document.getElementById('reportsList');if(!box)return;
-  if(!REPORTS.length){box.innerHTML='<div class="hint">Todavía no generaste ningún reporte. Generá uno en "Generar PDF" para poder imprimirlo por lotes.</div>';return;}
+  if(!REPORTS.length){box.innerHTML='<div class="hint">No hay reportes. Generá uno en "Generar PDF".</div>';return;}
   box.innerHTML=REPORTS.map(r=>`<div class="report-item ${r.id===activeReportId?'active':''}" data-rid="${r.id}">
     <div style="width:40px;height:40px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:800">${r.totalPages}p</div>
     <div class="rp-body">
@@ -8783,6 +8808,7 @@ function setStatus(msg,warn,progress){
       const meta=document.createElement('div');meta.className='od-operation-meta';meta.textContent=current+' de '+total+' · '+pct+'%';e.appendChild(meta);
     }
   });
+  try{if(window.NoraBusy){if(busy||(statusProgress&&statusProgress.active))NoraBusy.show(msg,statusProgress&&statusProgress.total>0?{current:statusProgress.current,total:statusProgress.total}:null);else NoraBusy.hide();}}catch(_){}
   refreshButtons();
 }
 function refreshButtons(){
@@ -8899,27 +8925,35 @@ async function gfetch(url,token,tries){
 const encPath=p=>p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 const SELECT='$top=200&$select=id,name,size,eTag,lastModifiedDateTime,file,folder';
 
-async function listFolder(token){
+async function listFolder(token,onProgress){
   const root=(cfg.folder||'').trim().replace(/^\/+|\/+$/g,'');
   const first=root?GRAPH+'/me/drive/root:/'+encPath(root)+':/children?'+SELECT
                   :GRAPH+'/me/drive/root/children?'+SELECT;
-  const out=[];
-  async function walk(url,depth,rel){
-    while(url){
-      const j=await gfetch(url,token);
-      const subs=[];
-      (j.value||[]).forEach(it=>{
-        if(it.folder){if(cfg.recursive&&depth<MAX_DEPTH)subs.push(it);return;}
-        if(it.file&&EXCEL_RE.test(it.name)&&!it.name.startsWith('~$')){
-          out.push({id:it.id,name:it.name,size:it.size||0,etag:it.eTag||'',mtime:it.lastModifiedDateTime||'',
-                    url:it['@microsoft.graph.downloadUrl']||'',path:rel});
-        }
-      });
-      for(const f of subs)await walk(GRAPH+'/me/drive/items/'+f.id+'/children?'+SELECT,depth+1,(rel?rel+'/':'')+f.name);
-      url=j['@odata.nextLink']||'';
-    }
+  const out=[],queue=[{url:first,depth:0,rel:''}],running=new Set();let folders=0,firstErr=null;
+  async function runJob(job){
+    try{
+      let url=job.url;
+      while(url){
+        const j=await gfetch(url,token);
+        (j.value||[]).forEach(it=>{
+          if(it.folder){if(cfg.recursive&&job.depth<MAX_DEPTH)queue.push({url:GRAPH+'/me/drive/items/'+it.id+'/children?'+SELECT,depth:job.depth+1,rel:(job.rel?job.rel+'/':'')+it.name});return;}
+          if(it.file&&EXCEL_RE.test(it.name)&&!it.name.startsWith('~$')){
+            out.push({id:it.id,name:it.name,size:it.size||0,etag:it.eTag||'',mtime:it.lastModifiedDateTime||'',
+                      url:it['@microsoft.graph.downloadUrl']||'',path:job.rel});
+          }
+        });
+        url=j['@odata.nextLink']||'';
+      }
+      folders++;
+      if(onProgress){try{onProgress({folders,files:out.length,pending:queue.length});}catch(_){}}
+    }catch(e){if(!firstErr)firstErr=e;queue.length=0;}
   }
-  await walk(first,0,'');
+  /* Varias carpetas a la vez (hasta 5) en lugar de una por una. */
+  while(queue.length||running.size){
+    while(queue.length&&running.size<5){const pr=runJob(queue.shift());running.add(pr);pr.then(()=>running.delete(pr));}
+    if(running.size)await Promise.race(running);
+  }
+  if(firstErr)throw firstErr;
   return out;
 }
 
@@ -9000,18 +9034,18 @@ async function getItemMetadata(token,id){
   const linked=curFiles().find(x=>x.source==='onedrive'&&String(x.sourceId||'')===String(item.id));
   return {id:String(item.id),name:item.name,size:item.size||0,etag:item.eTag||'',mtime:item.lastModifiedDateTime||'',url:'',path:pathFromGraphParent(item.parentReference?.path)||(cached?.path||linked?.sourcePath||'')};
 }
-async function refreshList(){
+async function refreshList(onProgress){
   const token=await getToken();if(!token){setStatus('Primero conectá con Microsoft.',true);return false;}
-  try{setStatus('Leyendo las carpetas de OneDrive para actualizar el explorador…',false,{active:true});const all=await listFolder(token);const m=new Map();
+  try{setStatus('Leyendo OneDrive…',false,{active:true});const all=await listFolder(token,p=>{setStatus('Leyendo OneDrive · '+p.folders+' carpeta(s) · '+p.files+' archivo(s)',false,{active:true});if(onProgress)onProgress(p);});const m=new Map();
     all.forEach(it=>{const p=m.get(it.name);if(!p||it.mtime>p.mtime)m.set(it.name,it);});
     jset(K_LIST,[...m.values()].map(i=>({id:i.id,name:i.name,path:i.path,mtime:i.mtime,size:i.size,etag:i.etag||''})));describeStatus();return true;}
-  catch(e){setStatus('No se pudo leer la carpeta: '+e.message,true);return false;}
+  catch(e){setStatus('No se pudo leer OneDrive: '+e.message,true);return false;}
 }
 async function openPicker(){
   const cachedList=jget(K_LIST,null);
   const canRefresh=ready()&&hasTok();
-  const refreshed=canRefresh?await refreshList():false;
-  let list=(refreshed?(jget(K_LIST,[])||[]):(Array.isArray(cachedList)?cachedList:[])).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));
+  const sortList=a=>a.slice().sort((x,y)=>(y.mtime||'').localeCompare(x.mtime||'')||x.name.localeCompare(y.name,'es'));
+  let list=sortList(Array.isArray(cachedList)?cachedList:[]);
   const sel=getSel()||{ids:[],names:[],seen:[]};
   const chosen=new Set((sel.ids||[]).map(String));
   const legacyNames=new Set((!chosen.size?(sel.names||[]):[]).map(String));
@@ -9020,12 +9054,12 @@ async function openPicker(){
   const first=!getSel();
   const ov=document.createElement('div');ov.className='nora-od-picker-overlay';
   ov.innerHTML='<section class="nora-od-picker card" role="dialog" aria-modal="true" aria-labelledby="pk-title">'+
-    '<header class="pk-head"><div class="pk-title-group"><div class="pk-eyebrow">NORA · CENTRO DE ARCHIVOS</div><h2 id="pk-title">OneDrive</h2><p>Elegí las planillas que Nora puede leer. Tus originales permanecen en OneDrive.</p></div><div class="pk-head-actions"><span class="pk-cloud-mark" aria-hidden="true">OD</span><button type="button" class="iconbtn pk-x" aria-label="Cerrar">×</button></div></header>'+
+    '<header class="pk-head"><div class="pk-title-group"><h2 id="pk-title">OneDrive</h2></div><div class="pk-head-actions"><span class="pk-cloud-mark" aria-hidden="true">OD</span><button type="button" class="iconbtn pk-x" aria-label="Cerrar">×</button></div></header>'+
     '<div class="pk-explorer"><aside class="pk-sidebar" aria-label="Carpetas de OneDrive"><div class="pk-side-label">UBICACIONES</div><button type="button" class="pk-place active" data-place=""><span class="pk-nav-glyph">⌂</span><span>Todos los Excel</span><small class="pk-all-count"></small></button><div class="pk-side-label pk-folders-label">CARPETAS</div><nav class="pk-folder-nav"></nav><div class="pk-side-note">Solo se muestran archivos Excel admitidos por Nora.</div></aside>'+
     '<main class="pk-main"><div class="pk-toolbar"><label class="pk-search"><span aria-hidden="true">⌕</span><input type="search" class="pk-q" placeholder="Buscar archivo o carpeta…" aria-label="Buscar archivos" autocomplete="off"></label><button type="button" class="secondary miniBtn pk-ref" title="Actualizar la lista de OneDrive">Actualizar</button></div>'+
     '<div class="pk-crumbs" aria-label="Ubicación actual"></div><div class="pk-actions"><div class="pk-bulk"><button type="button" class="secondary miniBtn pk-all">Marcar visibles</button><button type="button" class="ghost miniBtn pk-none">Desmarcar visibles</button><label class="pk-only-label"><input type="checkbox" class="pk-only"> Solo seleccionados</label></div><div class="pk-actions-right"><div class="pk-view-toggle" role="group" aria-label="Vista de archivos"><button type="button" class="active" data-viewmode="list" title="Vista de lista">Lista</button><button type="button" data-viewmode="grid" title="Vista de cuadrícula">Cuadrícula</button></div><div class="pk-cnt" aria-live="polite"></div></div></div>'+
     '<div class="pk-list-wrap"><div class="pk-list" data-mode="list"></div></div><div class="pk-status" aria-live="polite"></div></main></div>'+
-    '<footer class="pk-foot"><span class="pk-safe-note"><span class="pk-safe-dot"></span>Lectura de archivos · sin modificar ni borrar originales</span><div><button type="button" class="secondary miniBtn pk-cancel">Cancelar</button><button type="button" class="primary miniBtn pk-ok">Guardar selección y sincronizar</button></div></footer></section>';
+    '<footer class="pk-foot"><span class="pk-safe-note"><span class="pk-safe-dot"></span>Solo lectura</span><div><button type="button" class="secondary miniBtn pk-cancel">Cancelar</button><button type="button" class="primary miniBtn pk-ok">Guardar selección y sincronizar</button></div></footer></section>';
   document.body.appendChild(ov);
   const q=c=>ov.querySelector(c);let vis=[],currentFolder='',viewMode='list';
   const folderOf=i=>i.path||'';
@@ -9092,8 +9126,8 @@ async function openPicker(){
   q('.pk-crumbs').addEventListener('click',e=>{const b=e.target.closest('[data-crumb]');if(b)selectPlace(b.dataset.crumb||'');});
   q('.pk-view-toggle').onclick=e=>{const b=e.target.closest('[data-viewmode]');if(!b)return;viewMode=b.dataset.viewmode;q('.pk-view-toggle').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));draw();};
   q('.pk-ref').onclick=async()=>{
-    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando OneDrive…';
-    const ok=await refreshList();
+    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando…';
+    const ok=await refreshList(p=>{q('.pk-status').textContent='Actualizando… '+p.folders+' carpeta(s) · '+p.files+' archivo(s)';});
     if(ok){list=(jget(K_LIST,[])||[]).slice().sort((a,b)=>(b.mtime||'').localeCompare(a.mtime||'')||a.name.localeCompare(b.name,'es'));buildFolderTree();q('.pk-status').textContent='Lista actualizada.';}
     else q('.pk-status').textContent='No se pudo actualizar. Se conserva la última lista disponible.';
     q('.pk-ref').disabled=false;
@@ -9127,9 +9161,20 @@ async function openPicker(){
     close();await sync({manual:true});renderSelectedFiles();
   };
   buildFolderTree();draw();q('.pk-q').focus();
-  const canSave=ready()&&hasTok()&&list.length>0;q('.pk-ok').disabled=!canSave;
-  if(!refreshed){q('.pk-status').textContent=(!ready()||!hasTok())?'Configurá y conectá Microsoft desde Configuración → Accesos y seguridad. '+(list.length?'Se muestra la última lista guardada.':''):('No se pudo actualizar OneDrive. '+(list.length?'Se conserva la última lista guardada.':'Revisá la conexión y volvé a intentar.'));}
-  else if(!list.length)q('.pk-status').textContent='La conexión funciona, pero no encontramos Excel en la ubicación configurada.';
+  const updateSave=()=>{q('.pk-ok').disabled=!(ready()&&hasTok()&&list.length>0);};
+  updateSave();
+  const offlineMsg=()=>(!ready()||!hasTok())?'Conectá Microsoft desde Configuración. '+(list.length?'Se muestra la última lista guardada.':''):('No se pudo actualizar. '+(list.length?'Se conserva la última lista.':'Revisá la conexión.'));
+  if(canRefresh){
+    /* La ventana ya está abierta: la lista se actualiza detrás, con el avance a la vista. */
+    if(!list.length)q('.pk-list').innerHTML='<div class="pk-empty"><span class="pk-spin"></span><b>Leyendo OneDrive…</b><span class="pk-prog">Conectando</span></div>';
+    q('.pk-ref').disabled=true;q('.pk-status').textContent='Actualizando… 0 carpeta(s) · 0 archivo(s)';
+    refreshList(p=>{if(!ov.isConnected)return;q('.pk-status').textContent='Actualizando… '+p.folders+' carpeta(s) · '+p.files+' archivo(s)';const pr=q('.pk-prog');if(pr)pr.textContent=p.folders+' carpeta(s) · '+p.files+' archivo(s)';}).then(ok=>{
+      if(!ov.isConnected)return;
+      if(ok){list=sortList(jget(K_LIST,[])||[]);buildFolderTree();q('.pk-status').textContent=list.length?list.length+' archivo(s) · lista actualizada':'La conexión funciona, pero no hay Excel en la ubicación configurada.';}
+      else{draw();q('.pk-status').textContent=offlineMsg();}
+      q('.pk-ref').disabled=false;updateSave();
+    });
+  }else{q('.pk-status').textContent=offlineMsg();}
 }
 
 function renderSelectedFiles(){
@@ -9302,7 +9347,7 @@ async function sync(opts){
     else setStatus('Error al sincronizar: '+e.message,true);
     log('error: '+e.message+(e.stack?' · '+String(e.stack).split('\n')[1]:''),'error');
     try{console.error('[OneDrive]',e);}catch(_){}
-  }finally{busy=false;setStatus(statusMsg,statusWarn,statusProgress);refreshButtons();}
+  }finally{busy=false;setStatus(statusMsg,statusWarn,statusProgress);refreshButtons();try{if(window.NoraBusy&&!(statusProgress&&statusProgress.active))NoraBusy.hide();}catch(_){}}
 }
 
 /* -------------------------------------------------------------- UI ----- */
@@ -10130,7 +10175,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
   function renderPrintAudit(){
     const box=$('printAuditList');if(!box)return;
     const rows=auditRows();
-    if(!rows.length){box.textContent='Todavía no hay impresiones registradas.';return;}
+    if(!rows.length){box.textContent='Sin registros.';return;}
     box.innerHTML=rows.slice(0,15).map(x=>`<div class="audit-line"><b>${escHtml(x.reportName)}</b><span class="pill">${escHtml(x.type)}</span><span class="pill">Páginas ${x.firstPage}–${x.lastPage} / ${x.totalPages}</span><span class="hint">${escHtml(fmtDate(x.at))}</span><span class="hint">${escHtml(x.operator)} · ${escHtml(x.terminal)}</span><span class="pill">${escHtml(x.result||'Enviado al diálogo')}</span></div>`).join('');
   }
   function downloadJson(name,data){
@@ -10370,15 +10415,15 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     state.className='nq-state'+(sent?' pending':idx<0?' done':'');
     state.textContent=sent?'En espera':idx<0?'Completo':'Listo';
     const printBtn=$('btnBatchPrintNext'),confirmBtn=$('btnBatchConfirm'),retryBtn=$('btnBatchNotPrinted'),finishBtn=$('btnBatchFinish');
-    if(printBtn){const manuallySelected=PRINT_QUEUE.reportId===r.id&&Number.isInteger(PRINT_QUEUE.selectedIndex);printBtn.disabled=PRINT_QUEUE.busy||sent||idx<0;printBtn.innerHTML=(typeof icon==='function'?icon('printer'):'')+(idx>=0&&printed.has(idx)?'Reimprimir lote seleccionado':manuallySelected?'Imprimir lote seleccionado':'Imprimir siguiente lote');}
+    if(printBtn){const manuallySelected=PRINT_QUEUE.reportId===r.id&&Number.isInteger(PRINT_QUEUE.selectedIndex);printBtn.disabled=PRINT_QUEUE.busy||sent||idx<0;printBtn.innerHTML=(typeof icon==='function'?icon('printer'):'')+(idx>=0&&printed.has(idx)?'Reimprimir':'Imprimir');}
     if(confirmBtn)confirmBtn.disabled=PRINT_QUEUE.busy||!sent;
     if(retryBtn)retryBtn.disabled=PRINT_QUEUE.busy||!sent;
     if(finishBtn)finishBtn.disabled=PRINT_QUEUE.busy;
     const msg=$('batchQueueMessage');
-    if(PRINT_QUEUE.busy)msg.textContent='Preparando el PDF del lote. No cierres Nora ni la ventana de impresión.';
-    else if(sent)msg.textContent='El PDF está abierto en el visor. Imprimilo allí; después volvé a Nora y confirmá si salió correctamente. Si no salió, elegí “No se imprimió”.';
-    else if(idx<0)msg.textContent='Todos los lotes están confirmados por el operador. Podés exportar la auditoría o reiniciar el control para una nueva pasada.';
-    else msg.textContent='La cola está lista. Se reutilizará la misma pestaña PDF para los siguientes lotes. Nora no marcará un lote como impreso hasta que lo confirmes.';
+    if(PRINT_QUEUE.busy)msg.textContent='Preparando el PDF…';
+    else if(sent)msg.textContent='Imprimí en el visor y confirmá acá.';
+    else if(idx<0)msg.textContent='Todos los lotes confirmados.';
+    else msg.textContent='';
     document.querySelectorAll('#batchList .batch-item').forEach(b=>{
       const bi=Number(b.dataset.batchIndex),itemRange=ranges[bi];
       const itemDone=printed.has(bi),itemPending=bi===pendingIndex;
@@ -10432,7 +10477,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
   }
   function selectQueueBatch(idx){
     const r=activeReport();if(!r||!r.batchState||!r.batchState.ranges[idx])return;
-    if(Number.isInteger(r.batchState.pendingIndex)){notify('Primero confirmá el lote que ya está en el visor o indicá que no se imprimió.','warn');return;}
+    if(Number.isInteger(r.batchState.pendingIndex)){notify('Primero confirmá el lote enviado.','warn');return;}
     PRINT_QUEUE.reportId=r.id;PRINT_QUEUE.selectedIndex=idx;
     renderBatchQueuePanel();
   }
@@ -10460,7 +10505,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     if($('batchProgressWrap'))$('batchProgressWrap').classList.remove('hidden');
     if(!silent){
       st.className='status-line ok';
-      st.textContent='Se prepararon '+next.length+' lote(s) para '+total+' páginas. Cobertura verificada: 1–'+total+', sin saltos ni solapamientos.';
+      st.textContent=next.length+' lote(s) listos.';
       if(typeof notify==='function')notify(next.length+' lote(s) preparados','ok');
     }
     try{if(typeof renderReports==='function')renderReports();}catch(e){}
@@ -10506,13 +10551,13 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       hideBuildProgress();
       persistQueueState(r);
       $('printStatus').className='status-line ok';
-      $('printStatus').textContent='Lote '+(idx+1)+' enviado al visor. Confirmá cuando la impresión haya salido correctamente.';
+      $('printStatus').textContent='Lote '+(idx+1)+' enviado. Confirmá cuando salga.';
       if(typeof notify==='function')notify('Lote enviado al visor · falta confirmar','ok');
     }catch(e){
       printProtection.release();
       if(PRINT_QUEUE.protection===printProtection)PRINT_QUEUE.protection=null;
-      keepPreparationError(printWindow,'No se pudo preparar o enviar el lote: '+(e.message||e));
-      hideBuildProgress();$('printStatus').className='status-line err';$('printStatus').textContent='No se pudo preparar o enviar el lote: '+(e.message||e);
+      keepPreparationError(printWindow,'No se pudo enviar el lote: '+(e.message||e));
+      hideBuildProgress();$('printStatus').className='status-line err';$('printStatus').textContent='No se pudo enviar el lote: '+(e.message||e);
       if(typeof notify==='function')notify('No se pudo imprimir el lote','err');
     }finally{
       PRINT_QUEUE.busy=false;renderBatchQueuePanel();
@@ -10526,7 +10571,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;releaseQueueProtection();
     PRINT_QUEUE.selectedIndex=null;
     persistQueueState(r);
-    $('printStatus').className='status-line ok';$('printStatus').textContent='Lote '+(idx+1)+' confirmado por el operador. El siguiente lote ya está seleccionado.';
+    $('printStatus').className='status-line ok';$('printStatus').textContent='Lote '+(idx+1)+' confirmado.';
     renderBatchesPaged();notify('Lote '+(idx+1)+' confirmado','ok');
   }
   function markBatchNotPrinted(){
@@ -10536,17 +10581,17 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     r.batchState.pendingIndex=null;r.batchState.pendingAuditId=null;releaseQueueProtection();
     PRINT_QUEUE.selectedIndex=idx;
     persistQueueState(r);
-    $('printStatus').className='status-line';$('printStatus').textContent='El lote '+(idx+1)+' quedó pendiente. Podés volver a enviarlo cuando quieras.';
+    $('printStatus').className='status-line';$('printStatus').textContent='Lote '+(idx+1)+' pendiente.';
     renderBatchesPaged();notify('Lote pendiente, no se marcó como impreso','info');
   }
   function finishPrintSession(){
     if(PRINT_QUEUE.busy)return;
     const r=activeReport(),hasPending=!!(r&&r.batchState&&Number.isInteger(r.batchState.pendingIndex));
-    if(hasPending&&!confirm('Hay un lote enviado que todavía no confirmaste. Si cerrás la sesión, seguirá pendiente y podrás resolverlo después. ¿Cerrar igualmente?'))return;
+    if(hasPending&&!confirm('Hay un lote sin confirmar. ¿Cerrar igual?'))return;
     const w=PRINT_QUEUE.window;PRINT_QUEUE.window=null;
     try{if(w&&!w.closed)w.close();}catch(e){}
     releaseQueueProtection();
-    const msg=hasPending?'Visor cerrado. El lote no confirmado se conserva como pendiente.':'Sesión de impresión finalizada.';
+    const msg=hasPending?'Lote pendiente guardado.':'Sesión cerrada.';
     if($('printStatus')){$('printStatus').className='status-line';$('printStatus').textContent=msg;}
     renderBatchQueuePanel();
   }
@@ -10584,7 +10629,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       await sendPdfToPrinter(part,r.filename||r.name||'reporte.pdf',printWindow,printProtection);
       hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:repeat?'Reimpresión de rango':'Rango manual',firstPage:pages[0],lastPage:pages[pages.length-1],totalPages:r.totalPages});
-      $('printStatus').className='status-line ok';$('printStatus').textContent='Rango enviado al diálogo de impresión: '+pages.join(', ')+'.';
+      $('printStatus').className='status-line ok';$('printStatus').textContent='Enviado a imprimir: páginas '+pages.join(', ')+'.';
     }catch(e){printProtection.release();keepPreparationError(printWindow,'No se pudo imprimir el rango: '+(e.message||e));hideBuildProgress();notify('No se pudo imprimir el rango: '+(e.message||e),'err');}
   }
   async function printWholeReport(r,asReprint){
@@ -10600,7 +10645,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
       showBuildProgress(100,'El PDF original está listo. No hace falta reconstruir sus '+total+' páginas.');
       await sendPdfToPrinter(blob,r.filename||r.name||'reporte.pdf',printWindow,printProtection);hideBuildProgress();
       addPrintAudit({reportId:r.id,reportName:r.name||r.filename,type:'Reporte completo',firstPage:1,lastPage:total,totalPages:total});
-      $('printStatus').className='status-line ok';$('printStatus').textContent='Reporte completo enviado al diálogo de impresión.';
+      $('printStatus').className='status-line ok';$('printStatus').textContent='Reporte enviado a imprimir.';
     }catch(e){printProtection.release();keepPreparationError(printWindow,'No se pudo imprimir el reporte: '+(e.message||e));hideBuildProgress();notify('No se pudo imprimir el reporte: '+(e.message||e),'err');}
   }
 
@@ -10625,7 +10670,7 @@ if(typeof origSched==='function'){window.scheduleAutoBackup=function(){try{sched
     try{if(PRINT_QUEUE.window&&!PRINT_QUEUE.window.closed)PRINT_QUEUE.window.close();}catch(e){}
     PRINT_QUEUE.window=null;PRINT_QUEUE.selectedIndex=null;
     persistQueueState(r);renderBatchesPaged();
-    $('printStatus').textContent='Control reiniciado. Todos los lotes vuelven a quedar pendientes.';
+    $('printStatus').textContent='Control reiniciado.';
     notify('Control de impresión reiniciado','ok');
   });
   $('batchSize')&&$('batchSize').addEventListener('change',e=>{e.stopImmediatePropagation();prepareBatchesExact(true);},true);
@@ -10893,7 +10938,7 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
   const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Nora impresión automática: no se pudo guardar',e);}};
   let state=read(KEY,null),timer=null,lastSecond=-1,autoLockToken=null,dispatching=false;
   if(state&&state.active){
-    state.active=false;state.paused=true;state.nextAt=null;state.resumeReason='Nora se volvió a cargar. La secuencia quedó pausada para evitar que se envíe un lote sin supervisión.';write(KEY,state);
+    state.active=false;state.paused=true;state.nextAt=null;state.resumeReason='Pausado al recargar Nora.';write(KEY,state);
   }
 
   function intervalMs(){
@@ -10948,29 +10993,29 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
     const busy=!!(active&&dispatching);
     const usable=!!(r&&r.batchState&&r.batchState.ranges&&r.batchState.ranges.length);
     start.disabled=!usable||busy||(active)||(pending&&!(paused&&own));
-    start.textContent=paused?'Reanudar impresión automática':'Imprimir todos los lotes';
+    start.textContent=paused?'Reanudar':'Imprimir todos';
     pause.disabled=!active;
-    pause.textContent='Pausar secuencia';
+    pause.textContent='Pausar';
     if(input)input.disabled=active;
     if(unit)unit.disabled=active;
     const manual=$('btnBatchPrintNext');
     if(manual&&active)manual.disabled=true;
     if(countdown){
-      let title='LISTA PARA COMENZAR',detail='Configurá el intervalo y pulsá “Imprimir todos los lotes”.';
-      if(own&&active&&pending){title='ESPERANDO CONFIRMACIÓN';detail='Imprimí el lote abierto y confirmá en Nora. Después comienza la espera de '+intervalText(state.intervalMs)+'.';}
+      let title='',detail='';
+      if(own&&active&&pending){title='Esperando confirmación';detail='Imprimí y confirmá.';}
       else if(own&&active&&state.nextAt){title='PRÓXIMO LOTE EN';detail=fmtLeft(state.nextAt-Date.now());}
       else if(own&&active&&busy){title='ENVIANDO LOTE';detail='Preparando y abriendo el siguiente PDF…';}
-      else if(own&&active&&idx<0){title='SECUENCIA COMPLETA';detail='Todos los lotes están confirmados.';}
+      else if(own&&active&&idx<0){title='Completo';detail='Todos confirmados.';}
       else if(own&&paused){title='SECUENCIA PAUSADA';detail=state.resumeReason||'Podés reanudarla o continuar manualmente.';}
-      else if(pending){title='LOTE PENDIENTE';detail='Confirmá el lote abierto o indicá que no se imprimió.';}
-      countdown.innerHTML='<small>'+title+'</small><strong>'+(active&&state.nextAt?fmtLeft(state.nextAt-Date.now()):detail)+'</strong>';
+      else if(pending){title='Lote pendiente';detail='Confirmá o indicá “No salió”.';}
+      countdown.innerHTML=(title?'<small>'+title+'</small>':'')+'<strong>'+(active&&state.nextAt?fmtLeft(state.nextAt-Date.now()):detail)+'</strong>';
     }
     if(own&&active){
-      if(pending)setStatus('La secuencia está activa, pero espera tu confirmación del lote actual. No enviará otro PDF antes de que confirmes.', 'running');
-      else if(state.nextAt)setStatus('Secuencia activa. El próximo lote se abrirá automáticamente cuando termine la cuenta regresiva.', 'running');
-      else setStatus('Secuencia activa. Preparando el próximo lote…', 'running');
-    }else if(own&&paused){setStatus(state.resumeReason||'Secuencia pausada. Podés reanudarla cuando quieras.', 'paused');}
-    else setStatus('Después de confirmar cada impresión, Nora espera el intervalo elegido y abre el siguiente lote. La impresión física se confirma en el visor del navegador.', '');
+      if(pending)setStatus('Esperando tu confirmación.', 'running');
+      else if(state.nextAt)setStatus('Activo. Próximo lote al terminar la cuenta.', 'running');
+      else setStatus('Preparando el próximo lote…', 'running');
+    }else if(own&&paused){setStatus(state.resumeReason||'En pausa.', 'paused');}
+    else setStatus('', '');
   }
   function pauseAuto(reason){
     if(!state)return;
@@ -10980,16 +11025,16 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
   }
   function stopAuto(reason){
     clearCountdown();
-    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason=reason||'Secuencia detenida.';persist();}
+    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason=reason||'Detenido.';persist();}
     releaseAutoLock();updateUI();
   }
   function finishAuto(){
     clearCountdown();
-    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason='Todos los lotes fueron confirmados.';persist();}
+    if(state){state.active=false;state.paused=false;state.nextAt=null;state.finishedAt=Date.now();state.resumeReason='Todos confirmados.';persist();}
     releaseAutoLock();
-    if($('printStatus')){$('printStatus').className='status-line ok';$('printStatus').textContent='Impresión automática finalizada: todos los lotes están confirmados.';}
+    if($('printStatus')){$('printStatus').className='status-line ok';$('printStatus').textContent='Todos los lotes confirmados.';}
     updateUI();
-    try{window.notify&&notify('Todos los lotes fueron confirmados','ok');}catch(e){}
+    try{window.notify&&notify('Todos los lotes confirmados','ok');}catch(e){}
   }
   async function dispatchNext(){
     if(dispatching||!state||!state.active)return;
@@ -11004,13 +11049,13 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
       await window.noraPrintBatch(idx);
       if(!hasPending(r)||r.batchState.pendingIndex!==idx){
         pauseAuto('No se pudo abrir el siguiente lote automáticamente. Revisá las ventanas emergentes y reanudá la secuencia.');
-        try{window.notify&&notify('La secuencia se pausó porque no se pudo abrir el lote.','warn');}catch(e){}
+        try{window.notify&&notify('Pausado: no se pudo abrir el lote.','warn');}catch(e){}
       }else{
         state.resumeReason='';persist();updateUI();
       }
     }catch(e){
       pauseAuto('No se pudo enviar el lote: '+(e&&e.message||e));
-      try{window.notify&&notify('La secuencia se pausó: '+(e&&e.message||e),'err');}catch(_){}
+      try{window.notify&&notify('Pausado: '+(e&&e.message||e),'err');}catch(_){}
     }finally{dispatching=false;updateUI();}
   }
   function scheduleNext(){
@@ -11034,8 +11079,8 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
   }
   async function startOrResume(){
     const r=getReport();
-    if(!r||!r.batchState||!Array.isArray(r.batchState.ranges)||!r.batchState.ranges.length){window.notify&&notify('Primero prepará los lotes del reporte.','warn');return;}
-    if(hasPending(r)&&!(sameReport(r)&&state&&state.paused)){window.notify&&notify('Primero resolvé el lote que está pendiente de confirmación.','warn');return;}
+    if(!r||!r.batchState||!Array.isArray(r.batchState.ranges)||!r.batchState.ranges.length){window.notify&&notify('Primero prepará los lotes.','warn');return;}
+    if(hasPending(r)&&!(sameReport(r)&&state&&state.paused)){window.notify&&notify('Primero confirmá el lote pendiente.','warn');return;}
     const ms=intervalMs();savePreference();
     const isResume=sameReport(r)&&state&&state.paused;
     if(!isResume){
@@ -11050,8 +11095,8 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
       return;
     }
     state.active=true;state.paused=false;state.intervalMs=ms;state.nextAt=null;state.resumeReason='';persist();holdAutoLock();
-    if(hasPending(r)){updateUI();window.notify&&notify('Secuencia reanudada. Esperando que confirmes el lote actual.','info');return;}
-    window.notify&&notify('Secuencia reanudada','ok');scheduleNext();
+    if(hasPending(r)){updateUI();window.notify&&notify('Reanudado. Confirmá el lote actual.','info');return;}
+    window.notify&&notify('Reanudado','ok');scheduleNext();
   }
 
   function injectUI(){
@@ -11060,12 +11105,11 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
     const box=document.createElement('div');box.className='nq-auto';box.id='nqAutoControls';
     box.innerHTML=`
       <div class="nq-auto-grid">
-        <div><label for="nqAutoInterval">Tiempo de espera entre lotes</label><div class="nq-auto-time"><input id="nqAutoInterval" type="number" min="1" max="3600" step="1" value="30"><select id="nqAutoUnit" aria-label="Unidad de tiempo"><option value="seconds">Segundos</option><option value="minutes">Minutos</option></select></div></div>
-        <div><label>Automatización de la cola</label><div class="hint" style="margin:0">Después de confirmar un lote impreso, Nora espera este tiempo y abre automáticamente el siguiente.</div></div>
+        <div><label for="nqAutoInterval">Pausa entre lotes</label><div class="nq-auto-time"><input id="nqAutoInterval" type="number" min="1" max="3600" step="1" value="30"><select id="nqAutoUnit" aria-label="Unidad de tiempo"><option value="seconds">Segundos</option><option value="minutes">Minutos</option></select></div></div>
       </div>
-      <div class="nq-auto-actions"><button type="button" class="primary" id="btnBatchAutoStart">Imprimir todos los lotes</button><button type="button" class="secondary" id="btnBatchAutoPause" disabled>Pausar secuencia</button></div>
-      <div class="nq-auto-status" id="nqAutoStatus"><div><small>ESTADO DE LA SECUENCIA</small><span id="nqAutoMessage" class="hint">La cola está lista para comenzar.</span></div><div id="nqAutoCountdown" aria-live="polite"><small>LISTA PARA COMENZAR</small><strong>—</strong></div></div>
-      <p class="nq-auto-note">Importante: el navegador no permite imprimir en silencio desde una página web. Nora abre cada PDF automáticamente, pero el operador debe pulsar Imprimir en el visor y confirmar en Nora que el lote salió. El intervalo comienza después de esa confirmación. Mantené abierta la pestaña del PDF para que Nora pueda reutilizarla.</p>`;
+      <div class="nq-auto-actions"><button type="button" class="primary" id="btnBatchAutoStart">Imprimir todos</button><button type="button" class="secondary" id="btnBatchAutoPause" disabled>Pausar</button></div>
+      <div class="nq-auto-status" id="nqAutoStatus"><div><span id="nqAutoMessage" class="hint"></span></div><div id="nqAutoCountdown" aria-live="polite"><strong></strong></div></div>
+`;
     if(anchor)panel.insertBefore(box,anchor);else panel.appendChild(box);
     const pref=read(PREF_KEY,{value:30,unit:'seconds'});
     $('nqAutoUnit').value=pref.unit==='minutes'?'minutes':'seconds';
@@ -11349,6 +11393,27 @@ button,select,input,textarea,label,summary,.chip,[role=button]{touch-action:mani
   new MutationObserver(sync).observe(nav,{attributes:true,attributeFilter:['class'],subtree:true});
   (mq.addEventListener?mq.addEventListener('change',arrange):mq.addListener(arrange));
   arrange();
+})();
+</script>
+
+<script id="nora-busy">
+/* Indicador de actividad: dice qué está haciendo Nora, con avance y segundos transcurridos. */
+(function(){
+  'use strict';
+  const el=document.createElement('div');el.id='noraBusy';el.className='nora-busy';el.hidden=true;el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+  el.innerHTML='<span class="nb-spin"></span><span class="nb-txt"></span><span class="nb-time"></span><span class="nb-bar"><i></i></span>';
+  document.body.appendChild(el);
+  const txt=el.querySelector('.nb-txt'),tm=el.querySelector('.nb-time'),bar=el.querySelector('.nb-bar'),fill=bar.querySelector('i');
+  let t0=0,timer=null;
+  const tick=()=>{const s=Math.floor((Date.now()-t0)/1000);tm.textContent=s>=3?s+' s':'';};
+  const api={
+    show(label,prog){if(el.hidden){el.hidden=false;t0=Date.now();tm.textContent='';timer=setInterval(tick,1000);}api.update(label,prog&&prog.current,prog&&prog.total);},
+    update(label,cur,total){if(label)txt.textContent=label;if(total>0){bar.classList.add('det');fill.style.width=Math.round(Math.max(0,Math.min(total,cur||0))/total*100)+'%';}else{bar.classList.remove('det');fill.style.width='';}},
+    hide(){if(el.hidden)return;el.hidden=true;clearInterval(timer);timer=null;},
+    async wrap(label,fn){api.show(label);try{return await fn();}finally{api.hide();}}
+  };
+  el.addEventListener('click',api.hide);
+  window.NoraBusy=api;
 })();
 </script>
 </body>
