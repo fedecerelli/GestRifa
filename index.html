@@ -1196,6 +1196,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #view-grid .qg-status{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:13px;padding:2px 4px}
 #view-grid .qg-bad{color:#b0452f;font-weight:600}#view-grid .qg-ok{opacity:.65}
 @media(max-width:820px){#view-grid .qg-body{height:calc(100dvh - 340px)}#view-grid .qg-find{width:110px}}
+
+/* Conexión OneDrive: solo se ve lo que corresponde al estado */
+.od-connect:not([data-state="a"]) .od-ca,.od-connect:not([data-state="b"]) .od-cb,.od-connect:not([data-state="c"]) .od-cc{display:none!important}
+.od-conn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.od-conn-row input{flex:1 1 220px;min-height:42px}
+.od-cb .od-btn-connect{min-height:46px;font-size:15px;padding:0 22px}
+
+.od-sec-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--line,#ddd)}
+.od-sec-row .chk{margin:0;font-size:13.5px}
 /* Impresión por lotes: solo lo necesario */
 @media(max-width:600px){#reportsList .report-item{flex-wrap:wrap;gap:8px}#reportsList .rp-body{flex:1 1 55%;min-width:0}#reportsList .rp-name{white-space:normal}}
 #view-print #batchProgressWrap,#view-print .nq-stats,#view-print .nq-eyebrow,#view-print #batchQueueDetail,#view-print #batchQueueLabel{display:none!important}
@@ -1246,6 +1255,59 @@ body.qg-zen-on{overflow:hidden}
 #view-grid.qg-zen .qg-hz,#view-grid.qg-zen #qgCfgB,#view-grid.qg-zen #qgZen{display:none}
 @media(max-width:820px){body.qg-zen-on .fab,body.qg-zen-on .bottom-nav{display:none!important}}
 </style>
+<script>/* Para que TODA PC arranque ya configurada, poné tu ID de Azure acá: window.NORA_OD_DEFAULTS={clientId:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'}; */window.NORA_OD_DEFAULTS=window.NORA_OD_DEFAULTS||{};</script>
+<script id="nora-security">
+/* Nora · seguridad local: (1) borrado total al reiniciar tras "Cerrar sesión y borrar", (2) cifrado con PIN del token de Microsoft. */
+(function(){
+  'use strict';
+  const KEYRE=/^(nora|nx_|cobranza_)/i,DBS=['cobranza_suite_db','nora_pdf_lib','nora_mejoras_db'];
+  function wipeStores(){
+    try{Object.keys(localStorage).forEach(k=>{if(KEYRE.test(k))localStorage.removeItem(k);});}catch(e){}
+    try{sessionStorage.clear();}catch(e){}
+    const kill=n=>{try{const r=indexedDB.deleteDatabase(n);r.onerror=r.onblocked=()=>{};}catch(e){}};
+    DBS.forEach(kill);
+    try{if(indexedDB.databases)indexedDB.databases().then(l=>(l||[]).forEach(x=>{if(x&&x.name&&/^(nora|cobranza)/i.test(x.name))kill(x.name);})).catch(()=>{});}catch(e){}
+  }
+  /* segunda pasada al arrancar: borra lo que algún módulo haya vuelto a escribir antes de cerrarse */
+  try{if(sessionStorage.getItem('nora_wipe')==='1')wipeStores();}catch(e){}
+
+  const enc=new TextEncoder(),dec=new TextDecoder(),SKEY='nora_sec_sk_v1',SALT='nora_sec_salt_v1';
+  let key=null;
+  const b64=u=>btoa(String.fromCharCode.apply(null,Array.from(new Uint8Array(u))));
+  const ub=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+  const avail=()=>!!(window.crypto&&crypto.subtle);
+  const imp=bits=>crypto.subtle.importKey('raw',bits,'AES-GCM',false,['encrypt','decrypt']);
+  async function setPin(pin){
+    if(!avail())return false;
+    let salt=localStorage.getItem(SALT);if(!salt){salt=b64(crypto.getRandomValues(new Uint8Array(16)));localStorage.setItem(SALT,salt);}
+    const base=await crypto.subtle.importKey('raw',enc.encode(String(pin)),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:ub(salt),iterations:200000},base,256);
+    key=await imp(bits);try{sessionStorage.setItem(SKEY,b64(bits));}catch(e){}
+    window.dispatchEvent(new Event('nora:unlocked'));return true;
+  }
+  async function restore(){if(key)return true;if(!avail())return false;try{const t=sessionStorage.getItem(SKEY);if(t){key=await imp(ub(t));return true;}}catch(e){}return false;}
+  async function seal(text){if(!key)throw new Error('sin clave');const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));return JSON.stringify({enc:1,iv:b64(iv),ct:b64(ct)});}
+  async function open(s){if(!key)throw new Error('sin clave');const o=JSON.parse(s);return dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(o.iv)},key,ub(o.ct)));}
+  const isSealed=s=>{try{return JSON.parse(s).enc===1;}catch(e){return false;}};
+  function forget(){key=null;try{sessionStorage.removeItem(SKEY);localStorage.removeItem('nora_od_tok_v1');}catch(e){}}
+  window.NoraSec={setPin,restore,seal,open,isSealed,forget,hasKey:()=>!!key,available:avail};
+
+  /* Cerrar sesión y borrar todo lo guardado por Nora en este navegador */
+  async function wipe(){
+    try{if(window.NoraGrid&&NoraGrid.rows().length&&confirm('Hay '+NoraGrid.rows().length+' fila(s) en Carga rápida.\n\n¿Descargás el Excel antes de borrar?\n\nAceptar = descargar primero')){
+      const w=NoraGrid.workbook();const b=new Blob([XLSX.write(w,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});directDownloadBlob(b,'Carga rápida - respaldo.xlsx');}}catch(e){}
+    if(!confirm('Se borra TODO lo que Nora guardó en este navegador: archivos cargados, planilla de Carga rápida, historial, PIN y sesión de Microsoft.\n\nTus archivos en OneDrive no se tocan.\n\n¿Seguir?'))return false;
+    let cfg=null;try{cfg=JSON.parse(localStorage.getItem('nora_od_cfg_v1')||'null');}catch(e){}
+    let out=false;if(cfg&&cfg.clientId)out=confirm('¿Cerrar también la sesión de Microsoft en este navegador?\n\nRecomendado en una PC compartida.');
+    key=null;wipeStores();try{sessionStorage.setItem('nora_wipe','1');}catch(e){}
+    const base=(location.origin==='null'||location.protocol==='file:')?location.href.split('#')[0]:location.origin+location.pathname;
+    const dest=out?'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri='+encodeURIComponent(base):base;
+    if(typeof window.__noraNav==='function'){window.__noraNav(dest);return true;}
+    location.replace(dest);return true;
+  }
+  window.NoraSecurity={wipe,wipeStores};
+})();
+</script>
 </head>
 <body>
 <div class="app">
@@ -2140,13 +2202,18 @@ body.qg-zen-on{overflow:hidden}
             <h3><span class="b-ic" data-icon="cloud"></span>Microsoft OneDrive</h3>
             <div class="row od-settings-actions" style="gap:8px;margin-bottom:12px">
               <button type="button" class="primary miniBtn od-btn-connect">Conectar con Microsoft</button>
+              <button type="button" class="secondary miniBtn od-btn-link">Copiar enlace para otra PC</button>
               <button type="button" class="ghost miniBtn od-btn-disc">Desconectar</button>
             </div>
-            <div class="field"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
+            <div class="od-sec-row" style="margin-bottom:12px"><label class="chk"><input type="checkbox" class="od-in-shared"><span>PC compartida (no recordar mi sesión)</span></label><button type="button" class="ghost miniBtn sec-wipe">Cerrar sesión y borrar datos de este equipo</button></div>
+            <div class="od-conn-row" style="margin-bottom:12px"><input type="text" class="od-in-code" placeholder="¿Tenés un enlace de conexión? Pegalo acá" autocomplete="off" spellcheck="false"><button type="button" class="secondary miniBtn od-btn-usecode">Usar</button></div>
+            <details class="od-help od-adv"><summary>Configuración avanzada</summary>
+            <div class="field" style="margin-top:10px"><label>ID de aplicación (cliente) de Azure</label><input type="text" class="od-in-client" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
             <div class="field" style="margin-top:10px"><label>Carpeta base de OneDrive (opcional)</label><input type="text" class="od-in-folder" placeholder="Vacío = raíz de OneDrive" autocomplete="off"><div class="hint">Podés dejarla vacía y explorar carpetas desde Carga de Datos.</div></div>
-            <div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo <small style="opacity:.75">(guarda el token en este navegador; usalo solo en un equipo propio)</small></label></div>
+            <div class="od-check-options"><label><input type="checkbox" class="od-in-rec"> Incluir subcarpetas</label><label><input type="checkbox" class="od-in-auto"> Sincronizar al abrir Nora</label><label><input type="checkbox" class="od-in-remember"> Recordar sesión en este dispositivo <small style="opacity:.75">(con PIN activado se guarda cifrada)</small></label></div>
             <div class="field" style="margin-top:12px"><label>Dirección de redirección (registrala en Azure)</label><div class="row od-redirect-row" style="gap:8px"><input type="text" class="od-in-redir" readonly><button type="button" class="ghost miniBtn od-btn-copy">Copiar</button></div></div>
             <div class="row" style="gap:8px;margin-top:12px"><button type="button" class="secondary miniBtn od-btn-save">Guardar configuración</button><span class="status-line od-status" aria-live="polite"></span></div>
+            </details>
             <details class="od-help"><summary>Cómo configurar la aplicación de Microsoft</summary><ol class="hint od-setup-steps"><li>Entrá a <b>entra.microsoft.com</b> → Registros de aplicaciones → Nuevo registro.</li><li>Nombre: <b>Nora</b>. Elegí cuentas personales de Microsoft.</li><li>Agregá la URL que aparece arriba en la plataforma <b>Aplicación de página única (SPA)</b>.</li><li>Copiá el Id. de aplicación (cliente), pegalo acá y guardá.</li><li>Conectá Microsoft y aceptá el permiso de lectura solicitado.</li></ol></details>
             <details class="od-help"><summary>Historial de sincronización</summary><div class="od-hist-list" style="margin-top:8px"></div></details>
           </section>
@@ -8731,7 +8798,7 @@ function ask(then){
   box('Nora bloqueada',['PIN de acceso'],'Desbloquear',async([pin],say)=>{
     const c=get();if(!c){close();then&&then();return true;}
     if(fails)await new Promise(r=>setTimeout(r,Math.min(30,Math.pow(2,fails))*1000));
-    if(await hash(pin,unb(c.salt))===c.hash){fails=0;sessMark();close();then&&then();return true;}
+    if(await hash(pin,unb(c.salt))===c.hash){fails=0;sessMark();try{window.NoraSec&&await NoraSec.setPin(pin);}catch(e){}close();then&&then();return true;}
     fails++;say('PIN incorrecto'+(fails>2?' · esperá unos segundos entre intentos':''));return false;});
 }
 function printIsActive(){return activePrintOperations.size>0;}
@@ -8810,10 +8877,10 @@ window.NoraLock={
   isPrintOperationActive:printIsActive,
   setup(){const doSet=()=>box('Nuevo PIN',['PIN nuevo (6 a 12 dígitos)','Repetir PIN'],'Guardar PIN',async([a,b],say)=>{
       if(!/^\d{6,12}$/.test(a)){say('Usá entre 6 y 12 dígitos.');return false;}if(a!==b){say('Los PIN no coinciden');return false;}
-      const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(a,salt)}));
+      const salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(K,JSON.stringify({salt:b64(salt),hash:await hash(a,salt)}));try{window.NoraSec&&await NoraSec.setPin(a);}catch(e){}
       close();bump();try{window.notify&&notify('PIN guardado','ok');}catch(e){}return true;},true);
     if(get())ask(doSet);else doSet();},
-  remove(){if(!get())return;ask(()=>{localStorage.removeItem(K);clearTimeout(timer);try{window.notify&&notify('PIN quitado','ok');}catch(e){}});},
+  remove(){if(!get())return;ask(()=>{localStorage.removeItem(K);try{window.NoraSec&&NoraSec.forget();}catch(e){}clearTimeout(timer);try{window.notify&&notify('PIN quitado','ok');}catch(e){}});},
   getOptions:cfgGet,
   setOptions(o){cfgSet(o);if(!cfgGet().remember){try{sessionStorage.removeItem(KS);}catch(e){}}else if(!ov&&get())sessMark();bump();},
   isSet:()=>!!get()};
@@ -8848,18 +8915,40 @@ const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
 const K_REMEMBER='nora_od_remember_session_v1';
 let volatileToken=null;
+const K_SHARED='nora_shared_pc_v1';
+const sharedPC=()=>{try{return localStorage.getItem(K_SHARED)==='1';}catch(e){return false;}};
+const rememberOn=()=>!sharedPC()&&jget(K_REMEMBER,true)!==false;
+let unsealing=false;
+function unseal(saved){
+  if(unsealing||!window.NoraSec)return;unsealing=true;
+  NoraSec.open(saved).then(raw=>{const t=JSON.parse(raw);volatileToken=t;try{sessionStorage.setItem(K_TOK,raw);}catch(e){}refreshButtons();if(cfg&&cfg.auto)setTimeout(()=>sync({quiet:true}),300);})
+    .catch(()=>{try{localStorage.removeItem(K_TOK);}catch(e){}refreshButtons();}).then(()=>{unsealing=false;});
+}
 function readToken(){
   try{const live=sessionStorage.getItem(K_TOK);if(live){volatileToken=JSON.parse(live);return volatileToken;}}catch(e){}
-  try{const saved=localStorage.getItem(K_TOK);if(!saved)return volatileToken;const token=JSON.parse(saved);volatileToken=token;
-    if(jget(K_REMEMBER,false)===true)return token;
+  try{const saved=localStorage.getItem(K_TOK);if(!saved)return volatileToken;
+    if(window.NoraSec&&NoraSec.isSealed(saved)){            /* guardado cifrado con tu PIN: se abre al desbloquear */
+      if(NoraSec.hasKey())unseal(saved);else NoraSec.restore().then(ok=>{if(ok)unseal(saved);});
+      return volatileToken;}
+    const token=JSON.parse(saved);volatileToken=token;
+    if(rememberOn())return token;
     try{sessionStorage.setItem(K_TOK,saved);localStorage.removeItem(K_TOK);}catch(e){}
     return token;
   }catch(e){return volatileToken;}
 }
 function writeToken(token){
   volatileToken=token;const raw=JSON.stringify(token);
-  try{if(jget(K_REMEMBER,false)===true){localStorage.setItem(K_TOK,raw);sessionStorage.removeItem(K_TOK);}else{sessionStorage.setItem(K_TOK,raw);localStorage.removeItem(K_TOK);}}catch(e){}
+  try{
+    sessionStorage.setItem(K_TOK,raw);
+    if(!rememberOn()){localStorage.removeItem(K_TOK);return;}
+    const pinOn=!!(window.NoraLock&&NoraLock.isSet&&NoraLock.isSet())&&window.NoraSec&&NoraSec.available();
+    if(!pinOn){localStorage.setItem(K_TOK,raw);return;}            /* sin PIN: como siempre */
+    localStorage.removeItem(K_TOK);                                  /* con PIN: nunca en claro */
+    const put=()=>NoraSec.seal(raw).then(sl=>{if(rememberOn())localStorage.setItem(K_TOK,sl);}).catch(()=>{});
+    if(NoraSec.hasKey())put();else NoraSec.restore().then(ok=>{if(ok)put();});
+  }catch(e){}
 }
+window.addEventListener('nora:unlocked',()=>{try{const saved=localStorage.getItem(K_TOK);if(saved&&window.NoraSec&&NoraSec.isSealed(saved)&&!volatileToken)unseal(saved);else if(volatileToken&&rememberOn())writeToken(volatileToken);}catch(e){}});
 function clearToken(){volatileToken=null;try{localStorage.removeItem(K_TOK);}catch(e){}try{sessionStorage.removeItem(K_TOK);}catch(e){}}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const $$=sel=>Array.from(document.querySelectorAll(sel));
@@ -8911,6 +9000,7 @@ function setStatus(msg,warn,progress){
   refreshButtons();
 }
 function refreshButtons(){
+  try{paintConnect();}catch(_){}
   const conn=hasTok(),ok=ready();
   $$('.od-btn-connect').forEach(b=>{b.style.display='';b.textContent=conn?'Reconectar con Microsoft':'Conectar con Microsoft';b.disabled=busy;});
   // El explorador siempre puede abrirse para explicar qué falta o mostrar la última lista guardada.
@@ -8925,7 +9015,7 @@ const b64url=buf=>btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).repl
 const rnd=n=>b64url(crypto.getRandomValues(new Uint8Array(n)));
 
 async function startLogin(silent){
-  if(!ready()){setStatus('Falta el ID de aplicación. Completalo en Ajustes → OneDrive.',true);return;}
+  if(!ready()){setStatus('Pegá el enlace de conexión para empezar.',true);return;}
   const verifier=rnd(48),state=rnd(12);
   const challenge=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
   try{sessionStorage.setItem(K_PKCE,JSON.stringify({verifier,state,silent:!!silent,t:Date.now()}));}catch(e){jset(K_PKCE,{verifier,state,silent:!!silent,t:Date.now()});}
@@ -9452,10 +9542,66 @@ async function sync(opts){
 /* -------------------------------------------------------------- UI ----- */
 function cardHTML(full){
   return '<div class="od-manager-head"><div><div class="od-manager-kicker">FUENTE EN LA NUBE</div><h2><span class="h-ic" data-icon="refresh"></span>Archivos y sincronización</h2><p class="hint">Administrá desde acá las planillas locales y las de OneDrive. Elegí una vez los Excel que Nora puede leer; los originales no se modifican ni se eliminan.</p></div><div class="od-cloud-badge"><span class="od-cloud-glyph">OD</span><span><b>Microsoft OneDrive</b><small>Solo lectura</small></span></div></div>'+
-  '<div class="status-line od-status" style="margin:12px 0" aria-live="polite"></div><div class="od-main-actions"><button type="button" class="secondary miniBtn od-btn-pick">Explorar OneDrive…</button><button type="button" class="primary miniBtn od-btn-sync">Sincronizar ahora</button><span class="od-settings-shortcut">Cuenta y PIN: Configuración → Accesos y seguridad</span></div>'+
+  '<div class="status-line od-status" style="margin:12px 0" aria-live="polite"></div>'+
+  '<div class="od-connect" data-state="a">'+
+    '<div class="od-ca"><div class="od-conn-row"><input type="text" class="od-in-code" placeholder="Pegá el enlace de conexión" autocomplete="off" spellcheck="false"><button type="button" class="primary od-btn-usecode">Conectar</button></div><div class="hint">Lo copiás con «Copiar enlace para otra PC» desde un equipo ya conectado.</div></div>'+
+    '<div class="od-cb"><button type="button" class="primary od-btn-connect">Conectar con Microsoft</button></div>'+
+    '<div class="od-cc od-main-actions"><button type="button" class="primary miniBtn od-btn-sync">Sincronizar ahora</button><button type="button" class="secondary miniBtn od-btn-pick">Explorar OneDrive…</button><button type="button" class="ghost miniBtn od-btn-link">Copiar enlace para otra PC</button><button type="button" class="ghost miniBtn od-btn-disc">Desconectar</button></div>'+
+  '</div>'+
+  '<div class="od-sec-row"><label class="chk"><input type="checkbox" class="od-in-shared"><span>PC compartida (no recordar mi sesión)</span></label><button type="button" class="ghost miniBtn sec-wipe">Cerrar sesión y borrar datos de este equipo</button></div>'+
   '<section class="od-local-source"><div class="od-section-head"><div><b>Archivos del equipo</b><div class="hint">Agregá Excel desde tu computadora. Se administran junto con OneDrive.</div></div><span class="od-local-count-slot"></span></div><div class="od-local-drop-mount"></div></section>'+
   '<section class="od-local-list-section"><div class="od-section-head od-local-list-toolbar"><div><b>Archivos disponibles en Nora</b><div class="hint">Asigná destinos o quitá el vínculo desde esta única lista.</div></div></div><div class="od-local-list-mount"></div></section>'+
   '';
+}
+
+
+/* ---------------------------------------------------- enlace de conexión --- */
+/* Un solo enlace lleva el ID, la carpeta y las opciones: en una PC nueva no hay que recordar nada. */
+const b64e=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d=t=>{t=String(t).replace(/-/g,'+').replace(/_/g,'/');t+='='.repeat((4-t.length%4)%4);return JSON.parse(decodeURIComponent(escape(atob(t))));};
+const GUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function connLink(){if(!ready())return '';return REDIRECT+'#conexion='+b64e({c:cfg.clientId.trim(),f:cfg.folder||'',r:cfg.recursive?1:0,a:cfg.auto?1:0,u:REDIRECT});}
+function parseConn(txt){
+  let t=String(txt||'').trim();if(!t)return null;const m=t.match(/conexion=([A-Za-z0-9_\-]+)/);if(m)t=m[1];t=t.replace(/^nora1\./,'');
+  try{const o=b64d(t);return o&&GUID.test(String(o.c||''))?o:null;}catch(e){return null;}
+}
+function applyConn(o){
+  const next={clientId:String(o.c).trim(),folder:String(o.f||'').replace(/^\/+|\/+$/g,''),recursive:o.r!==0,auto:o.a!==0};
+  if(next.clientId!==cfg.clientId)clearToken();
+  jset(K_REMEMBER,true);jset(K_ST,{files:{}});jset(K_CFG,next);cfg=Object.assign({},cfg,next);
+  fillInputs();refreshButtons();
+  if(o.u&&o.u!==REDIRECT)setStatus('Ojo: el enlace se creó en otra dirección ('+o.u+'). En Azure tiene que estar registrada esta: '+REDIRECT,true);
+  else setStatus('Conexión configurada.');
+  return true;
+}
+async function shareLink(){
+  const link=connLink();if(!link){setStatus('Primero conectá OneDrive en este equipo.',true);return;}
+  try{if(navigator.share&&/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){await navigator.share({title:'Conectar Nora con OneDrive',text:'Abrí este enlace en la otra PC para conectar Nora.',url:link});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  const done=()=>toast('Enlace copiado: abrilo en la otra PC','ok');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(link).then(done,()=>prompt('Copiá este enlace:',link));else prompt('Copiá este enlace:',link);
+}
+function useCode(t){
+  const box=t.closest('.od-connect,.od-settings-section')||document,inp=box.querySelector('.od-in-code'),o=parseConn(inp&&inp.value);
+  if(!o){setStatus('Ese enlace no es válido. Copialo de nuevo desde la otra PC.',true);return;}
+  applyConn(o);if(inp)inp.value='';
+  if(!hasTok())setTimeout(()=>startLogin(false),500);
+}
+/* Si Nora se abre con el enlace (…#conexion=…), se configura y empieza el inicio de sesión sola. */
+function consumeConnHash(){
+  const m=String(location.hash||'').match(/^#conexion=([A-Za-z0-9_\-]+)/);if(!m)return false;
+  try{history.replaceState(null,'',REDIRECT);}catch(e){}
+  const o=parseConn(m[1]);if(!o){setStatus('El enlace de conexión no es válido.',true);return false;}
+  applyConn(o);if(!hasTok())setTimeout(()=>startLogin(false),900);return true;
+}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.classList||!t.classList.contains('od-in-shared'))return;
+  try{localStorage.setItem(K_SHARED,t.checked?'1':'0');}catch(_){}
+  if(t.checked){try{localStorage.removeItem(K_TOK);}catch(_){}if(volatileToken)try{sessionStorage.setItem(K_TOK,JSON.stringify(volatileToken));}catch(_){}toast('PC compartida: la sesión no se recuerda. Al terminar tocá «Cerrar sesión y borrar».','ok');}
+  else{if(volatileToken)writeToken(volatileToken);}
+  fillInputs();});
+function paintConnect(){
+  const st=!ready()?'a':(!hasTok()?'b':'c');
+  $$('.od-connect').forEach(b=>{b.dataset.state=st;});
+  $$('.od-adv').forEach(d=>{if(st==='a')d.open=true;});
 }
 
 function fillInputs(){
@@ -9463,7 +9609,8 @@ function fillInputs(){
   $$('.od-in-folder').forEach(e=>e.value=cfg.folder||'');
   $$('.od-in-rec').forEach(e=>e.checked=!!cfg.recursive);
   $$('.od-in-auto').forEach(e=>e.checked=!!cfg.auto);
-  $$('.od-in-remember').forEach(e=>e.checked=jget(K_REMEMBER,false)===true);
+  $$('.od-in-remember').forEach(e=>{e.checked=rememberOn();e.disabled=sharedPC();});
+  $$('.od-in-shared').forEach(e=>{e.checked=sharedPC();});
   $$('.od-in-redir').forEach(e=>e.value=REDIRECT);
 }
 
@@ -9492,7 +9639,7 @@ function saveCfg(){
 }
 
 function describeStatus(){
-  if(!ready())return setStatus('Falta configurar Microsoft. Abrí Configuración → Accesos y seguridad y completá el ID de aplicación.');
+  if(!ready())return setStatus('Pegá el enlace de conexión para empezar.');
   if(!hasTok())return setStatus('Falta iniciar sesión. Tocá «Conectar con Microsoft».');
   const last=(jget(K_ST,{})||{}).last;
   setStatus(last?'Última sincronización: '+new Date(last).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'}):'Conectado. Todavía no se sincronizó.');
@@ -9539,6 +9686,9 @@ function buildUI(){
   document.addEventListener('click',ev=>{
     const t=ev.target.closest&&ev.target.closest('button');if(!t)return;
     if(t.classList.contains('od-btn-connect')){ev.preventDefault();if(document.querySelector('.od-in-client'))saveCfg();if(ready())startLogin(false);else setStatus('Abrí Configuración, ingresá el ID de aplicación y guardá antes de conectar.',true);}
+    else if(t.classList.contains('od-btn-link')){ev.preventDefault();shareLink();}
+    else if(t.classList.contains('sec-wipe')){ev.preventDefault();if(window.NoraSecurity)NoraSecurity.wipe();}
+    else if(t.classList.contains('od-btn-usecode')){ev.preventDefault();useCode(t);}
     else if(t.classList.contains('od-btn-pick')){ev.preventDefault();openPicker().catch(e=>{setStatus('No se pudo abrir el explorador de OneDrive: '+e.message,true);try{console.error('[OneDrive picker]',e);}catch(_){}});}
     else if(t.classList.contains('od-btn-pin')){ev.preventDefault();window.NoraLock&&NoraLock.setup();}
     else if(t.classList.contains('od-btn-nopin')){ev.preventDefault();window.NoraLock&&NoraLock.remove();}
@@ -9562,8 +9712,9 @@ async function autoStart(){
 
 async function init(){
   buildUI();
+  const linked=consumeConnHash();
   const handled=await handleRedirect();
-  if(!handled||!statusMsg)describeStatus();
+  if((!handled&&!linked)||!statusMsg)describeStatus();
   refreshButtons();
 
   let started=false;
@@ -9599,7 +9750,7 @@ function unlinkSource(name,id){
   const st=jget(K_ST,{files:{}})||{};st.files=st.files||{};delete st.files[sourceId];jset(K_ST,st);
   renderSelectedFiles();refreshButtons();
 }
-window.NoraOD={sync,startLogin,config:()=>Object.assign({},cfg),unlinkSource};
+window.NoraOD={link:()=>connLink(),applyLink:t=>{const o=parseConn(t);if(!o)return false;applyConn(o);return true;},sync,startLogin,config:()=>Object.assign({},cfg),unlinkSource};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 
