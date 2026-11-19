@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>EKO — icono de escritorio</title>
+<rect x="8" y="8" width="496" height="496" rx="96" fill="#F4EBDD"/>
+<g transform="translate(22 40) scale(.78)"><g transform="translate(0 0) scale(1)" stroke-linecap="round" stroke-linejoin="round">
+      <g fill="none" stroke="#B65B2E" stroke-width="14">
+        <path d="M 144.4 363.6 A 220 220 0 1 1 455.6 363.6"/>
+        <path d="M 179.8 328.2 A 170 170 0 1 1 420.2 328.2"/>
+        <path d="M 211.6 296.4 A 125 125 0 1 1 388.4 296.4"/>
+      </g>
+      <circle cx="300" cy="208" r="34" fill="#202827"/>
+      <g fill="none" stroke="#202827" stroke-width="13">
+        <path d="M300 242 L205 438 L395 438 Z"/>
+        <path d="M300 242 L300 438"/>
+        <path d="M252 340 L348 340 M229 390 L371 390"/>
+        <path d="M300 242 L252 340 L348 340 L300 242"/>
+        <path d="M252 340 L371 390 L229 390 L348 340"/>
+        <path d="M229 390 L395 438 L205 438 L371 390"/>
+      </g>
+      <path d="M55 454 Q300 374 545 454 Q300 442 55 454 Z" fill="#202827"/>
+    </g></g>
+<text x="256" y="473" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="86" font-weight="900" letter-spacing="-6" fill="#202827">EKO</text>
+</svg>
