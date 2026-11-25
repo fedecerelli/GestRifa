@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-<title>EKO — icono de escritorio</title>
-<rect x="8" y="8" width="496" height="496" rx="96" fill="#F4EBDD"/>
-<g transform="translate(22 40) scale(.78)"><g transform="translate(0 0) scale(1)" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1354" viewBox="0 0 700 790">
+<title>EKO — logo principal</title>
+<g transform="translate(50 40) scale(1)" stroke-linecap="round" stroke-linejoin="round">
       <g fill="none" stroke="#B65B2E" stroke-width="14">
         <path d="M 144.4 363.6 A 220 220 0 1 1 455.6 363.6"/>
         <path d="M 179.8 328.2 A 170 170 0 1 1 420.2 328.2"/>
@@ -17,6 +16,6 @@
         <path d="M229 390 L395 438 L205 438 L371 390"/>
       </g>
       <path d="M55 454 Q300 374 545 454 Q300 442 55 454 Z" fill="#202827"/>
-    </g></g>
-<text x="256" y="473" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="86" font-weight="900" letter-spacing="-6" fill="#202827">EKO</text>
+    </g>
+<text x="350" y="730" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="188" font-weight="900" letter-spacing="-13" fill="#202827">EKO</text>
 </svg>
